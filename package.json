@@ -1,0 +1,10 @@
+{
+    "name": "solar_mvp_",
+    "private":"true",
+    "scripts": {
+        "dev": "concurrently \"npm start --prefix frontend\" \"npm run dev --prefix backend\""
+    },
+    "devDependencies": {
+        "concurrently": "^9.2.1"
+    }
+}
