@@ -9,9 +9,10 @@ import Footer from './components/Footer';
 const App = () => {
 
   useEffect(() => {
-    fetch('/api/hello')
+    console.log("App mounted!!!");
+    fetch('http://localhost:9000/users')
     .then(res => res.json())
-    .then(data => console.log(data.message))
+    .then(data => console.log(data))
     .catch(err => console.error('Error fetching data:', err));
   }, []);
 

@@ -1,5 +1,5 @@
 {
-  "name": "solar_mvp_backend",
+  "name": "boosty_server",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
