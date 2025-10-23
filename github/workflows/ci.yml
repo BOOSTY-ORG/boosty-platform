@@ -25,7 +25,7 @@ jobs:
         run: |
           cd backend
           npm ci
-          npm test
+          npm run ci-test
 
       - name: Install frontend dependences and build
         run: |

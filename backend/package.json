@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "nodemon",
     "build-client": "cd ../frontend && npm install && npm run build",
-    "build": "npm install && npm run build-client"
+    "build": "npm install && npm run build-client",
+    "ci-test": "jest --coverage"
   },
   "keywords": [],
   "author": "",
