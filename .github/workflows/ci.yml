@@ -10,7 +10,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    # job tasks to run
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,25 +20,22 @@ jobs:
           node-version: "20.x"
           cache: "npm"
 
-      - name: Install backend dependencies and run test
+      - name: Install frontend dependencies, run tests and build
+        working-directory: frontend
         run: |
-          cd backend
           npm ci
-          npm run 
-
-      - name: Install frontend dependences and build
-        run: |
-          cd frontend
-          npm ci
-          npm run build
-      - name: Install backend dependencies and run tests
-        run: |
-          cd backend
-          npm ci
+          # run tests once in CI (CRA watches by default unless CI is set)
+          CI=true npm test -- --watchAll=false
           npm run build
 
-      - name: Install frontend dependences and build
+      - name: Install backend dependencies
+        working-directory: backend
         run: |
-          cd frontend
           npm ci
-          npm run build
+
+      - name: Upload frontend build artifact (optional)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build

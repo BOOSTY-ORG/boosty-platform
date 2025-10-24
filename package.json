@@ -1,5 +1,5 @@
 {
-    "name": "solar_mvp_",
+    "name": "boosty_mern_",
     "private": "true",
     "scripts": {
         "dev": "concurrently \"npm start --prefix frontend\" \"npm run dev --prefix backend\""
@@ -8,6 +8,8 @@
         "concurrently": "^9.2.1"
     },
     "dependencies": {
+        "boosty_client": "file:frontend",
+        "boosty_server": "file:backend",
         "cookie-parser": "^1.4.7",
         "jsonwebtoken": "^9.0.2"
     }
