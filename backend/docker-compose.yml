@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "7000:7000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=mongodb://mongo:27017/boosty_dev
+      - JWT_SECRET=dev_jwt_secret_key
+    depends_on:
+      - mongo
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+    command: npm run dev
+
+  mongo:
+    image: mongo:5.0
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  test:
+    build: .
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=mongodb://mongo_test:27017/boosty_test
+      - JWT_SECRET=test_jwt_secret
+    depends_on:
+      - mongo_test
+    command: npm run test
+    volumes:
+      - ./src:/app/src
+      - ./tests:/app/tests
+
+  mongo_test:
+    image: mongo:5.0
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_test_data:/data/db
+
+volumes:
+  mongo_data:
+  mongo_test_data:

@@ -1,0 +1,116 @@
+name: Backend CI
+
+on:
+  push:
+    branches: ["master", "develop"]
+    paths: ["backend/**"]
+  pull_request:
+    branches: ["master", "develop"]
+    paths: ["backend/**"]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Set up environment variables
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=mongodb://localhost:27017/boosty_test" >> .env
+          echo "NODE_ENV=test" >> .env
+          echo "JWT_SECRET=test_jwt_secret" >> .env
+
+      - name: Run linting
+        working-directory: backend
+        run: npm run lint
+
+      - name: Run tests
+        working-directory: backend
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js environment
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20.x"
+          cache: "npm"
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci --production
+
+      - name: Create deployment artifact
+        working-directory: backend
+        run: |
+          mkdir -p deployment
+          cp -r src deployment/
+          cp package*.json deployment/
+          cp .env.example deployment/.env
+
+      - name: Upload deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-deployment
+          path: backend/deployment
+          retention-days: 30
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+
+    steps:
+      - name: Download deployment artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-deployment
+          path: deployment
+
+      # Add your deployment steps here
+      # Example for deploying to a cloud provider:
+      # - name: Deploy to production
+      #   run: |
+      #     echo "Add your deployment commands here"
+      #     # For example, using AWS CLI, Docker, etc.
