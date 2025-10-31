@@ -3,6 +3,7 @@ import cors from "cors";
 import mongoose from "mongoose";
 import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import metricsRoutes from "./routes/metrics.routes.js";
 import cookieParser from "cookie-parser";
 import "dotenv/config";
 
@@ -23,6 +24,7 @@ mongoose
 // ** Routes **
 app.use("/", userRoutes); // Mount user routes
 app.use("/", authRoutes); // Mount auth routes
+app.use("/metrics", metricsRoutes); // Mount metrics routes
 
 // ** export configured App **
 export default app;

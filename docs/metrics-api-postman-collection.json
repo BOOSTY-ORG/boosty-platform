@@ -1,0 +1,2019 @@
+{
+	"info": {
+		"_postman_id": "boosty-metrics-api",
+		"name": "Boosty Metrics API",
+		"description": "Comprehensive metrics and analytics API for the Boosty solar investment platform. This collection includes all endpoints for dashboard, investors, users, transactions, KYC, and reporting.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "boosty-platform"
+	},
+	"item": [
+		{
+			"name": "System",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is healthy\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has required fields\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status');",
+									"    pm.expect(jsonData).to.have.property('service');",
+									"    pm.expect(jsonData).to.have.property('timestamp');",
+									"    pm.expect(jsonData).to.have.property('version');",
+									"});",
+									"",
+									"pm.test(\"Service is metrics-api\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.service).to.eql('metrics-api');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/health",
+							"host": ["{{baseUrl}}"],
+							"path": ["health"]
+						},
+						"description": "Check the health status of the metrics API service"
+					},
+					"response": []
+				},
+				{
+					"name": "API Documentation",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has API info\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('title');",
+									"    pm.expect(jsonData).to.have.property('version');",
+									"    pm.expect(jsonData).to.have.property('endpoints');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/docs",
+							"host": ["{{baseUrl}}"],
+							"path": ["docs"]
+						},
+						"description": "Get API documentation and endpoint information"
+					},
+					"response": []
+				}
+			],
+			"description": "System endpoints for health checks and API documentation"
+		},
+		{
+			"name": "Dashboard",
+			"item": [
+				{
+					"name": "Get Dashboard Overview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has success structure\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('success');",
+									"    pm.expect(jsonData.success).to.be.true;",
+									"    pm.expect(jsonData).to.have.property('data');",
+									"    pm.expect(jsonData).to.have.property('meta');",
+									"});",
+									"",
+									"pm.test(\"Dashboard data contains summary\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalUsers');",
+									"    pm.expect(jsonData.data.summary).to.have.property('activeUsers');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalInvestors');",
+									"});",
+									"",
+									"pm.test(\"Dashboard data contains growth metrics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('growth');",
+									"    pm.expect(jsonData.data.growth).to.have.property('userGrowth');",
+									"    pm.expect(jsonData.data.growth).to.have.property('investmentGrowth');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/overview?dateRange={{dateRange}}&startDate={{startDate}}&endDate={{endDate}}&region={{region}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "overview"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								}
+							]
+						},
+						"description": "Provides high-level overview metrics for the admin dashboard"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Real-time Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has real-time data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('activeUsers');",
+									"    pm.expect(jsonData.data).to.have.property('onlineInvestors');",
+									"    pm.expect(jsonData.data).to.have.property('pendingTransactions');",
+									"    pm.expect(jsonData.data).to.have.property('systemStatus');",
+									"    pm.expect(jsonData.data).to.have.property('serverLoad');",
+									"});",
+									"",
+									"pm.test(\"System status is operational\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.systemStatus).to.be.oneOf(['operational', 'degraded', 'down']);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/dashboard/realtime",
+							"host": ["{{baseUrl}}"],
+							"path": ["dashboard", "realtime"]
+						},
+						"description": "Real-time metrics for live dashboard updates"
+					},
+					"response": []
+				}
+			],
+			"description": "Dashboard metrics endpoints for admin overview and real-time data"
+		},
+		{
+			"name": "Investors",
+			"item": [
+				{
+					"name": "Get Investor Overview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has investor metrics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('breakdowns');",
+									"    pm.expect(jsonData.data).to.have.property('performance');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalInvestors');",
+									"    pm.expect(jsonData.data.summary).to.have.property('activeInvestors');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/investors?dateRange={{dateRange}}&investorType={{investorType}}&riskProfile={{riskProfile}}&region={{region}}&status={{status}}&page={{page}}&limit={{limit}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["investors"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "investorType",
+									"value": "{{investorType}}",
+									"description": "Filter by investor type"
+								},
+								{
+									"key": "riskProfile",
+									"value": "{{riskProfile}}",
+									"description": "Filter by risk profile"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								}
+							]
+						},
+						"description": "Overview metrics for investors"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Investor List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has paginated data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"    pm.expect(jsonData.data.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('page');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('limit');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('total');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/investors/list?dateRange={{dateRange}}&investorType={{investorType}}&riskProfile={{riskProfile}}&region={{region}}&status={{status}}&page={{page}}&limit={{limit}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["investors", "list"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "investorType",
+									"value": "{{investorType}}",
+									"description": "Filter by investor type"
+								},
+								{
+									"key": "riskProfile",
+									"value": "{{riskProfile}}",
+									"description": "Filter by risk profile"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								}
+							]
+						},
+						"description": "Get paginated list of investors"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Investor Performance Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has performance data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('averageROI');",
+									"    pm.expect(jsonData.data).to.have.property('totalInvestments');",
+									"    pm.expect(jsonData.data).to.have.property('completionRate');",
+									"    pm.expect(jsonData.data).to.have.property('roiDistribution');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/investors/performance?dateRange={{dateRange}}&groupBy={{groupBy}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}&page={{page}}&limit={{limit}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["investors", "performance"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "groupBy",
+									"value": "{{groupBy}}",
+									"description": "Group results by time period"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								}
+							]
+						},
+						"description": "Detailed performance metrics for investors"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Investor Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has investor details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('investor');",
+									"    pm.expect(jsonData.data).to.have.property('financials');",
+									"    pm.expect(jsonData.data).to.have.property('performance');",
+									"    pm.expect(jsonData.data).to.have.property('investments');",
+									"    pm.expect(jsonData.data).to.have.property('transactions');",
+									"});",
+									"",
+									"pm.test(\"Investor ID matches requested ID\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.investor.id).to.eql(pm.variables.get('investorId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/investors/{{investorId}}?dateRange={{dateRange}}&startDate={{startDate}}&endDate={{endDate}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["investors", "{{investorId}}"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								}
+							]
+						},
+						"description": "Detailed information for a specific investor",
+						"variable": [
+							{
+								"key": "investorId",
+								"value": "inv_123",
+								"description": "ID of the investor to retrieve"
+							}
+						]
+					},
+					"response": []
+				}
+			],
+			"description": "Investor metrics endpoints for overview, performance, and individual investor data"
+		},
+		{
+			"name": "Users",
+			"item": [
+				{
+					"name": "Get User Overview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user metrics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('activity');",
+									"    pm.expect(jsonData.data).to.have.property('applications');",
+									"    pm.expect(jsonData.data).to.have.property('kycStatus');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalUsers');",
+									"    pm.expect(jsonData.data.summary).to.have.property('activeUsers');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users?dateRange={{dateRange}}&userType={{userType}}&status={{status}}&region={{region}}&propertyType={{propertyType}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "userType",
+									"value": "{{userType}}",
+									"description": "Filter by user type"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								},
+								{
+									"key": "propertyType",
+									"value": "{{propertyType}}",
+									"description": "Filter by property type"
+								}
+							]
+						},
+						"description": "Overview metrics for platform users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has paginated user data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"    pm.expect(jsonData.data.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('total');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/list?dateRange={{dateRange}}&userType={{userType}}&status={{status}}&region={{region}}&propertyType={{propertyType}}&page={{page}}&limit={{limit}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "list"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "userType",
+									"value": "{{userType}}",
+									"description": "Filter by user type"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								},
+								{
+									"key": "propertyType",
+									"value": "{{propertyType}}",
+									"description": "Filter by property type"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								}
+							]
+						},
+						"description": "Get paginated list of users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Activity Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has activity data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('dailyActive');",
+									"    pm.expect(jsonData.data).to.have.property('weeklyActive');",
+									"    pm.expect(jsonData.data).to.have.property('monthlyActive');",
+									"    pm.expect(jsonData.data).to.have.property('dailyActivity');",
+									"    pm.expect(jsonData.data).to.have.property('hourlyActivity');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/activity?dateRange={{dateRange}}&userType={{userType}}&status={{status}}&region={{region}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "activity"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "userType",
+									"value": "{{userType}}",
+									"description": "Filter by user type"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "region",
+									"value": "{{region}}",
+									"description": "Geographic filter"
+								}
+							]
+						},
+						"description": "Detailed activity metrics for users"
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has user details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data).to.have.property('applications');",
+									"    pm.expect(jsonData.data).to.have.property('kycDocuments');",
+									"    pm.expect(jsonData.data).to.have.property('transactions');",
+									"});",
+									"",
+									"pm.test(\"User ID matches requested ID\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.user.id).to.eql(pm.variables.get('userId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}?dateRange={{dateRange}}&startDate={{startDate}}&endDate={{endDate}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["users", "{{userId}}"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								}
+							]
+						},
+						"description": "Detailed information for a specific user",
+						"variable": [
+							{
+								"key": "userId",
+								"value": "user_123",
+								"description": "ID of the user to retrieve"
+							}
+						]
+					},
+					"response": []
+				}
+			],
+			"description": "User metrics endpoints for overview, activity, and individual user data"
+		},
+		{
+			"name": "Transactions",
+			"item": [
+				{
+					"name": "Get Transaction Overview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has transaction metrics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('growth');",
+									"    pm.expect(jsonData.data).to.have.property('breakdowns');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalTransactions');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalVolume');",
+									"    pm.expect(jsonData.data.summary).to.have.property('completionRate');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions?dateRange={{dateRange}}&transactionType={{transactionType}}&status={{status}}&currency={{currency}}&minAmount={{minAmount}}&maxAmount={{maxAmount}}&paymentMethod={{paymentMethod}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["transactions"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "transactionType",
+									"value": "{{transactionType}}",
+									"description": "Filter by transaction type"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "currency",
+									"value": "{{currency}}",
+									"description": "Filter by currency"
+								},
+								{
+									"key": "minAmount",
+									"value": "{{minAmount}}",
+									"description": "Minimum amount filter"
+								},
+								{
+									"key": "maxAmount",
+									"value": "{{maxAmount}}",
+									"description": "Maximum amount filter"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{paymentMethod}}",
+									"description": "Filter by payment method"
+								}
+							]
+						},
+						"description": "Overview metrics for all financial transactions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has paginated transaction data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"    pm.expect(jsonData.data.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('total');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/list?dateRange={{dateRange}}&transactionType={{transactionType}}&status={{status}}&currency={{currency}}&minAmount={{minAmount}}&maxAmount={{maxAmount}}&paymentMethod={{paymentMethod}}&page={{page}}&limit={{limit}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["transactions", "list"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "transactionType",
+									"value": "{{transactionType}}",
+									"description": "Filter by transaction type"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "currency",
+									"value": "{{currency}}",
+									"description": "Filter by currency"
+								},
+								{
+									"key": "minAmount",
+									"value": "{{minAmount}}",
+									"description": "Minimum amount filter"
+								},
+								{
+									"key": "maxAmount",
+									"value": "{{maxAmount}}",
+									"description": "Maximum amount filter"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{paymentMethod}}",
+									"description": "Filter by payment method"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								}
+							]
+						},
+						"description": "Get paginated list of transactions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Performance Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has performance data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('totalTransactions');",
+									"    pm.expect(jsonData.data).to.have.property('successRate');",
+									"    pm.expect(jsonData.data).to.have.property('failureRate');",
+									"    pm.expect(jsonData.data).to.have.property('averageProcessingTime');",
+									"    pm.expect(jsonData.data).to.have.property('processingTime');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/performance?dateRange={{dateRange}}&transactionType={{transactionType}}&paymentMethod={{paymentMethod}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["transactions", "performance"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "transactionType",
+									"value": "{{transactionType}}",
+									"description": "Filter by transaction type"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{paymentMethod}}",
+									"description": "Filter by payment method"
+								}
+							]
+						},
+						"description": "Detailed performance metrics for transactions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Analytics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has analytics data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('transactionFlow');",
+									"    pm.expect(jsonData.data).to.have.property('hourlyPatterns');",
+									"    pm.expect(jsonData.data).to.have.property('dailyPatterns');",
+									"    pm.expect(jsonData.data).to.have.property('failureAnalysis');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/analytics?dateRange={{dateRange}}&transactionType={{transactionType}}&paymentMethod={{paymentMethod}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["transactions", "analytics"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "transactionType",
+									"value": "{{transactionType}}",
+									"description": "Filter by transaction type"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{paymentMethod}}",
+									"description": "Filter by payment method"
+								}
+							]
+						},
+						"description": "Advanced analytics for transactions"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has transaction details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('transaction');",
+									"    pm.expect(jsonData.data).to.have.property('relatedEntities');",
+									"    pm.expect(jsonData.data).to.have.property('relatedApplication');",
+									"    pm.expect(jsonData.data).to.have.property('relatedInvestment');",
+									"});",
+									"",
+									"pm.test(\"Transaction ID matches requested ID\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.transaction.id).to.eql(pm.variables.get('transactionId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/transactions/{{transactionId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["transactions", "{{transactionId}}"]
+						},
+						"description": "Detailed information for a specific transaction",
+						"variable": [
+							{
+								"key": "transactionId",
+								"value": "txn_123",
+								"description": "ID of the transaction to retrieve"
+							}
+						]
+					},
+					"response": []
+				}
+			],
+			"description": "Transaction metrics endpoints for overview, performance, analytics, and individual transaction data"
+		},
+		{
+			"name": "KYC",
+			"item": [
+				{
+					"name": "Get KYC Overview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has KYC metrics\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('growth');",
+									"    pm.expect(jsonData.data).to.have.property('breakdowns');",
+									"    pm.expect(jsonData.data).to.have.property('processingTime');",
+									"    pm.expect(jsonData.data).to.have.property('verificationScores');",
+									"    pm.expect(jsonData.data.summary).to.have.property('totalDocuments');",
+									"    pm.expect(jsonData.data.summary).to.have.property('verificationRate');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/kyc?dateRange={{dateRange}}&documentType={{documentType}}&verificationStatus={{verificationStatus}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["kyc"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "documentType",
+									"value": "{{documentType}}",
+									"description": "Filter by document type"
+								},
+								{
+									"key": "verificationStatus",
+									"value": "{{verificationStatus}}",
+									"description": "Filter by verification status"
+								}
+							]
+						},
+						"description": "Overview metrics for KYC processing"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KYC Document List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has paginated KYC data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('data');",
+									"    pm.expect(jsonData.data).to.have.property('pagination');",
+									"    pm.expect(jsonData.data.data).to.be.an('array');",
+									"    pm.expect(jsonData.data.pagination).to.have.property('total');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/kyc/list?dateRange={{dateRange}}&documentType={{documentType}}&verificationStatus={{verificationStatus}}&page={{page}}&limit={{limit}}&sortBy={{sortBy}}&sortOrder={{sortOrder}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["kyc", "list"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "documentType",
+									"value": "{{documentType}}",
+									"description": "Filter by document type"
+								},
+								{
+									"key": "verificationStatus",
+									"value": "{{verificationStatus}}",
+									"description": "Filter by verification status"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sortBy}}",
+									"description": "Sort field"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sortOrder}}",
+									"description": "Sort direction"
+								}
+							]
+						},
+						"description": "Get paginated list of KYC documents"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KYC Performance Metrics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has performance data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('totalDocuments');",
+									"    pm.expect(jsonData.data).to.have.property('verificationRate');",
+									"    pm.expect(jsonData.data).to.have.property('averageProcessingTime');",
+									"    pm.expect(jsonData.data).to.have.property('processingTimeDistribution');",
+									"    pm.expect(jsonData.data).to.have.property('scoreDistribution');",
+									"    pm.expect(jsonData.data).to.have.property('reviewerPerformance');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/kyc/performance?dateRange={{dateRange}}&documentType={{documentType}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["kyc", "performance"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "documentType",
+									"value": "{{documentType}}",
+									"description": "Filter by document type"
+								}
+							]
+						},
+						"description": "Detailed performance metrics for KYC processing"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KYC Analytics",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has analytics data\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('typeSuccessRates');",
+									"    pm.expect(jsonData.data).to.have.property('aiInsights');",
+									"    pm.expect(jsonData.data).to.have.property('expiryAnalysis');",
+									"    pm.expect(jsonData.data).to.have.property('qualityTrends');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/kyc/analytics?dateRange={{dateRange}}&documentType={{documentType}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["kyc", "analytics"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "documentType",
+									"value": "{{documentType}}",
+									"description": "Filter by document type"
+								}
+							]
+						},
+						"description": "Advanced analytics for KYC processing"
+					},
+					"response": []
+				},
+				{
+					"name": "Get KYC Document Details",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has KYC document details\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('document');",
+									"    pm.expect(jsonData.data).to.have.property('user');",
+									"    pm.expect(jsonData.data).to.have.property('relatedApplication');",
+									"    pm.expect(jsonData.data).to.have.property('reviewer');",
+									"    pm.expect(jsonData.data).to.have.property('aiAnalysis');",
+									"});",
+									"",
+									"pm.test(\"Document ID matches requested ID\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.document.id).to.eql(pm.variables.get('documentId'));",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/kyc/{{documentId}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["kyc", "{{documentId}}"]
+						},
+						"description": "Detailed information for a specific KYC document",
+						"variable": [
+							{
+								"key": "documentId",
+								"value": "kyc_123",
+								"description": "ID of the KYC document to retrieve"
+							}
+						]
+					},
+					"response": []
+				}
+			],
+			"description": "KYC metrics endpoints for overview, performance, analytics, and individual document data"
+		},
+		{
+			"name": "Reports",
+			"item": [
+				{
+					"name": "Get Report List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has report list\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('reports');",
+									"    pm.expect(jsonData.data.reports).to.be.an('array');",
+									"    pm.expect(jsonData.data).to.have.property('filters');",
+									"});",
+									"",
+									"pm.test(\"Reports contain required types\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    const reportTypes = jsonData.data.reports.map(r => r.id);",
+									"    pm.expect(reportTypes).to.include('financial');",
+									"    pm.expect(reportTypes).to.include('operational');",
+									"    pm.expect(reportTypes).to.include('compliance');",
+									"    pm.expect(reportTypes).to.include('performance');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports?dateRange={{dateRange}}&startDate={{startDate}}&endDate={{endDate}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["reports"],
+							"query": [
+								{
+									"key": "dateRange",
+									"value": "{{dateRange}}",
+									"description": "Preset date range"
+								},
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								}
+							]
+						},
+						"description": "Get list of available reports"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Financial Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has financial report\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('reportType');",
+									"    pm.expect(jsonData.data).to.have.property('period');",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('monthlyBreakdown');",
+									"    pm.expect(jsonData.data).to.have.property('investorReturns');",
+									"    pm.expect(jsonData.data).to.have.property('paymentMethodBreakdown');",
+									"});",
+									"",
+									"pm.test(\"Report type is financial\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.reportType).to.eql('financial');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/financial?startDate={{startDate}}&endDate={{endDate}}&format={{format}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["reports", "financial"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								},
+								{
+									"key": "format",
+									"value": "{{format}}",
+									"description": "Report format"
+								}
+							]
+						},
+						"description": "Generate comprehensive financial report"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Operational Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has operational report\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('reportType');",
+									"    pm.expect(jsonData.data).to.have.property('period');",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('details');",
+									"});",
+									"",
+									"pm.test(\"Report type is operational\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.reportType).to.eql('operational');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/operational?startDate={{startDate}}&endDate={{endDate}}&format={{format}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["reports", "operational"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								},
+								{
+									"key": "format",
+									"value": "{{format}}",
+									"description": "Report format"
+								}
+							]
+						},
+						"description": "Generate comprehensive operational report"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Compliance Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has compliance report\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('reportType');",
+									"    pm.expect(jsonData.data).to.have.property('period');",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('details');",
+									"});",
+									"",
+									"pm.test(\"Report type is compliance\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.reportType).to.eql('compliance');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/compliance?startDate={{startDate}}&endDate={{endDate}}&format={{format}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["reports", "compliance"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								},
+								{
+									"key": "format",
+									"value": "{{format}}",
+									"description": "Report format"
+								}
+							]
+						},
+						"description": "Generate comprehensive compliance report"
+					},
+					"response": []
+				},
+				{
+					"name": "Generate Performance Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response has performance report\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data).to.have.property('reportType');",
+									"    pm.expect(jsonData.data).to.have.property('period');",
+									"    pm.expect(jsonData.data).to.have.property('summary');",
+									"    pm.expect(jsonData.data).to.have.property('details');",
+									"});",
+									"",
+									"pm.test(\"Report type is performance\", function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData.data.reportType).to.eql('performance');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{authToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/reports/performance?startDate={{startDate}}&endDate={{endDate}}&format={{format}}",
+							"host": ["{{baseUrl}}"],
+							"path": ["reports", "performance"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{startDate}}",
+									"description": "Custom start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{endDate}}",
+									"description": "Custom end date (ISO 8601)"
+								},
+								{
+									"key": "format",
+									"value": "{{format}}",
+									"description": "Report format"
+								}
+							]
+						},
+						"description": "Generate comprehensive performance report"
+					},
+					"response": []
+				}
+			],
+			"description": "Reporting endpoints for generating various types of reports"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://api.boosty.com/api/metrics",
+			"description": "Base URL for the Metrics API",
+			"type": "string"
+		},
+		{
+			"key": "authToken",
+			"value": "",
+			"description": "JWT authentication token",
+			"type": "string"
+		},
+		{
+			"key": "dateRange",
+			"value": "last_30_days",
+			"description": "Preset date range for filtering",
+			"type": "string"
+		},
+		{
+			"key": "startDate",
+			"value": "2024-01-01",
+			"description": "Custom start date (ISO 8601 format)",
+			"type": "string"
+		},
+		{
+			"key": "endDate",
+			"value": "2024-01-31",
+			"description": "Custom end date (ISO 8601 format)",
+			"type": "string"
+		},
+		{
+			"key": "region",
+			"value": "all",
+			"description": "Geographic filter",
+			"type": "string"
+		},
+		{
+			"key": "status",
+			"value": "active",
+			"description": "Status filter",
+			"type": "string"
+		},
+		{
+			"key": "page",
+			"value": "1",
+			"description": "Page number for pagination",
+			"type": "string"
+		},
+		{
+			"key": "limit",
+			"value": "20",
+			"description": "Items per page for pagination",
+			"type": "string"
+		},
+		{
+			"key": "sortBy",
+			"value": "createdAt",
+			"description": "Sort field",
+			"type": "string"
+		},
+		{
+			"key": "sortOrder",
+			"value": "desc",
+			"description": "Sort order (asc/desc)",
+			"type": "string"
+		},
+		{
+			"key": "investorType",
+			"value": "individual",
+			"description": "Investor type filter",
+			"type": "string"
+		},
+		{
+			"key": "riskProfile",
+			"value": "moderate",
+			"description": "Risk profile filter",
+			"type": "string"
+		},
+		{
+			"key": "userType",
+			"value": "customer",
+			"description": "User type filter",
+			"type": "string"
+		},
+		{
+			"key": "propertyType",
+			"value": "residential",
+			"description": "Property type filter",
+			"type": "string"
+		},
+		{
+			"key": "transactionType",
+			"value": "investment",
+			"description": "Transaction type filter",
+			"type": "string"
+		},
+		{
+			"key": "currency",
+			"value": "NGN",
+			"description": "Currency filter",
+			"type": "string"
+		},
+		{
+			"key": "minAmount",
+			"value": "1000",
+			"description": "Minimum amount filter",
+			"type": "string"
+		},
+		{
+			"key": "maxAmount",
+			"value": "100000",
+			"description": "Maximum amount filter",
+			"type": "string"
+		},
+		{
+			"key": "paymentMethod",
+			"value": "bank_transfer",
+			"description": "Payment method filter",
+			"type": "string"
+		},
+		{
+			"key": "documentType",
+			"value": "government_id",
+			"description": "Document type filter",
+			"type": "string"
+		},
+		{
+			"key": "verificationStatus",
+			"value": "verified",
+			"description": "Verification status filter",
+			"type": "string"
+		},
+		{
+			"key": "groupBy",
+			"value": "month",
+			"description": "Group results by time period",
+			"type": "string"
+		},
+		{
+			"key": "format",
+			"value": "json",
+			"description": "Report format (json/csv)",
+			"type": "string"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Check if auth token is available",
+					"if (!pm.variables.get('authToken')) {",
+					"    console.log('Warning: No auth token set. Please set the authToken variable.');",
+					"}",
+					"",
+					"// Log request details for debugging",
+					"console.log('Request URL:', pm.request.url.toString());",
+					"console.log('Request Method:', pm.request.method);",
+					"console.log('Request Headers:', JSON.stringify(pm.request.headers, null, 2));"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Common response validation",
+					"pm.test(\"Response has proper structure\", function () {",
+					"    try {",
+					"        const jsonData = pm.response.json();",
+					"        pm.expect(jsonData).to.have.property('success');",
+					"        pm.expect(jsonData).to.have.property('meta');",
+					"        ",
+					"        if (jsonData.success) {",
+					"            pm.expect(jsonData).to.have.property('data');",
+					"        } else {",
+					"            pm.expect(jsonData).to.have.property('error');",
+					"        }",
+					"        ",
+					"        pm.expect(jsonData.meta).to.have.property('timestamp');",
+					"        pm.expect(jsonData.meta).to.have.property('requestId');",
+					"    } catch (e) {",
+					"        pm.test('Failed to parse JSON response', function () {",
+					"            pm.expect.fail('Invalid JSON response: ' + e.message);",
+					"        });",
+					"    }",
+					"});",
+					"",
+					"// Check for rate limiting headers",
+					"if (pm.response.headers.get('X-RateLimit-Limit')) {",
+					"    pm.environment.set('rateLimit', pm.response.headers.get('X-RateLimit-Limit'));",
+					"    pm.environment.set('rateLimitRemaining', pm.response.headers.get('X-RateLimit-Remaining'));",
+					"    pm.environment.set('rateLimitReset', pm.response.headers.get('X-RateLimit-Reset'));",
+					"}",
+					"",
+					"// Check for caching headers",
+					"if (pm.response.headers.get('Cache-Control')) {",
+					"    pm.environment.set('cacheControl', pm.response.headers.get('Cache-Control'));",
+					"}",
+					"",
+					"// Log response time",
+					"pm.environment.set('responseTime', pm.response.responseTime);",
+					"console.log('Response Time:', pm.response.responseTime + 'ms');"
+				]
+			}
+		}
+	]
+}

@@ -1,4 +1,6 @@
 import { beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
+import mongoose from 'mongoose';
+import { setupTestDatabase, teardownTestDatabase } from './helpers/metrics.test.helpers.js';
 
 // Mock console methods to reduce noise in tests
 global.console = {
@@ -13,22 +15,32 @@ global.console = {
 // Set test environment variables
 process.env.NODE_ENV = 'test';
 process.env.PORT = '7001';
-process.env.DATABASE_URL = process.env.DATABASE_URL || 'mongodb://localhost:27017/boosty_test';
+process.env.DATABASE_URL = process.env.DATABASE_URL || 'mongodb://localhost:27017/boosty_metrics_test';
 
 // Global test setup
 beforeAll(async () => {
-  // Add any global setup logic here
+  // Setup test database for metrics tests
+  await setupTestDatabase();
 });
 
 // Global test teardown
 afterAll(async () => {
-  // Add any global teardown logic here
+  // Cleanup test database
+  await teardownTestDatabase();
 });
 
 // Setup before each test
-beforeEach(() => {
+beforeEach(async () => {
   // Reset mocks before each test
   jest.clearAllMocks();
+  
+  // Clear collections between tests for isolation
+  if (mongoose.connection.readyState !== 0) {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany({});
+    }
+  }
 });
 
 // Cleanup after each test
