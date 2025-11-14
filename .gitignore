@@ -160,3 +160,6 @@ docs/generated/
 *.njsproj
 *.sln
 *.sw?
+
+.kilocode
+Comprehensive Development Guide.txt
