@@ -5,7 +5,7 @@ import Transaction from "../../models/metrics/transaction.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, getPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getUserMetrics = async (req, res) => {
   try {
@@ -173,7 +173,7 @@ export const getUserList = async (req, res) => {
       .limit(paginationOptions.limit);
     
     const total = await User.countDocuments(query);
-    const paginationMeta = getPaginationMeta(total, paginationOptions);
+    const paginationMeta = buildPaginationMeta(paginationOptions.page, paginationOptions.limit, total);
     
     // Get additional metrics for each user
     const usersWithMetrics = await Promise.all(

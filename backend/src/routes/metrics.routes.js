@@ -1,8 +1,8 @@
 import express from "express";
 import { requireMetricsAuth } from "../middleware/metrics/auth.middleware.js";
-import { validateMetricsRequest } from "../middleware/metrics/validation.middleware.js";
-import { applyRateLimit } from "../middleware/metrics/rateLimit.middleware.js";
-import { enableCaching } from "../middleware/metrics/caching.middleware.js";
+import { validateDateRange, validatePagination, validateSorting } from "../middleware/metrics/validation.middleware.js";
+import { standardRateLimit } from "../middleware/metrics/rateLimit.middleware.js";
+import { smartCache } from "../middleware/metrics/caching.middleware.js";
 import { applyQueryBuilder } from "../middleware/metrics/queryBuilder.middleware.js";
 
 // Import route modules
@@ -17,9 +17,11 @@ const router = express.Router();
 
 // Apply common middleware to all metrics routes
 router.use(requireMetricsAuth);
-router.use(validateMetricsRequest);
-router.use(applyRateLimit);
-router.use(enableCaching);
+router.use(validateDateRange);
+router.use(validatePagination);
+router.use(validateSorting);
+router.use(standardRateLimit);
+router.use(smartCache);
 router.use(applyQueryBuilder);
 
 // Health check endpoint for metrics service

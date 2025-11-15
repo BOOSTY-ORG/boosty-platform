@@ -6,7 +6,7 @@ import User from "../../models/user.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, getPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getTransactionMetrics = async (req, res) => {
   try {
@@ -194,7 +194,7 @@ export const getTransactionList = async (req, res) => {
       .limit(paginationOptions.limit);
     
     const total = await Transaction.countDocuments(query);
-    const paginationMeta = getPaginationMeta(total, paginationOptions);
+    const paginationMeta = buildPaginationMeta(paginationOptions.page, paginationOptions.limit, total);
     
     const response = {
       data: transactions.map(txn => ({
@@ -222,7 +222,7 @@ export const getTransactionList = async (req, res) => {
   }
 };
 
-export const getTransactionPerformanceMetrics = async (req, res) => {
+export const getTransactionPerformanceReport = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
@@ -550,6 +550,6 @@ export default {
   getTransactionMetrics,
   getTransactionDetails,
   getTransactionList,
-  getTransactionPerformanceMetrics,
+  getTransactionPerformanceReport,
   getTransactionAnalytics
 };

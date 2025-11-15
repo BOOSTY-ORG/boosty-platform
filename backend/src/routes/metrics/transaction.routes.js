@@ -10,7 +10,7 @@ router.use(transactionMetricsAccess);
 // Transaction metrics endpoints
 router.get('/', transactionController.getTransactionMetrics);
 router.get('/list', transactionController.getTransactionList);
-router.get('/performance', transactionController.getTransactionPerformanceMetrics);
+router.get('/performance', transactionController.getTransactionPerformanceReport);
 router.get('/analytics', transactionController.getTransactionAnalytics);
 
 // Individual transaction endpoints

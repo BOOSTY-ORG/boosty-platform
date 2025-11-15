@@ -5,7 +5,7 @@ import Investor from "../../models/metrics/investor.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, getPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getKYCMetrics = async (req, res) => {
   try {
@@ -187,7 +187,7 @@ export const getKYCList = async (req, res) => {
       .limit(paginationOptions.limit);
     
     const total = await KYCDocument.countDocuments(query);
-    const paginationMeta = getPaginationMeta(total, paginationOptions);
+    const paginationMeta = buildPaginationMeta(paginationOptions.page, paginationOptions.limit, total);
     
     const response = {
       data: documents.map(doc => ({
@@ -214,7 +214,7 @@ export const getKYCList = async (req, res) => {
   }
 };
 
-export const getKYCPerformanceMetrics = async (req, res) => {
+export const getKYCPerformanceReport = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
@@ -648,6 +648,6 @@ export default {
   getKYCMetrics,
   getKYCDetails,
   getKYCList,
-  getKYCPerformanceMetrics,
+  getKYCPerformanceReport,
   getKYCAnalytics
 };

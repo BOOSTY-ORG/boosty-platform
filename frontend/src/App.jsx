@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { AppProvider } from './context/AppContext.jsx';
-import routes from './routes/index.js';
+import routes from './routes/index.jsx';
 
 // Layouts
 import AuthLayout from './layouts/AuthLayout.jsx';

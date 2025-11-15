@@ -1,0 +1,8 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="120" height="40" rx="8" fill="#10B981"/>
+  <path d="M20 12L30 20L20 28V12Z" fill="white"/>
+  <path d="M35 15H45V17H35V15Z" fill="white"/>
+  <path d="M35 19H50V21H35V19Z" fill="white"/>
+  <path d="M35 23H47V25H35V23Z" fill="white"/>
+  <text x="60" y="25" fill="white" font-family="Arial, sans-serif" font-size="16" font-weight="bold">Boosty</text>
+</svg>

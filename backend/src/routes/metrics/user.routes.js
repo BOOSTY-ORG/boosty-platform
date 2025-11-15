@@ -16,6 +16,6 @@ router.get('/activity', userController.getUserActivityMetrics);
 router.get('/:userId', userController.getUserDetails);
 
 // Apply ownership check for individual user data
-router.use('/:userId/*', requireOwnershipOrAdmin('userId'));
+router.use('/:userId', requireOwnershipOrAdmin('userId'));
 
 export default router;
