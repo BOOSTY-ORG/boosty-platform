@@ -38,27 +38,27 @@ export const getDashboardOverview = async (req, res) => {
       SolarApplication.countDocuments({ applicationStatus: 'approved' }),
       SolarApplication.countDocuments({ applicationStatus: 'installed' }),
       Transaction.aggregate([
-        { $match: { 
+        { $match: {
           type: 'investment',
           status: 'completed',
           completedAt: { $gte: startDate, $lte: endDate }
         }},
-        { $group: { _id: null, total: { $sum: "$amount" } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       Transaction.aggregate([
-        { $match: { 
+        { $match: {
           type: 'repayment',
           status: 'completed',
           completedAt: { $gte: startDate, $lte: endDate }
         }},
-        { $group: { _id: null, total: { $sum: "$amount" } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       Transaction.aggregate([
-        { $match: { 
+        { $match: {
           status: 'completed',
           completedAt: { $gte: startDate, $lte: endDate }
         }},
-        { $group: { _id: null, total: { $sum: "$amount" } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       calculateMonthlyRecurringRevenue()
     ]);
@@ -70,20 +70,20 @@ export const getDashboardOverview = async (req, res) => {
     const [previousUsers, previousInvestments, previousRevenue] = await Promise.all([
       User.countDocuments({ createdAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd } }),
       Transaction.aggregate([
-        { $match: { 
+        { $match: {
           type: 'investment',
           status: 'completed',
           completedAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd }
         }},
-        { $group: { _id: null, total: { $sum: "$amount" } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
       Transaction.aggregate([
-        { $match: { 
+        { $match: {
           type: 'repayment',
           status: 'completed',
           completedAt: { $gte: previousPeriodStart, $lte: previousPeriodEnd }
         }},
-        { $group: { _id: null, total: { $sum: "$amount" } }
+        { $group: { _id: null, total: { $sum: "$amount" } } }
       ])
     ]);
     
@@ -205,12 +205,12 @@ const calculateGrowth = (current, previous) => {
 const calculateMonthlyRecurringRevenue = async () => {
   // Calculate MRR from active investments
   const result = await Transaction.aggregate([
-    { $match: { 
+    { $match: {
       type: 'repayment',
       status: 'completed',
       completedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }},
-    { $group: { _id: null, total: { $sum: "$amount" } }
+    { $group: { _id: null, total: { $sum: "$amount" } } }
   ]);
   return result[0]?.total || 0;
 };
@@ -333,11 +333,11 @@ const getTodayStats = async () => {
       completedAt: { $gte: today }
     }),
     Transaction.aggregate([
-      { $match: { 
+      { $match: {
         status: 'completed',
         completedAt: { $gte: today }
       }},
-      { $group: { _id: null, total: { $sum: "$amount" } }
+      { $group: { _id: null, total: { $sum: "$amount" } } }
     ])
   ]);
   

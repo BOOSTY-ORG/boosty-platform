@@ -10,7 +10,7 @@ router.use(kycMetricsAccess);
 // KYC metrics endpoints
 router.get('/', kycController.getKYCMetrics);
 router.get('/list', kycController.getKYCList);
-router.get('/performance', kycController.getKYCPerformanceMetrics);
+router.get('/performance', kycController.getKYCPerformanceReport);
 router.get('/analytics', kycController.getKYCAnalytics);
 
 // Individual KYC document endpoints

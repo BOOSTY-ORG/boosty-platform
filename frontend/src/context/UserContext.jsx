@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { usersAPI } from '../api/users.js';
-import { useApp } from './AppContext.js';
+import { useApp } from './AppContext.jsx';
 import toast from 'react-hot-toast';
 
 // Initial state

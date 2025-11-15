@@ -16,6 +16,6 @@ router.get('/performance', investorController.getInvestorPerformanceMetrics);
 router.get('/:investorId', investorController.getInvestorDetails);
 
 // Apply ownership check for individual investor data
-router.use('/:investorId/*', requireOwnershipOrAdmin('investorId'));
+router.use('/:investorId', requireOwnershipOrAdmin('investorId'));
 
 export default router;
