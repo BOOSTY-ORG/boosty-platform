@@ -1,14 +1,17 @@
-// src/pages/auth/Onboarding.jsx
+// src/pages/auth/GetStarted.jsx
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
-
-const Onboarding = () => {
+const GetStarted = () => {
   const navigate = useNavigate();
 
-  const handleGetStarted = () => {
-    navigate('/auth/get-started');
+  const handleLoginClick = () => {
+    navigate('/auth/login');
+  };
+
+  const handleRegisterClick = () => {
+    navigate('/auth/register');
   };
 
   return (
@@ -30,20 +33,26 @@ const Onboarding = () => {
         {/* Top Section with Text */}
         <div className="flex-1 flex flex-col justify-center text-center">
           <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
-            Welcome To a<br />Brighter Future
+            Choose Your Path
           </h1>
-          <p className="text-xl text-gray-800 leading-relaxed">
-            Generate clean energy, save on bills,<br />and track your impact
+          <p className="text-xl text-gray-800 leading-relaxed mb-12">
+            Join us in creating a sustainable future<br />with clean energy solutions
           </p>
         </div>
         
-        {/* Bottom Section with Button */}
-        <div className="pb-8">
+        {/* Bottom Section with Buttons */}
+        <div className="pb-8 space-y-4">
           <button
             className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xl font-semibold py-5 rounded-full shadow-lg transition-colors"
-            onClick={handleGetStarted}
+            onClick={handleLoginClick}
           >
-            Get Started
+            Sign In
+          </button>
+          <button
+            className="w-full bg-white hover:bg-gray-100 text-gray-900 text-xl font-semibold py-5 rounded-full shadow-lg transition-colors border-2 border-gray-200"
+            onClick={handleRegisterClick}
+          >
+            Create Account
           </button>
         </div>
       </div>
@@ -51,4 +60,4 @@ const Onboarding = () => {
   );
 };
 
-export default Onboarding;
+export default GetStarted;

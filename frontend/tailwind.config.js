@@ -227,10 +227,6 @@ export default {
       
       addUtilities(newUtilities);
     },
-    // Plugin for dark mode variants
-    function({ addVariant }) {
-      addVariant('dark', ['@media (prefers-color-scheme: dark)', '[data-theme="dark"]']);
-    },
   ],
   darkMode: 'class',
 }
