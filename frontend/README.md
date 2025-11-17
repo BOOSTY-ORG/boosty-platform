@@ -277,6 +277,10 @@ VITE_NODE_ENV=development npm run build
 4. Add tests if applicable
 5. Submit a pull request
 
+## Changelog
+
+For a detailed history of changes to the frontend application, please see the [CHANGELOG.md](./CHANGELOG.md) file.
+
 ## License
 
 This project is licensed under the MIT License.

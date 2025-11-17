@@ -13,6 +13,7 @@ import DashboardLayout from './layouts/DashboardLayout.jsx';
 import Login from './pages/auth/Login.jsx';
 import Register from './pages/auth/Register.jsx';
 import Onboarding from './pages/auth/Onboarding.jsx';
+import GetStarted from './pages/auth/GetStarted.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
 import DashboardHome from './pages/dashboard/DashboardHome.jsx';
@@ -26,22 +27,32 @@ import './styles/index.css';
 
 function App() {
   return (
-    <Router>
+    <Router
+      future={{
+        // React Router v7 future flags to resolve deprecation warnings
+        // and prepare for upcoming version compatibility
+        v7_startTransition: true, // Enables React's startTransition API for navigation state updates
+        v7_relativeSplatPath: true // Updates behavior for relative splat routes to match v7 specifications
+      }}
+    >
       <AppProvider>
         <AuthProvider>
           <div className="App">
             <Routes>
-              {/* Auth Routes */}
+              {/* Full-screen auth routes (without AuthLayout) */}
+              <Route path="/auth/onboarding" element={<Onboarding />} />
+              <Route path="/auth/get-started" element={<GetStarted />} />
+              
+              {/* Landing Route - Onboarding */}
+              <Route path="/" element={<Onboarding />} />
+              
+              {/* Auth Routes with Layout */}
               <Route path="/auth" element={<AuthLayout />}>
-                <Route path="onboarding" element={<Onboarding />} />
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password" element={<ResetPassword />} />
               </Route>
-
-              {/* Landing Route - Onboarding */}
-              <Route path="/" element={<Onboarding />} />
 
               {/* Dashboard Routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>

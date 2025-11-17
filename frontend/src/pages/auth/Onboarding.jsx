@@ -3,44 +3,45 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 
+
 const Onboarding = () => {
   const navigate = useNavigate();
 
   const handleGetStarted = () => {
-    navigate('/auth/login');
+    navigate('/auth/get-started');
   };
 
   return (
-    // Main container
-    <div className="relative w-[440px] h-[956px] mx-auto bg-white overflow-hidden rounded-[30px]">
-      {/* Background Image - Full Cover */}
+    <div className="min-h-screen flex flex-col relative overflow-hidden">
+      {/* Background Image */}
       <div 
-        className="absolute inset-0 w-full h-full"
+        className="absolute inset-0 bg-cover bg-center"
         style={{
-          background: "url('bkg.png'), #FFFFFF",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat'
+          backgroundImage: 'url(/bkg.jpg)',
+          backgroundPosition: 'center bottom'
         }}
       />
       
-      {/* Content Overlay */}
-      <div className="relative z-10 flex flex-col justify-between h-full pt-[236px]">
-        {/* Welcome Text */}
-        <div className="flex flex-col items-center gap-2 px-14">
-          <h1 className="font-open-sans text-black text-[30px] font-bold leading-10 text-center">
-            Welcome To a Brighter Future
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-sky-400 via-sky-300/70 to-transparent" />
+      
+      {/* Content */}
+      <div className="relative z-10 flex-1 flex flex-col px-6 pt-16">
+        {/* Top Section with Text */}
+        <div className="flex-1 flex flex-col justify-center text-center">
+          <h1 className="text-5xl font-bold text-gray-900 mb-6 leading-tight">
+            Welcome To a<br />Brighter Future
           </h1>
-          <p className="font-open-sans text-black text-lg font-semibold leading-[22px] text-center tracking-[0.02em]">
-            Generate clean energy, save on bills, and track your impact
+          <p className="text-xl text-gray-800 leading-relaxed">
+            Generate clean energy, save on bills,<br />and track your impact
           </p>
         </div>
         
-        {/* Get Started Button */}
-        <div className="flex justify-center items-center pb-20 px-9">
-          <button 
+        {/* Bottom Section with Button */}
+        <div className="pb-8">
+          <button
+            className="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 text-xl font-semibold py-5 rounded-full shadow-lg transition-colors"
             onClick={handleGetStarted}
-            className="w-full max-w-[365px] h-10 bg-[#F3B921] hover:bg-[#e5a815] active:scale-95 rounded-[20px] font-open-sans text-black text-base font-semibold leading-5 text-center transition-all duration-150 ease-in-out"
           >
             Get Started
           </button>

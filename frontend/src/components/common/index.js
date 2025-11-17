@@ -12,6 +12,9 @@ import Sidebar from './Sidebar';
 import Header from './Header';
 import Footer from './Footer';
 import Notification, { useNotification } from './Notification';
+import AdvancedFilterPanel from './AdvancedFilterPanel';
+import FilterPreset from './FilterPreset';
+import DateRangePicker from './DateRangePicker';
 
 export {
   Button,
@@ -26,6 +29,9 @@ export {
   Footer,
   Notification,
   useNotification,
+  AdvancedFilterPanel,
+  FilterPreset,
+  DateRangePicker,
 };
 
 // Default export with all components
@@ -42,4 +48,7 @@ export default {
   Footer,
   Notification,
   useNotification,
+  AdvancedFilterPanel,
+  FilterPreset,
+  DateRangePicker,
 };

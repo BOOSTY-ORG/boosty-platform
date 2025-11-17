@@ -120,6 +120,7 @@ PRD (Boosty).docx
 # Test data and mock data not needed for production
 backend/src/data/mockData/
 frontend/Data/
+/test
 
 # Development scripts
 backend/scripts/deploy.sh

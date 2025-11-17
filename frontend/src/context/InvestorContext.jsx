@@ -56,7 +56,7 @@ const investorReducer = (state, action) => {
     case INVESTOR_ACTIONS.SET_INVESTORS:
       return {
         ...state,
-        investors: action.payload,
+        investors: action.payload.data || action.payload,
         isLoading: false,
         error: null,
       };
@@ -120,7 +120,7 @@ const investorReducer = (state, action) => {
     case INVESTOR_ACTIONS.SET_SEARCH_RESULTS:
       return {
         ...state,
-        searchResults: action.payload,
+        searchResults: action.payload.data || action.payload,
         isLoading: false,
         error: null,
       };
@@ -181,13 +181,17 @@ export const InvestorProvider = ({ children }) => {
   const getInvestors = async (params = {}) => {
     try {
       dispatch({ type: INVESTOR_ACTIONS.SET_LOADING, payload: true });
-      const investors = await investorsAPI.getInvestors({
+      const response = await investorsAPI.getInvestors({
         page: pagination.page,
         limit: pagination.limit,
         dateRange,
         ...filters,
         ...params,
       });
+      
+      // Handle different response formats from backend
+      const investors = response.data?.data || response.data || response;
+      
       dispatch({ type: INVESTOR_ACTIONS.SET_INVESTORS, payload: investors });
       return investors;
     } catch (error) {
@@ -217,7 +221,11 @@ export const InvestorProvider = ({ children }) => {
   const createInvestor = async (investorData) => {
     try {
       dispatch({ type: INVESTOR_ACTIONS.SET_LOADING, payload: true });
-      const investor = await investorsAPI.createInvestor(investorData);
+      const response = await investorsAPI.createInvestor(investorData);
+      
+      // Handle different response formats from backend
+      const investor = response.data?.data || response.data || response;
+      
       dispatch({ type: INVESTOR_ACTIONS.ADD_INVESTOR, payload: investor });
       toast.success('Investor created successfully');
       return investor;
@@ -233,7 +241,11 @@ export const InvestorProvider = ({ children }) => {
   const updateInvestor = async (id, investorData) => {
     try {
       dispatch({ type: INVESTOR_ACTIONS.SET_LOADING, payload: true });
-      const investor = await investorsAPI.updateInvestor(id, investorData);
+      const response = await investorsAPI.updateInvestor(id, investorData);
+      
+      // Handle different response formats from backend
+      const investor = response.data?.data || response.data || response;
+      
       dispatch({ type: INVESTOR_ACTIONS.UPDATE_INVESTOR, payload: investor });
       toast.success('Investor updated successfully');
       return investor;
@@ -282,7 +294,11 @@ export const InvestorProvider = ({ children }) => {
   const getInvestorKYC = async (id) => {
     try {
       dispatch({ type: INVESTOR_ACTIONS.SET_LOADING, payload: true });
-      const kycDocuments = await investorsAPI.getInvestorKYC(id);
+      const response = await investorsAPI.getInvestorKYC(id);
+      
+      // Handle different response formats from backend
+      const kycDocuments = response.data?.data || response.data || response;
+      
       dispatch({ type: INVESTOR_ACTIONS.SET_KYC_DOCUMENTS, payload: kycDocuments });
       return kycDocuments;
     } catch (error) {

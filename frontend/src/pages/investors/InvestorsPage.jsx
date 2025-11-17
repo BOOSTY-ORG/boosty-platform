@@ -3,40 +3,298 @@ import { useNavigate } from 'react-router-dom';
 import { useInvestor } from '../../context/InvestorContext.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
+import { investorsAPI } from '../../api/investors.js';
+import {
+  Table,
+  AdvancedFilterPanel,
+  FilterPreset,
+  DateRangePicker,
+  Notification,
+  useNotification
+} from '../../components/common/index.js';
+import {
+  BulkActions,
+  BulkEditModal,
+  BulkKYCModal,
+  BulkCommunicationModal,
+  BulkOperationManager,
+  ExportModal,
+  ExportProgress,
+  ExportHistory,
+  ExportTemplate,
+  CreateInvestorModal,
+  EditInvestorModal,
+  InvestorWizard
+} from '../../components/investors/index.js';
 
 const InvestorsPage = () => {
   const navigate = useNavigate();
-  const { 
-    investors, 
-    isLoading, 
-    error, 
-    getInvestors, 
+  const {
+    investors,
+    isLoading,
+    error,
+    getInvestors,
     searchInvestors,
     updateInvestor,
-    stats 
+    stats
   } = useInvestor();
   const { setPagination, setFilters, pagination, filters } = useApp();
+  const { showNotification } = useNotification();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [showPresets, setShowPresets] = useState(false);
   const [selectedInvestors, setSelectedInvestors] = useState([]);
+  const [sortFields, setSortFields] = useState([{ field: 'createdAt', direction: 'desc' }]);
+  const [tableFilters, setTableFilters] = useState({});
+  const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [visibleColumns, setVisibleColumns] = useState([
+    'investor', 'contact', 'status', 'kycStatus', 'totalInvestment', 'joinedDate', 'actions'
+  ]);
+  
+  // Bulk operation states
+  const [showBulkEditModal, setShowBulkEditModal] = useState(false);
+  const [showBulkKYCModal, setShowBulkKYCModal] = useState(false);
+  const [showBulkCommunicationModal, setShowBulkCommunicationModal] = useState(false);
+  const [showBulkOperationManager, setShowBulkOperationManager] = useState(false);
+  
+  // Export states
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showExportProgress, setShowExportProgress] = useState(false);
+  const [showExportHistory, setShowExportHistory] = useState(false);
+  const [showExportTemplate, setShowExportTemplate] = useState(false);
+  const [currentExportId, setCurrentExportId] = useState(null);
+  
+  // Form modal states
+  const [showCreateInvestorModal, setShowCreateInvestorModal] = useState(false);
+  const [showEditInvestorModal, setShowEditInvestorModal] = useState(false);
+  const [showInvestorWizard, setShowInvestorWizard] = useState(false);
+  const [selectedInvestorId, setSelectedInvestorId] = useState(null);
+
+  // Available filters for advanced filter panel
+  const availableFilters = [
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'suspended', label: 'Suspended' },
+      ],
+    },
+    {
+      key: 'kycStatus',
+      label: 'KYC Status',
+      type: 'select',
+      options: [
+        { value: 'verified', label: 'Verified' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'not_submitted', label: 'Not Submitted' },
+      ],
+    },
+    {
+      key: 'investmentRange',
+      label: 'Investment Range',
+      type: 'number',
+    },
+    {
+      key: 'joinedDate',
+      label: 'Joined Date',
+      type: 'daterange',
+    },
+    {
+      key: 'hasEmail',
+      label: 'Has Email',
+      type: 'boolean',
+    },
+    {
+      key: 'hasPhone',
+      label: 'Has Phone',
+      type: 'boolean',
+    },
+  ];
+
+  // Table columns configuration
+  const tableColumns = [
+    {
+      key: 'investor',
+      title: 'Investor',
+      sortable: true,
+      render: (value, row) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-primary-500 flex items-center justify-center">
+              <span className="text-white font-medium">
+                {row.firstName?.charAt(0)}{row.lastName?.charAt(0)}
+              </span>
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">
+              {row.firstName} {row.lastName}
+            </div>
+            <div className="text-sm text-gray-500">
+              ID: {row.investorId || row._id?.slice(-8)}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'contact',
+      title: 'Contact',
+      sortable: false,
+      render: (value, row) => (
+        <>
+          <div className="text-sm text-gray-900">{row.email}</div>
+          <div className="text-sm text-gray-500">{row.phone}</div>
+        </>
+      ),
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'active', label: 'Active' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'suspended', label: 'Suspended' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(value)}`}>
+          {formatStatus(value)}
+        </span>
+      ),
+    },
+    {
+      key: 'kycStatus',
+      title: 'KYC Status',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'verified', label: 'Verified' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'not_submitted', label: 'Not Submitted' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'verified' ? 'bg-green-100 text-green-800' :
+          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'rejected' ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {formatStatus(value || 'not_submitted')}
+        </span>
+      ),
+    },
+    {
+      key: 'totalInvestment',
+      title: 'Total Investment',
+      sortable: true,
+      filterable: true,
+      filterType: 'number',
+      render: (value) => formatCurrency(value || 0),
+    },
+    {
+      key: 'joinedDate',
+      title: 'Joined Date',
+      sortable: true,
+      filterable: true,
+      filterType: 'date',
+      render: (value) => formatDate(value),
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      sortable: false,
+      render: (value, row) => (
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={() => navigate(`/investors/${row._id}`)}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            View
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => {
+              setSelectedInvestorId(row._id);
+              setShowEditInvestorModal(true);
+            }}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            Edit
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => navigate(`/investors/${row._id}/kyc`)}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            KYC
+          </button>
+          <span className="text-gray-300">|</span>
+          <div className="relative">
+            <button
+              className="text-gray-400 hover:text-gray-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                // Handle dropdown menu
+              }}
+            >
+              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      ),
+    },
+  ];
 
   // Fetch investors on component mount and when filters change
   useEffect(() => {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
+      sort: sortFields,
+      ...tableFilters,
+      ...(dateRange.start && dateRange.end && { dateRange }),
       ...(statusFilter !== 'all' && { status: statusFilter }),
       ...filters,
     };
     
     if (searchQuery) {
-      searchInvestors(searchQuery, params);
+      searchInvestors(searchQuery, params).then(response => {
+        // Update pagination with total from response if available
+        if (response.pagination) {
+          setPagination(prev => ({
+            ...prev,
+            total: response.pagination.total
+          }));
+        }
+      });
     } else {
-      getInvestors(params);
+      getInvestors(params).then(response => {
+        // Update pagination with total from response if available
+        if (response.pagination) {
+          setPagination(prev => ({
+            ...prev,
+            total: response.pagination.total
+          }));
+        }
+      });
     }
-  }, [pagination.page, pagination.limit, statusFilter, filters, searchQuery]);
+  }, [pagination.page, pagination.limit, statusFilter, filters, searchQuery, sortFields, tableFilters, dateRange]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -48,6 +306,99 @@ const InvestorsPage = () => {
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
     setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle table sort
+  const handleTableSort = (sortData) => {
+    if (Array.isArray(sortData)) {
+      setSortFields(sortData);
+    } else {
+      setSortFields([{ field: sortData.field, direction: sortData.direction }]);
+    }
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle table filter
+  const handleTableFilter = (filterData) => {
+    setTableFilters(filterData);
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle date range change
+  const handleDateRangeChange = (range) => {
+    setDateRange(range);
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle export
+  const handleExport = () => {
+    setShowExportModal(true);
+  };
+
+  // Handle export with advanced options
+  const handleAdvancedExport = async (exportOptions) => {
+    try {
+      const response = await investorsAPI.exportInvestorsAdvanced(exportOptions);
+      
+      // For large exports, the response might contain an export ID instead of file data
+      if (response.data?.exportId) {
+        setCurrentExportId(response.data.exportId);
+        setShowExportProgress(true);
+        setShowExportModal(false);
+      } else {
+        // Direct download for small exports
+        const blob = new Blob([response.data], {
+          type: getContentType(exportOptions.format)
+        });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `investors_export_${new Date().toISOString().split('T')[0]}.${exportOptions.format}`);
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+        
+        showNotification({
+          type: 'success',
+          message: `Export completed successfully`
+        });
+        setShowExportModal(false);
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      showNotification({
+        type: 'error',
+        message: 'Export failed. Please try again.'
+      });
+    }
+  };
+
+  // Handle export completion
+  const handleExportComplete = (exportStatus) => {
+    setShowExportProgress(false);
+    setCurrentExportId(null);
+    
+    if (exportStatus.status === 'completed') {
+      showNotification({
+        type: 'success',
+        message: 'Export completed successfully'
+      });
+    }
+  };
+
+  // Get content type for export format
+  const getContentType = (format) => {
+    switch (format) {
+      case 'xlsx':
+        return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      case 'csv':
+        return 'text/csv';
+      case 'pdf':
+        return 'application/pdf';
+      default:
+        return 'application/octet-stream';
+    }
   };
 
   // Handle status update
@@ -80,6 +431,198 @@ const InvestorsPage = () => {
     } else {
       setSelectedInvestors(investors.map(inv => inv._id));
     }
+  };
+
+  // Bulk operation handlers
+  const handleBulkEdit = (investorIds) => {
+    setSelectedInvestors(investorIds);
+    setShowBulkEditModal(true);
+  };
+
+  const handleBulkKYC = (investorIds) => {
+    setSelectedInvestors(investorIds);
+    setShowBulkKYCModal(true);
+  };
+
+  const handleBulkCommunication = (investorIds) => {
+    setSelectedInvestors(investorIds);
+    setShowBulkCommunicationModal(true);
+  };
+
+  const handleBulkExport = async (investorIds) => {
+    try {
+      const response = await investorsAPI.bulkExportInvestors(investorIds);
+      const blob = new Blob([response.data], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `selected_investors_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      showNotification({
+        type: 'success',
+        message: `Successfully exported ${investorIds.length} investor(s)`
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+      showNotification({
+        type: 'error',
+        message: 'Failed to export investors'
+      });
+    }
+  };
+
+  const handleBulkStatusUpdate = async (investorIds, status) => {
+    try {
+      await investorsAPI.bulkUpdateInvestors(investorIds, { status });
+      
+      showNotification({
+        type: 'success',
+        message: `Successfully updated status to ${status} for ${investorIds.length} investor(s)`
+      });
+      
+      // Refresh the investors list
+      getInvestors({
+        page: pagination.page,
+        limit: pagination.limit,
+        sort: sortFields,
+        ...tableFilters,
+        ...(dateRange.start && dateRange.end && { dateRange }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...filters,
+      });
+      
+      // Clear selection
+      setSelectedInvestors([]);
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      showNotification({
+        type: 'error',
+        message: 'Failed to update investor status'
+      });
+    }
+  };
+
+  const handleBulkAssign = (investorIds) => {
+    // This would open a modal for assigning to team members
+    // For now, we'll just show a notification
+    showNotification({
+      type: 'info',
+      message: 'Bulk assignment feature coming soon'
+    });
+  };
+
+  const handleBulkDelete = async (investorIds) => {
+    try {
+      await investorsAPI.bulkDeleteInvestors(investorIds);
+      
+      showNotification({
+        type: 'success',
+        message: `Successfully deleted ${investorIds.length} investor(s)`
+      });
+      
+      // Refresh the investors list
+      getInvestors({
+        page: pagination.page,
+        limit: pagination.limit,
+        sort: sortFields,
+        ...tableFilters,
+        ...(dateRange.start && dateRange.end && { dateRange }),
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...filters,
+      });
+      
+      // Clear selection
+      setSelectedInvestors([]);
+    } catch (error) {
+      console.error('Failed to delete investors:', error);
+      showNotification({
+        type: 'error',
+        message: 'Failed to delete investors'
+      });
+    }
+  };
+
+  const handleClearSelection = () => {
+    setSelectedInvestors([]);
+  };
+
+  // Bulk operation success handlers
+  const handleBulkEditSuccess = (result) => {
+    showNotification({
+      type: 'success',
+      message: result.message
+    });
+    
+    // Refresh the investors list
+    getInvestors({
+      page: pagination.page,
+      limit: pagination.limit,
+      sort: sortFields,
+      ...tableFilters,
+      ...(dateRange.start && dateRange.end && { dateRange }),
+      ...(statusFilter !== 'all' && { status: statusFilter }),
+      ...filters,
+    });
+    
+    // Clear selection
+    setSelectedInvestors([]);
+    setShowBulkEditModal(false);
+  };
+
+  const handleBulkEditError = (error) => {
+    showNotification({
+      type: 'error',
+      message: error
+    });
+  };
+
+  const handleBulkKYCSuccess = (result) => {
+    showNotification({
+      type: 'success',
+      message: result.message
+    });
+    
+    // Refresh the investors list
+    getInvestors({
+      page: pagination.page,
+      limit: pagination.limit,
+      sort: sortFields,
+      ...tableFilters,
+      ...(dateRange.start && dateRange.end && { dateRange }),
+      ...(statusFilter !== 'all' && { status: statusFilter }),
+      ...filters,
+    });
+    
+    // Clear selection
+    setSelectedInvestors([]);
+    setShowBulkKYCModal(false);
+  };
+
+  const handleBulkKYCError = (error) => {
+    showNotification({
+      type: 'error',
+      message: error
+    });
+  };
+
+  const handleBulkCommunicationSuccess = (result) => {
+    showNotification({
+      type: 'success',
+      message: result.message
+    });
+    
+    setShowBulkCommunicationModal(false);
+  };
+
+  const handleBulkCommunicationError = (error) => {
+    showNotification({
+      type: 'error',
+      message: error
+    });
   };
 
   // Get status badge styling
@@ -118,12 +661,20 @@ const InvestorsPage = () => {
             Manage and monitor investor accounts and activities.
           </p>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
+        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
           <button
             type="button"
+            onClick={() => setShowCreateInvestorModal(true)}
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
           >
             Add Investor
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowInvestorWizard(true)}
+            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            Investor Wizard
           </button>
         </div>
       </div>
@@ -219,26 +770,28 @@ const InvestorsPage = () => {
       <div className="bg-white shadow rounded-lg">
         <div className="px-4 py-5 sm:p-6">
           <form onSubmit={handleSearch} className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <label htmlFor="search" className="sr-only">Search investors</label>
-                <input
-                  type="text"
-                  name="search"
-                  id="search"
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                  placeholder="Search by name, email, or ID..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <input
+                    type="text"
+                    name="search"
+                    id="search"
+                    className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                    placeholder="Search by name, email, or ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                  />
                 </div>
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <select
                   id="status-filter"
                   name="status-filter"
@@ -253,15 +806,64 @@ const InvestorsPage = () => {
                   <option value="suspended">Suspended</option>
                 </select>
                 
+                <DateRangePicker
+                  value={dateRange}
+                  onChange={handleDateRangeChange}
+                  label="Date Range"
+                  className="flex-shrink-0"
+                />
+                
                 <button
                   type="button"
                   className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                  onClick={() => setShowFilters(!showFilters)}
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
                 >
                   <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
                   </svg>
-                  Filters
+                  Advanced
+                </button>
+                
+                <button
+                  type="button"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  onClick={() => setShowPresets(!showPresets)}
+                >
+                  <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  Presets
+                </button>
+                
+                <button
+                  type="button"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  onClick={handleExport}
+                >
+                  <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  onClick={() => setShowExportHistory(true)}
+                >
+                  <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Export History
+                </button>
+                <button
+                  type="button"
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  onClick={() => setShowExportTemplate(true)}
+                >
+                  <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Templates
                 </button>
                 
                 <button
@@ -272,73 +874,43 @@ const InvestorsPage = () => {
                 </button>
               </div>
             </div>
-            
-            {showFilters && (
-              <div className="border-t border-gray-200 pt-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <div>
-                    <label htmlFor="date-from" className="block text-sm font-medium text-gray-700">
-                      Date From
-                    </label>
-                    <input
-                      type="date"
-                      id="date-from"
-                      name="date-from"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="date-to" className="block text-sm font-medium text-gray-700">
-                      Date To
-                    </label>
-                    <input
-                      type="date"
-                      id="date-to"
-                      name="date-to"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="investment-range" className="block text-sm font-medium text-gray-700">
-                      Investment Range
-                    </label>
-                    <select
-                      id="investment-range"
-                      name="investment-range"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    >
-                      <option value="">Any</option>
-                      <option value="0-100000">0 - 100,000</option>
-                      <option value="100000-500000">100,000 - 500,000</option>
-                      <option value="500000-1000000">500,000 - 1,000,000</option>
-                      <option value="1000000+">1,000,000+</option>
-                    </select>
-                  </div>
-                  
-                  <div>
-                    <label htmlFor="kyc-status" className="block text-sm font-medium text-gray-700">
-                      KYC Status
-                    </label>
-                    <select
-                      id="kyc-status"
-                      name="kyc-status"
-                      className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                    >
-                      <option value="">Any</option>
-                      <option value="verified">Verified</option>
-                      <option value="pending">Pending</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="not_submitted">Not Submitted</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            )}
           </form>
         </div>
       </div>
+
+      {/* Advanced Filters Panel */}
+      {showAdvancedFilters && (
+        <div className="mb-6">
+          <AdvancedFilterPanel
+            filters={{ ...tableFilters, ...(dateRange.start && dateRange.end && { dateRange }) }}
+            onFiltersChange={(filters) => {
+              const { dateRange: newDateRange, ...otherFilters } = filters;
+              if (newDateRange) {
+                setDateRange(newDateRange);
+              }
+              setTableFilters(otherFilters);
+            }}
+            availableFilters={availableFilters}
+          />
+        </div>
+      )}
+
+      {/* Filter Presets Panel */}
+      {showPresets && (
+        <div className="mb-6">
+          <FilterPreset
+            filters={{ ...tableFilters, ...(dateRange.start && dateRange.end && { dateRange }) }}
+            onFiltersChange={(filters) => {
+              const { dateRange: newDateRange, ...otherFilters } = filters;
+              if (newDateRange) {
+                setDateRange(newDateRange);
+              }
+              setTableFilters(otherFilters);
+            }}
+            availableFilters={availableFilters}
+          />
+        </div>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -359,6 +931,19 @@ const InvestorsPage = () => {
         </div>
       )}
 
+      {/* Bulk Actions */}
+      <BulkActions
+        selectedInvestors={selectedInvestors}
+        onBulkEdit={handleBulkEdit}
+        onBulkKYC={handleBulkKYC}
+        onBulkCommunication={handleBulkCommunication}
+        onBulkExport={handleBulkExport}
+        onBulkStatusUpdate={handleBulkStatusUpdate}
+        onBulkAssign={handleBulkAssign}
+        onBulkDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Investors Table */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
@@ -366,237 +951,173 @@ const InvestorsPage = () => {
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               Investors ({investors.length})
             </h3>
-            {selectedInvestors.length > 0 && (
-              <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
+              {selectedInvestors.length > 0 && (
                 <span className="text-sm text-gray-500">
                   {selectedInvestors.length} selected
                 </span>
-                <button
-                  type="button"
-                  className="text-sm text-red-600 hover:text-red-900"
-                  onClick={() => setSelectedInvestors([])}
-                >
-                  Clear selection
-                </button>
-              </div>
-            )}
+              )}
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => setShowBulkOperationManager(true)}
+              >
+                <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287a1.532 1.532 0 010 2.954c1.008.245 1.487 1.401.947 2.287-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.836-1.372 2.742-1.372 3.578 0a1.532 1.532 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.532 1.532 0 010-2.954c-1.008-.245-1.487-1.401-.947-2.287.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947c-.836 1.372-2.742 1.372-3.578 0a1.532 1.532 0 01-2.287.947c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287z" clipRule="evenodd" />
+                  <path fillRule="evenodd" d="M15 8a3 3 0 11-6 0 3 3 0 016 0z" clipRule="evenodd" />
+                </svg>
+                Operations
+              </button>
+            </div>
           </div>
         </div>
         
-        {investors.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No investors found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchQuery ? 'Try adjusting your search criteria' : 'Get started by adding a new investor.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      checked={selectedInvestors.length === investors.length && investors.length > 0}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Investor
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    KYC Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Total Investment
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined Date
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {investors.map((investor) => (
-                  <tr key={investor._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        checked={selectedInvestors.includes(investor._id)}
-                        onChange={() => handleSelectInvestor(investor._id)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-primary-500 flex items-center justify-center">
-                            <span className="text-white font-medium">
-                              {investor.firstName?.charAt(0)}{investor.lastName?.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {investor.firstName} {investor.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {investor.investorId || investor._id.slice(-8)}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{investor.email}</div>
-                      <div className="text-sm text-gray-500">{investor.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(investor.status)}`}>
-                        {formatStatus(investor.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        investor.kycStatus === 'verified' ? 'bg-green-100 text-green-800' :
-                        investor.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        investor.kycStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {formatStatus(investor.kycStatus || 'not_submitted')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {formatCurrency(investor.totalInvestment || 0)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(investor.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => navigate(`/investors/${investor._id}`)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          View
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button
-                          onClick={() => navigate(`/investors/${investor._id}/kyc`)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          KYC
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <div className="relative">
-                          <button
-                            className="text-gray-400 hover:text-gray-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle dropdown menu
-                            }}
-                          >
-                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        {/* Pagination */}
-        {investors.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={!pagination.hasNext}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total || investors.length)}</span> of{' '}
-                  <span className="font-medium">{pagination.total || investors.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, Math.ceil((pagination.total || investors.length) / pagination.limit)) }, (_, i) => {
-                    const pageNum = i + 1;
-                    const isActive = pageNum === pagination.page;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          isActive
-                            ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={!pagination.hasNext}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+        <Table
+          columns={tableColumns}
+          data={investors}
+          loading={isLoading}
+          emptyMessage={searchQuery ? 'No investors found matching your search criteria' : 'No investors found'}
+          selectable={true}
+          selectedRows={selectedInvestors}
+          onSelectionChange={setSelectedInvestors}
+          sortable={true}
+          onSort={handleTableSort}
+          multiColumnSort={true}
+          filterable={true}
+          onFilter={handleTableFilter}
+          columnVisibility={true}
+          defaultVisibleColumns={visibleColumns}
+          pagination={true}
+          currentPage={pagination.page}
+          totalPages={Math.ceil((pagination.total || investors.length) / pagination.limit)}
+          onPageChange={handlePageChange}
+          rowsPerPage={pagination.limit}
+          totalPages={Math.ceil((pagination.total || 0) / pagination.limit)}
+        />
       </div>
+
+      {/* Bulk Operation Modals */}
+      <BulkEditModal
+        isOpen={showBulkEditModal}
+        onClose={() => setShowBulkEditModal(false)}
+        investorIds={selectedInvestors}
+        onSuccess={handleBulkEditSuccess}
+        onError={handleBulkEditError}
+      />
+
+      <BulkKYCModal
+        isOpen={showBulkKYCModal}
+        onClose={() => setShowBulkKYCModal(false)}
+        investorIds={selectedInvestors}
+        onSuccess={handleBulkKYCSuccess}
+        onError={handleBulkKYCError}
+      />
+
+      <BulkCommunicationModal
+        isOpen={showBulkCommunicationModal}
+        onClose={() => setShowBulkCommunicationModal(false)}
+        investorIds={selectedInvestors}
+        onSuccess={handleBulkCommunicationSuccess}
+        onError={handleBulkCommunicationError}
+      />
+
+      <BulkOperationManager
+        isOpen={showBulkOperationManager}
+        onClose={() => setShowBulkOperationManager(false)}
+      />
+
+      {/* Export Modals */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        investorIds={selectedInvestors}
+        currentFilters={{
+          sort: sortFields,
+          ...tableFilters,
+          ...(dateRange.start && dateRange.end && { dateRange }),
+          ...(statusFilter !== 'all' && { status: statusFilter }),
+          ...filters,
+        }}
+        onExport={handleAdvancedExport}
+      />
+
+      <ExportProgress
+        isOpen={showExportProgress}
+        onClose={() => setShowExportProgress(false)}
+        exportId={currentExportId}
+        onComplete={handleExportComplete}
+      />
+
+      <ExportHistory
+        isOpen={showExportHistory}
+        onClose={() => setShowExportHistory(false)}
+      />
+
+      <ExportTemplate
+        isOpen={showExportTemplate}
+        onClose={() => setShowExportTemplate(false)}
+        onTemplateSelect={(template) => {
+          // Apply template to export modal
+          setShowExportTemplate(false);
+          setShowExportModal(true);
+        }}
+      />
+
+      {/* Investor Form Modals */}
+      <CreateInvestorModal
+        isOpen={showCreateInvestorModal}
+        onClose={() => setShowCreateInvestorModal(false)}
+        onSuccess={(newInvestor) => {
+          // Refresh the investors list
+          getInvestors({
+            page: pagination.page,
+            limit: pagination.limit,
+            sort: sortFields,
+            ...tableFilters,
+            ...(dateRange.start && dateRange.end && { dateRange }),
+            ...(statusFilter !== 'all' && { status: statusFilter }),
+            ...filters,
+          });
+        }}
+      />
+
+      <EditInvestorModal
+        isOpen={showEditInvestorModal}
+        onClose={() => {
+          setShowEditInvestorModal(false);
+          setSelectedInvestorId(null);
+        }}
+        onSuccess={(updatedInvestor) => {
+          // Refresh the investors list
+          getInvestors({
+            page: pagination.page,
+            limit: pagination.limit,
+            sort: sortFields,
+            ...tableFilters,
+            ...(dateRange.start && dateRange.end && { dateRange }),
+            ...(statusFilter !== 'all' && { status: statusFilter }),
+            ...filters,
+          });
+        }}
+        investorId={selectedInvestorId}
+      />
+
+      <InvestorWizard
+        isOpen={showInvestorWizard}
+        onClose={() => setShowInvestorWizard(false)}
+        onSuccess={(newInvestor) => {
+          // Refresh the investors list
+          getInvestors({
+            page: pagination.page,
+            limit: pagination.limit,
+            sort: sortFields,
+            ...tableFilters,
+            ...(dateRange.start && dateRange.end && { dateRange }),
+            ...(statusFilter !== 'all' && { status: statusFilter }),
+            ...filters,
+          });
+        }}
+      />
     </div>
   );
 };
