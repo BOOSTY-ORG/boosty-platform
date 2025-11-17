@@ -6,7 +6,6 @@ A comprehensive MERN stack application for Boosty, a solar energy company platfo
 
 - [Project Overview](#project-overview)
 - [Prerequisites](#prerequisites)
-- [Installation](#installation)
 - [Getting Started](#getting-started)
   - [Starting Both Frontend and Backend Concurrently (Recommended)](#starting-both-frontend-and-backend-concurrently-recommended)
   - [Starting Only the Backend](#starting-only-the-backend)
@@ -47,13 +46,6 @@ Before you begin, ensure you have the following installed:
 - [npm](https://www.npmjs.com/) (v9 or higher) or [yarn](https://yarnpkg.com/)
 - [MongoDB](https://www.mongodb.com/) (running locally or MongoDB Atlas connection)
 - [Git](https://git-scm.com/) for version control
-
-### System Requirements
-
-- Operating System: Windows 10+, macOS 10.15+, or Linux
-- Memory: Minimum 4GB RAM (8GB recommended)
-- Storage: Minimum 2GB free space
-- Network: Internet connection for npm package installation
 
 ## Installation
 
