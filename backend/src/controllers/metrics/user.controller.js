@@ -58,7 +58,7 @@ export const getUserMetrics = async (req, res) => {
         newUsers,
         userGrowth,
         averageApplicationsPerUser: userApplications.totalApplications / totalUsers || 0,
-        kycCompletionRate: userKYCStats.completionRate,
+        kycCompletionRate: userKYCStatus.completionRate,
         averageTransactionValue: userTransactions.averageValue
       },
       activity: userActivity,

@@ -688,11 +688,10 @@ describe('Response Formatter Utility', () => {
       expect(mockRes.set).toHaveBeenCalledWith({
         'X-API-Version': '1.0.0',
         'X-Response-Time': expect.any(Number),
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Cache-Control': 'max-age=3600',
         'Pragma': 'no-cache',
         'Expires': '0',
-        'X-Custom-Header': 'custom-value',
-        'Cache-Control': 'max-age=3600'
+        'X-Custom-Header': 'custom-value'
       });
     });
 

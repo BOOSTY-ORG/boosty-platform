@@ -94,14 +94,16 @@ export const getPeriodStart = (period, date = new Date()) => {
   switch (period) {
     case 'day':
       return new Date(now.setHours(0, 0, 0, 0));
-    case 'week':
+    case 'week': {
       const dayOfWeek = now.getDay();
       return new Date(now.setDate(now.getDate() - dayOfWeek));
+    }
     case 'month':
       return new Date(now.getFullYear(), now.getMonth(), 1);
-    case 'quarter':
+    case 'quarter': {
       const quarter = Math.floor(now.getMonth() / 3);
       return new Date(now.getFullYear(), quarter * 3, 1);
+    }
     case 'year':
       return new Date(now.getFullYear(), 0, 1);
     default:
@@ -115,14 +117,16 @@ export const getPeriodEnd = (period, date = new Date()) => {
   switch (period) {
     case 'day':
       return new Date(now.setHours(23, 59, 59, 999));
-    case 'week':
+    case 'week': {
       const dayOfWeek = now.getDay();
       return new Date(now.setDate(now.getDate() - dayOfWeek + 6));
+    }
     case 'month':
       return new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    case 'quarter':
+    case 'quarter': {
       const quarter = Math.floor(now.getMonth() / 3);
       return new Date(now.getFullYear(), (quarter + 1) * 3, 0);
+    }
     case 'year':
       return new Date(now.getFullYear(), 11, 31);
     default:
