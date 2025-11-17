@@ -88,10 +88,24 @@ export const buildQuery = (req, res, next) => {
     req.queryBuilder.filters.verificationStatus = { $in: statuses };
   }
 
-  // Build sort options
-  const sortBy = req.query.sortBy || 'createdAt';
-  const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
-  req.queryBuilder.sort[sortBy] = sortOrder;
+  // Build sort options - handle both frontend format (field:direction) and backend format
+  if (req.query.sort) {
+    // Handle frontend format: sort=field:direction,field2:direction2
+    const sortParams = Array.isArray(req.query.sort) ? req.query.sort : [req.query.sort];
+    sortParams.forEach(sortParam => {
+      if (typeof sortParam === 'string') {
+        const [field, direction] = sortParam.split(':');
+        if (field) {
+          req.queryBuilder.sort[field] = direction === 'asc' ? 1 : -1;
+        }
+      }
+    });
+  } else {
+    // Fallback to backend format
+    const sortBy = req.query.sortBy || 'createdAt';
+    const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+    req.queryBuilder.sort[sortBy] = sortOrder;
+  }
 
   // Build pagination
   const page = parseInt(req.query.page) || 1;
@@ -126,6 +140,16 @@ export const buildQuery = (req, res, next) => {
   }
 
   next();
+};
+
+// Helper function to get query builder object for use in controllers
+export const getQueryBuilder = (req) => {
+  return req.queryBuilder || {
+    filters: {},
+    options: {},
+    sort: {},
+    pagination: {}
+  };
 };
 
 // Parse date range from query parameters

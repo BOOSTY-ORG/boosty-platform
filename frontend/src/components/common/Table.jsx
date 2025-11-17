@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 
 /**
- * Reusable Table component with sorting, filtering, and pagination support
+ * Reusable Table component with multi-column sorting, filtering, and pagination support
  */
 const Table = ({
   columns = [],
@@ -20,6 +20,7 @@ const Table = ({
   onSort,
   defaultSortField,
   defaultSortDirection = 'asc',
+  multiColumnSort = false,
   pagination = false,
   currentPage = 1,
   totalPages = 1,
@@ -29,22 +30,80 @@ const Table = ({
   selectable = false,
   selectedRows = [],
   onSelectionChange,
+  filterable = false,
+  onFilter,
+  columnVisibility = true,
+  defaultVisibleColumns,
   ...props
 }) => {
-  const [sortField, setSortField] = useState(defaultSortField);
-  const [sortDirection, setSortDirection] = useState(defaultSortDirection);
+  const [sortFields, setSortFields] = useState(
+    multiColumnSort && defaultSortField
+      ? [{ field: defaultSortField, direction: defaultSortDirection }]
+      : []
+  );
+  const [singleSortField, setSingleSortField] = useState(defaultSortField);
+  const [singleSortDirection, setSingleSortDirection] = useState(defaultSortDirection);
+  const [filters, setFilters] = useState({});
+  const [visibleColumns, setVisibleColumns] = useState(
+    defaultVisibleColumns || columns.map(col => col.key)
+  );
+  const [showColumnMenu, setShowColumnMenu] = useState(false);
   
   const handleSort = (field) => {
     if (!sortable || !onSort) return;
     
-    let newDirection = 'asc';
-    if (sortField === field && sortDirection === 'asc') {
-      newDirection = 'desc';
+    if (multiColumnSort) {
+      const existingIndex = sortFields.findIndex(s => s.field === field);
+      let newSortFields;
+      
+      if (existingIndex !== -1) {
+        // Toggle direction or remove if already descending
+        if (sortFields[existingIndex].direction === 'asc') {
+          newSortFields = sortFields.map((s, i) =>
+            i === existingIndex ? { ...s, direction: 'desc' } : s
+          );
+        } else {
+          newSortFields = sortFields.filter((_, i) => i !== existingIndex);
+        }
+      } else {
+        // Add new sort field
+        newSortFields = [...sortFields, { field, direction: 'asc' }];
+      }
+      
+      setSortFields(newSortFields);
+      onSort(newSortFields);
+    } else {
+      let newDirection = 'asc';
+      if (singleSortField === field && singleSortDirection === 'asc') {
+        newDirection = 'desc';
+      }
+      
+      setSingleSortField(field);
+      setSingleSortDirection(newDirection);
+      onSort(field, newDirection);
+    }
+  };
+  
+  const handleFilter = (field, value) => {
+    if (!filterable || !onFilter) return;
+    
+    const newFilters = { ...filters };
+    if (value === '' || value === null || value === undefined) {
+      delete newFilters[field];
+    } else {
+      newFilters[field] = value;
     }
     
-    setSortField(field);
-    setSortDirection(newDirection);
-    onSort(field, newDirection);
+    setFilters(newFilters);
+    onFilter(newFilters);
+  };
+  
+  const toggleColumnVisibility = (columnKey) => {
+    setVisibleColumns(prev =>
+      prev.includes(columnKey)
+        ? prev.filter(key => key !== columnKey)
+        : [...prev, columnKey]
+    );
   };
   
   const handleSelectAll = (checked) => {
@@ -78,28 +137,111 @@ const Table = ({
   const renderSortIcon = (field) => {
     if (!sortable) return null;
     
-    const isActive = sortField === field;
-    const isAsc = isActive && sortDirection === 'asc';
-    
-    return (
-      <span className="ml-2">
-        {isActive ? (
-          isAsc ? (
-            <svg className="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-            </svg>
+    if (multiColumnSort) {
+      const sortField = sortFields.find(s => s.field === field);
+      const isActive = !!sortField;
+      const isAsc = isActive && sortField.direction === 'asc';
+      const sortIndex = sortFields.findIndex(s => s.field === field);
+      
+      return (
+        <span className="ml-2 flex items-center">
+          {isActive ? (
+            <div className="flex items-center">
+              <span className="text-xs font-medium text-blue-600 mr-1">{sortIndex + 1}</span>
+              {isAsc ? (
+                <svg className="inline h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              ) : (
+                <svg className="inline h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              )}
+            </div>
           ) : (
-            <svg className="inline h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            <svg className="inline h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
             </svg>
-          )
-        ) : (
-          <svg className="inline h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-          </svg>
-        )}
-      </span>
-    );
+          )}
+        </span>
+      );
+    } else {
+      const isActive = singleSortField === field;
+      const isAsc = isActive && singleSortDirection === 'asc';
+      
+      return (
+        <span className="ml-2">
+          {isActive ? (
+            isAsc ? (
+              <svg className="inline h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+              </svg>
+            ) : (
+              <svg className="inline h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            )
+          ) : (
+            <svg className="inline h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+            </svg>
+          )}
+        </span>
+      );
+    }
+  };
+  
+  const renderFilterInput = (column) => {
+    if (!filterable || !column.filterable) return null;
+    
+    const filterValue = filters[column.key] || '';
+    
+    switch (column.filterType) {
+      case 'select':
+        return (
+          <select
+            className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+            value={filterValue}
+            onChange={(e) => handleFilter(column.key, e.target.value)}
+          >
+            <option value="">All</option>
+            {column.filterOptions?.map(option => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        );
+      case 'date':
+        return (
+          <input
+            type="date"
+            className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+            value={filterValue}
+            onChange={(e) => handleFilter(column.key, e.target.value)}
+          />
+        );
+      case 'number':
+        return (
+          <input
+            type="number"
+            className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+            value={filterValue}
+            onChange={(e) => handleFilter(column.key, e.target.value)}
+            placeholder="Filter..."
+          />
+        );
+      default:
+        return (
+          <input
+            type="text"
+            className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+            value={filterValue}
+            onChange={(e) => handleFilter(column.key, e.target.value)}
+            placeholder="Filter..."
+          />
+        );
+    }
   };
   
   if (loading) {
@@ -112,6 +254,46 @@ const Table = ({
   
   return (
     <div className={`overflow-x-auto ${className}`}>
+      {columnVisibility && (
+        <div className="mb-2 flex justify-end">
+          <div className="relative">
+            <button
+              type="button"
+              className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              onClick={() => setShowColumnMenu(!showColumnMenu)}
+            >
+              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              Columns
+            </button>
+            
+            {showColumnMenu && (
+              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                <div className="py-1" role="menu">
+                  {columns.map((column) => (
+                    <label
+                      key={column.key}
+                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                      role="menuitem"
+                    >
+                      <input
+                        type="checkbox"
+                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        checked={visibleColumns.includes(column.key)}
+                        onChange={() => toggleColumnVisibility(column.key)}
+                      />
+                      {column.title}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
       <table className={`min-w-full divide-y divide-gray-200 ${tableClassName}`} {...props}>
         <thead className={`bg-gray-50 ${theadClassName}`}>
           <tr>
@@ -128,7 +310,9 @@ const Table = ({
                 />
               </th>
             )}
-            {columns.map((column) => (
+            {columns
+              .filter(column => visibleColumns.includes(column.key))
+              .map((column) => (
               <th
                 key={column.key}
                 scope="col"
@@ -137,8 +321,11 @@ const Table = ({
                 } ${thClassName}`}
                 onClick={() => sortable && column.sortable !== false && handleSort(column.key)}
               >
-                {column.title}
-                {sortable && column.sortable !== false && renderSortIcon(column.key)}
+                <div>
+                  {column.title}
+                  {sortable && column.sortable !== false && renderSortIcon(column.key)}
+                </div>
+                {filterable && column.filterable && renderFilterInput(column)}
               </th>
             ))}
           </tr>
@@ -146,7 +333,7 @@ const Table = ({
         <tbody className={`bg-white divide-y divide-gray-200 ${tbodyClassName}`}>
           {data.length === 0 ? (
             <tr>
-              <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-6 py-4 text-center text-gray-500">
+              <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="px-6 py-4 text-center text-gray-500">
                 {emptyMessage}
               </td>
             </tr>
@@ -163,7 +350,9 @@ const Table = ({
                     />
                   </td>
                 )}
-                {columns.map((column) => (
+                {columns
+                  .filter(column => visibleColumns.includes(column.key))
+                  .map((column) => (
                   <td key={column.key} className={`px-6 py-4 whitespace-nowrap ${tdClassName}`}>
                     {column.render ? column.render(row[column.key], row) : row[column.key]}
                   </td>
@@ -200,7 +389,7 @@ const Table = ({
                 <span className="font-medium">
                   {Math.min(currentPage * rowsPerPage, data.length)}
                 </span>{' '}
-                of <span className="font-medium">{data.length}</span> results
+                of <span className="font-medium">{totalPages * rowsPerPage}</span> results
               </p>
             </div>
             <div>
@@ -269,6 +458,14 @@ Table.propTypes = {
       key: PropTypes.string.isRequired,
       title: PropTypes.string.isRequired,
       sortable: PropTypes.bool,
+      filterable: PropTypes.bool,
+      filterType: PropTypes.oneOf(['text', 'select', 'date', 'number']),
+      filterOptions: PropTypes.arrayOf(
+        PropTypes.shape({
+          value: PropTypes.any.isRequired,
+          label: PropTypes.string.isRequired,
+        })
+      ),
       render: PropTypes.func,
     })
   ),
@@ -286,6 +483,7 @@ Table.propTypes = {
   onSort: PropTypes.func,
   defaultSortField: PropTypes.string,
   defaultSortDirection: PropTypes.oneOf(['asc', 'desc']),
+  multiColumnSort: PropTypes.bool,
   pagination: PropTypes.bool,
   currentPage: PropTypes.number,
   totalPages: PropTypes.number,
@@ -295,6 +493,10 @@ Table.propTypes = {
   selectable: PropTypes.bool,
   selectedRows: PropTypes.array,
   onSelectionChange: PropTypes.func,
+  filterable: PropTypes.bool,
+  onFilter: PropTypes.func,
+  columnVisibility: PropTypes.bool,
+  defaultVisibleColumns: PropTypes.array,
 };
 
 export default Table;

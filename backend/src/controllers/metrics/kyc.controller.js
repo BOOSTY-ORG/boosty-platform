@@ -2,6 +2,7 @@ import KYCDocument from "../../models/metrics/kycDocument.model.js";
 import User from "../../models/user.model.js";
 import SolarApplication from "../../models/metrics/solarApplication.model.js";
 import Investor from "../../models/metrics/investor.model.js";
+import Investment from "../../models/metrics/investment.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";

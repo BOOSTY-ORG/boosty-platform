@@ -39,18 +39,20 @@ function App() {
         <AuthProvider>
           <div className="App">
             <Routes>
-              {/* Auth Routes */}
+              {/* Full-screen auth routes (without AuthLayout) */}
+              <Route path="/auth/onboarding" element={<Onboarding />} />
+              <Route path="/auth/get-started" element={<GetStarted />} />
+              
+              {/* Landing Route - Onboarding */}
+              <Route path="/" element={<Onboarding />} />
+              
+              {/* Auth Routes with Layout */}
               <Route path="/auth" element={<AuthLayout />}>
-                <Route path="onboarding" element={<Onboarding />} />
-                <Route path="get-started" element={<GetStarted />} />
                 <Route path="login" element={<Login />} />
                 <Route path="register" element={<Register />} />
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password" element={<ResetPassword />} />
               </Route>
-
-              {/* Landing Route - Onboarding */}
-              <Route path="/" element={<Onboarding />} />
 
               {/* Dashboard Routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>

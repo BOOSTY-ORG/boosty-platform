@@ -2,6 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useInvestor } from '../../context/InvestorContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
+import { investorsAPI } from '../../api/investors.js';
+import {
+  PerformanceCharts,
+  PortfolioAnalysis,
+  RiskMetrics,
+  InvestmentTimeline,
+  FinancialSummary
+} from '../../components/investors/index.js';
 
 const InvestorDetailsPage = () => {
   const { id } = useParams();
@@ -18,6 +26,8 @@ const InvestorDetailsPage = () => {
   } = useInvestor();
   
   const [activeTab, setActiveTab] = useState('overview');
+  const [timeRange, setTimeRange] = useState('1y');
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -26,6 +36,45 @@ const InvestorDetailsPage = () => {
       getInvestorTransactions(id);
     }
   }, [id]);
+
+  const handleExportReport = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Create export options based on current tab and time range
+      const exportOptions = {
+        investorId: id,
+        timeRange: timeRange,
+        activeTab: activeTab,
+        includePerformance: activeTab === 'performance' || activeTab === 'overview',
+        includePortfolio: activeTab === 'portfolio' || activeTab === 'overview',
+        includeRisk: activeTab === 'risk' || activeTab === 'overview',
+        includeTimeline: activeTab === 'timeline' || activeTab === 'overview',
+        includeFinancial: activeTab === 'financial' || activeTab === 'overview',
+        format: 'xlsx',
+        timestamp: new Date().toISOString()
+      };
+
+      // Call the export API
+      const response = await investorsAPI.exportInvestorAnalytics(id, exportOptions);
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `investor-analytics-${id}-${Date.now()}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Export failed:', error);
+      // You could show a notification here
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const getStatusBadgeClass = (status) => {
     switch (status) {
@@ -190,6 +239,50 @@ const InvestorDetailsPage = () => {
         </div>
       </div>
 
+      {/* Time Range Selector */}
+      <div className="bg-white shadow rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-medium text-gray-900">Analytics Dashboard</h3>
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Time Range:</label>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              className="block pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+            >
+              <option value="1m">Last Month</option>
+              <option value="3m">Last 3 Months</option>
+              <option value="6m">Last 6 Months</option>
+              <option value="1y">Last Year</option>
+              <option value="all">All Time</option>
+            </select>
+            <button
+              type="button"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              onClick={handleExportReport}
+              disabled={isExporting}
+            >
+              {isExporting ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Exporting...
+                </>
+              ) : (
+                <>
+                  <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export Report
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs */}
       <div className="bg-white shadow rounded-lg">
         <div className="border-b border-gray-200">
@@ -203,6 +296,56 @@ const InvestorDetailsPage = () => {
               }`}
             >
               Overview
+            </button>
+            <button
+              onClick={() => setActiveTab('performance')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'performance'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Performance
+            </button>
+            <button
+              onClick={() => setActiveTab('portfolio')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'portfolio'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Portfolio
+            </button>
+            <button
+              onClick={() => setActiveTab('risk')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'risk'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Risk Analysis
+            </button>
+            <button
+              onClick={() => setActiveTab('timeline')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'timeline'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Timeline
+            </button>
+            <button
+              onClick={() => setActiveTab('financial')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'financial'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Financial
             </button>
             <button
               onClick={() => setActiveTab('investments')}
@@ -229,6 +372,30 @@ const InvestorDetailsPage = () => {
 
         <div className="p-6">
           {activeTab === 'overview' && (
+            <FinancialSummary investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'performance' && (
+            <PerformanceCharts investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'portfolio' && (
+            <PortfolioAnalysis investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'risk' && (
+            <RiskMetrics investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'timeline' && (
+            <InvestmentTimeline investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'financial' && (
+            <FinancialSummary investorId={id} timeRange={timeRange} />
+          )}
+
+          {activeTab === 'investments' && (
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
                 <div className="bg-gray-50 overflow-hidden shadow rounded-lg">
