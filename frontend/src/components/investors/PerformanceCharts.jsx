@@ -264,7 +264,7 @@ const PerformanceCharts = ({ investorId, timeRange = '1y' }) => {
                 <div className="flex justify-center space-x-8 text-sm">
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-green-500 rounded mr-2"></div>
-                    <span className="text-gray-600">High (>2.5%)</span>
+                    <span className="text-gray-600">High (&gt;2.5%)</span>
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-blue-500 rounded mr-2"></div>
@@ -276,7 +276,7 @@ const PerformanceCharts = ({ investorId, timeRange = '1y' }) => {
                   </div>
                   <div className="flex items-center">
                     <div className="w-3 h-3 bg-red-500 rounded mr-2"></div>
-                    <span className="text-gray-600">Low (<0.5%)</span>
+                    <span className="text-gray-600">Low (&lt;0.5%)</span>
                   </div>
                 </div>
               </div>

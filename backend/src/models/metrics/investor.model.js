@@ -54,18 +54,12 @@ const investorSchema = new mongoose.Schema({
   availableFunds: { type: Number, default: 0 },
   expectedReturns: { type: Number, default: 0 },
   actualReturns: { type: Number, default: 0 },
-  riskProfile: { 
-    type: String, 
-    enum: ['conservative', 'moderate', 'aggressive'], 
-    default: 'moderate' 
+  riskProfile: {
+    type: String,
+    enum: ['conservative', 'moderate', 'aggressive'],
+    default: 'moderate'
   },
-  investmentPreferences: {
-    minAmount: { type: Number, default: 0 },
-    maxAmount: { type: Number },
-    preferredRegions: [{ type: String }],
-    preferredTerms: [{ type: String }]
-  },
-  verificationStatus: { 
+  verificationStatus: {
     type: String, 
     enum: ['pending', 'verified', 'rejected'], 
     default: 'pending' 

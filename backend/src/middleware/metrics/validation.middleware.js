@@ -146,7 +146,7 @@ export const validateStatusFilter = (req, res, next) => {
       'processing', 'defaulted', 'terminated'
     ];
     
-    let statusArray = Array.isArray(status) ? status : [status];
+    const statusArray = Array.isArray(status) ? status : [status];
     const invalidStatuses = statusArray.filter(s => !validStatuses.includes(s));
     
     if (invalidStatuses.length > 0) {
@@ -168,7 +168,7 @@ export const validateInvestorFilters = (req, res, next) => {
   
   if (investorType !== undefined) {
     const validTypes = ['individual', 'institutional', 'corporate'];
-    let typeArray = Array.isArray(investorType) ? investorType : [investorType];
+    const typeArray = Array.isArray(investorType) ? investorType : [investorType];
     const invalidTypes = typeArray.filter(t => !validTypes.includes(t));
     
     if (invalidTypes.length > 0) {
@@ -184,7 +184,7 @@ export const validateInvestorFilters = (req, res, next) => {
   
   if (riskProfile !== undefined) {
     const validProfiles = ['conservative', 'moderate', 'aggressive'];
-    let profileArray = Array.isArray(riskProfile) ? riskProfile : [riskProfile];
+    const profileArray = Array.isArray(riskProfile) ? riskProfile : [riskProfile];
     const invalidProfiles = profileArray.filter(p => !validProfiles.includes(p));
     
     if (invalidProfiles.length > 0) {
@@ -206,7 +206,7 @@ export const validateTransactionFilters = (req, res, next) => {
   
   if (transactionType !== undefined) {
     const validTypes = ['investment', 'repayment', 'fee', 'refund', 'penalty'];
-    let typeArray = Array.isArray(transactionType) ? transactionType : [transactionType];
+    const typeArray = Array.isArray(transactionType) ? transactionType : [transactionType];
     const invalidTypes = typeArray.filter(t => !validTypes.includes(t));
     
     if (invalidTypes.length > 0) {
@@ -222,7 +222,7 @@ export const validateTransactionFilters = (req, res, next) => {
   
   if (paymentMethod !== undefined) {
     const validMethods = ['bank_transfer', 'card', 'wallet', 'auto_debit'];
-    let methodArray = Array.isArray(paymentMethod) ? paymentMethod : [paymentMethod];
+    const methodArray = Array.isArray(paymentMethod) ? paymentMethod : [paymentMethod];
     const invalidMethods = methodArray.filter(m => !validMethods.includes(m));
     
     if (invalidMethods.length > 0) {
@@ -283,7 +283,7 @@ export const validateReportParameters = (req, res, next) => {
   
   if (includeSections !== undefined) {
     const validSections = ['overview', 'investors', 'users', 'transactions', 'kyc'];
-    let sectionsArray = Array.isArray(includeSections) ? includeSections : [includeSections];
+    const sectionsArray = Array.isArray(includeSections) ? includeSections : [includeSections];
     const invalidSections = sectionsArray.filter(s => !validSections.includes(s));
     
     if (invalidSections.length > 0) {

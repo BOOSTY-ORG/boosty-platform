@@ -989,10 +989,9 @@ const InvestorsPage = () => {
           defaultVisibleColumns={visibleColumns}
           pagination={true}
           currentPage={pagination.page}
-          totalPages={Math.ceil((pagination.total || investors.length) / pagination.limit)}
+          totalPages={Math.ceil((pagination.total || 0) / pagination.limit)}
           onPageChange={handlePageChange}
           rowsPerPage={pagination.limit}
-          totalPages={Math.ceil((pagination.total || 0) / pagination.limit)}
         />
       </div>
 

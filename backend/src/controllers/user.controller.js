@@ -65,7 +65,7 @@ const read = (req, res) => {
 */
 const update = async (req, res) => {
   try {
-    let user = req.profile; // The existing user document
+    const user = req.profile; // The existing user document
     // Update user properties from the request body
     user.name = req.body.name || user.name;
     user.email = req.body.email || user.email;
