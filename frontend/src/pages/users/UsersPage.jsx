@@ -1,42 +1,332 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
+import Table from '../../components/common/Table.jsx';
+import AdvancedFilterPanel from '../../components/common/AdvancedFilterPanel.jsx';
+import FilterPreset from '../../components/common/FilterPreset.jsx';
+import { useDebounce } from '../../hooks/useDebounce.js';
+import BulkActions from '../../components/users/BulkActions.jsx';
+import BulkEditModal from '../../components/users/BulkEditModal.jsx';
+import BulkCommunicationModal from '../../components/users/BulkCommunicationModal.jsx';
+import BulkKYCModal from '../../components/users/BulkKYCModal.jsx';
+import BulkOperationManager from '../../components/users/BulkOperationManager.jsx';
+import ExportModal from '../../components/users/ExportModal.jsx';
+import ExportHistory from '../../components/users/ExportHistory.jsx';
+import ExportTemplate from '../../components/users/ExportTemplate.jsx';
+import ExportScheduler from '../../components/users/ExportScheduler.jsx';
 
 const UsersPage = () => {
   const navigate = useNavigate();
-  const { 
-    users, 
-    isLoading, 
-    error, 
-    getUsers, 
+  const {
+    users,
+    isLoading,
+    error,
+    getUsers,
     searchUsers,
     updateUser,
-    userStats
+    userStats,
+    saveFilterPreset,
+    loadFilterPreset,
+    getColumnConfiguration,
+    saveColumnConfiguration,
+    filterPresets,
+    columnConfigurations,
+    // Bulk operations
+    selectedUsers,
+    setSelectedUsers,
+    clearSelectedUsers,
+    showBulkEditModal,
+    hideBulkEditModal,
+    showBulkCommunicationModal,
+    hideBulkCommunicationModal,
+    showBulkKYCModal,
+    hideBulkKYCModal,
+    showBulkOperationManager,
+    hideBulkOperationManager,
+    bulkUpdateUsers,
+    bulkSendCommunication,
+    bulkVerifyKYC,
+    bulkRejectKYC,
+    bulkRequestDocuments,
+    bulkFlagForReview,
+    bulkSetRiskLevel,
+    bulkUpdateStatus,
+    bulkExportUsers,
+    bulkDeleteUsers,
+    bulkAssignToTeam,
+    getBulkOperationHistory,
+    getOperationQueueStatus,
+    // Export functionality
+    createExport,
+    getExportStatus,
+    downloadExport,
+    cancelExport,
+    getExportHistory,
+    deleteExport,
+    getExportAnalytics,
+    // Export templates
+    getExportTemplates,
+    getExportTemplate,
+    createExportTemplate,
+    updateExportTemplate,
+    deleteExportTemplate,
+    duplicateExportTemplate,
+    setDefaultTemplate,
+    getDefaultTemplate,
+    getPublicTemplates,
+    getTemplateStats,
+    // Scheduled exports
+    getScheduledExports,
+    getScheduledExport,
+    createScheduledExport,
+    updateScheduledExport,
+    deleteScheduledExport,
+    toggleScheduledExport,
+    runScheduledExport,
+    getScheduledExportHistory,
+    getScheduledExportStats
   } = useUser();
   const { setPagination, setFilters, pagination, filters } = useApp();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
-  const [selectedUsers, setSelectedUsers] = useState([]);
+  const [showPresets, setShowPresets] = useState(false);
+  const [showColumnSettings, setShowColumnSettings] = useState(false);
+  const [showBulkOperationManagerState, setShowBulkOperationManagerState] = useState(false);
+  const [sortConfig, setSortConfig] = useState({ field: 'createdAt', direction: 'desc' });
+  const [activeFilters, setActiveFilters] = useState({});
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  
+  // Export state
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showExportHistory, setShowExportHistory] = useState(false);
+  const [showExportTemplate, setShowExportTemplate] = useState(false);
+  const [showExportScheduler, setShowExportScheduler] = useState(false);
+  const [currentExportData, setCurrentExportData] = useState(null);
+  
+  // Debounce search query
+  const debouncedQuery = useDebounce(searchQuery, 500);
+  useEffect(() => {
+    setDebouncedSearchQuery(debouncedQuery);
+  }, [debouncedQuery]);
 
-  // Fetch users on component mount and when filters change
+  // Define available filters for advanced filtering
+  const availableFilters = useMemo(() => [
+    {
+      key: 'status',
+      label: 'User Status',
+      type: 'select',
+      options: [
+        { value: 'active', label: 'Active' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'suspended', label: 'Suspended' },
+      ],
+    },
+    {
+      key: 'applicationStatus',
+      label: 'Application Status',
+      type: 'select',
+      options: [
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'under_review', label: 'Under Review' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+      ],
+    },
+    {
+      key: 'installationStatus',
+      label: 'Installation Status',
+      type: 'select',
+      options: [
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'in_progress', label: 'In Progress' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' },
+      ],
+    },
+    {
+      key: 'dateRange',
+      label: 'Registration Date',
+      type: 'daterange',
+    },
+    {
+      key: 'hasApplication',
+      label: 'Has Application',
+      type: 'boolean',
+    },
+    {
+      key: 'hasInstallation',
+      label: 'Has Installation',
+      type: 'boolean',
+    },
+  ], []);
+
+  // Define table columns
+  const tableColumns = useMemo(() => [
+    {
+      key: 'user',
+      title: 'User',
+      sortable: true,
+      render: (value, row) => (
+        <div className="flex items-center">
+          <div className="flex-shrink-0 h-10 w-10">
+            <div className="h-10 w-10 rounded-full bg-primary-500 flex items-center justify-center">
+              <span className="text-white font-medium">
+                {row.firstName?.charAt(0)}{row.lastName?.charAt(0)}
+              </span>
+            </div>
+          </div>
+          <div className="ml-4">
+            <div className="text-sm font-medium text-gray-900">
+              {row.firstName} {row.lastName}
+            </div>
+            <div className="text-sm text-gray-500">
+              ID: {row.userId || row._id?.slice(-8)}
+            </div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      title: 'Email',
+      sortable: true,
+      filterable: true,
+      filterType: 'text',
+    },
+    {
+      key: 'phone',
+      title: 'Phone',
+      sortable: false,
+      filterable: true,
+      filterType: 'text',
+    },
+    {
+      key: 'status',
+      title: 'Status',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'active', label: 'Active' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'inactive', label: 'Inactive' },
+        { value: 'suspended', label: 'Suspended' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(value)}`}>
+          {formatStatus(value)}
+        </span>
+      ),
+    },
+    {
+      key: 'applicationStatus',
+      title: 'Application',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'submitted', label: 'Submitted' },
+        { value: 'under_review', label: 'Under Review' },
+        { value: 'approved', label: 'Approved' },
+        { value: 'rejected', label: 'Rejected' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'approved' ? 'bg-green-100 text-green-800' :
+          value === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'submitted' ? 'bg-blue-100 text-blue-800' :
+          value === 'rejected' ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {formatStatus(value || 'not_submitted')}
+        </span>
+      ),
+    },
+    {
+      key: 'installationStatus',
+      title: 'Installation',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'scheduled', label: 'Scheduled' },
+        { value: 'in_progress', label: 'In Progress' },
+        { value: 'completed', label: 'Completed' },
+        { value: 'cancelled', label: 'Cancelled' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'completed' ? 'bg-green-100 text-green-800' :
+          value === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+          value === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'cancelled' ? 'bg-red-100 text-red-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {formatStatus(value || 'not_started')}
+        </span>
+      ),
+    },
+    {
+      key: 'createdAt',
+      title: 'Joined Date',
+      sortable: true,
+      filterable: true,
+      filterType: 'date',
+      render: (value) => formatDate(value),
+    },
+    {
+      key: 'actions',
+      title: 'Actions',
+      sortable: false,
+      render: (value, row) => (
+        <div className="flex items-center justify-end space-x-2">
+          <button
+            onClick={() => navigate(`/users/${row._id}`)}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            View
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => navigate(`/users/${row._id}/application`)}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            Application
+          </button>
+          <span className="text-gray-300">|</span>
+          <button
+            onClick={() => navigate(`/users/${row._id}/installation`)}
+            className="text-primary-600 hover:text-primary-900"
+          >
+            Installation
+          </button>
+        </div>
+      ),
+    },
+  ], []);
+
+  // Fetch users on component mount and when filters, search, or sort change
   useEffect(() => {
     const params = {
       page: pagination.page,
       limit: pagination.limit,
+      sort: sortConfig.field,
+      sortDirection: sortConfig.direction,
       ...(statusFilter !== 'all' && { status: statusFilter }),
-      ...filters,
+      ...activeFilters,
     };
     
-    if (searchQuery) {
-      searchUsers(searchQuery, params);
+    if (debouncedSearchQuery) {
+      searchUsers(debouncedSearchQuery, params);
     } else {
       getUsers(params);
     }
-  }, [pagination.page, pagination.limit, statusFilter, filters, searchQuery]);
+  }, [pagination.page, pagination.limit, statusFilter, activeFilters, debouncedSearchQuery, sortConfig]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -45,10 +335,94 @@ const UsersPage = () => {
   };
 
   // Handle filter change
-  const handleFilterChange = (newFilters) => {
-    setFilters(newFilters);
+  const handleFilterChange = useCallback((newFilters) => {
+    setActiveFilters(newFilters);
     setPagination({ ...pagination, page: 1 });
-  };
+  }, [pagination]);
+
+  // Handle sort change
+  const handleSort = useCallback((field, direction) => {
+    setSortConfig({ field, direction });
+    setPagination({ ...pagination, page: 1 });
+  }, [pagination]);
+
+  // Handle filter preset operations
+  const handleSavePreset = useCallback(async (presetName) => {
+    await saveFilterPreset(presetName, activeFilters);
+  }, [activeFilters, saveFilterPreset]);
+
+  const handleLoadPreset = useCallback((preset) => {
+    loadFilterPreset(preset);
+    setActiveFilters(preset.filters);
+    setPagination({ ...pagination, page: 1 });
+  }, [loadFilterPreset, pagination]);
+
+  // Handle filter preset operations
+  const handleUpdateFilterPreset = useCallback(async (presetId, filters) => {
+    await updateFilterPreset(presetId, filters);
+  }, [updateFilterPreset]);
+
+  const handleDeleteFilterPreset = useCallback(async (presetId) => {
+    await deleteFilterPreset(presetId);
+  }, [deleteFilterPreset]);
+
+  // Handle column configuration
+  const handleColumnConfigurationChange = useCallback(async (columnConfig) => {
+    await saveColumnConfiguration('users', columnConfig);
+  }, [saveColumnConfiguration]);
+
+  // Export functionality
+  const handleExport = useCallback(async (exportData) => {
+    try {
+      const params = {
+        ...exportData,
+        filters: {
+          ...activeFilters,
+          ...(debouncedSearchQuery && { search: debouncedSearchQuery }),
+          sort: sortConfig.field,
+          sortDirection: sortConfig.direction,
+        },
+        selectedUsers: selectedUsers.length > 0 ? selectedUsers : undefined,
+      };
+      
+      const response = await createExport(params);
+      
+      if (response.success) {
+        // Show success message or redirect to export history
+        console.log('Export started:', response.data.exportId);
+        setShowExportModal(false);
+        // Optionally show progress tracking
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  }, [activeFilters, debouncedSearchQuery, sortConfig, selectedUsers, createExport]);
+
+  // Handle advanced export
+  const handleAdvancedExport = useCallback(() => {
+    setCurrentExportData({
+      filters: activeFilters,
+      search: debouncedSearchQuery,
+      sort: sortConfig,
+      selectedUsers: selectedUsers.length > 0 ? selectedUsers : undefined,
+    });
+    setShowExportModal(true);
+  }, [activeFilters, debouncedSearchQuery, sortConfig, selectedUsers]);
+
+  // Handle export history
+  const handleExportHistory = useCallback(() => {
+    setShowExportHistory(true);
+  }, []);
+
+  // Handle export templates
+  const handleExportTemplates = useCallback(() => {
+    setShowExportTemplate(true);
+  }, []);
+
+  // Handle export scheduler
+  const handleExportScheduler = useCallback(() => {
+    setShowExportScheduler(true);
+  }, []);
 
   // Handle status update
   const handleStatusUpdate = async (userId, newStatus) => {
@@ -66,7 +440,7 @@ const UsersPage = () => {
 
   // Handle user selection
   const handleSelectUser = (userId) => {
-    setSelectedUsers(prev => 
+    setSelectedUsers(prev =>
       prev.includes(userId)
         ? prev.filter(id => id !== userId)
         : [...prev, userId]
@@ -76,10 +450,66 @@ const UsersPage = () => {
   // Handle select all
   const handleSelectAll = () => {
     if (selectedUsers.length === users.length) {
-      setSelectedUsers([]);
+      clearSelectedUsers();
     } else {
       setSelectedUsers(users.map(user => user._id));
     }
+  };
+
+  // Bulk operation handlers
+  const handleBulkEdit = () => {
+    showBulkEditModal();
+  };
+
+  const handleBulkKYC = () => {
+    showBulkKYCModal();
+  };
+
+  const handleBulkCommunication = () => {
+    showBulkCommunicationModal();
+  };
+
+  const handleBulkExport = () => {
+    setCurrentExportData({
+      selectedUsers,
+      filters: activeFilters,
+      search: debouncedSearchQuery,
+      sort: sortConfig,
+    });
+    setShowExportModal(true);
+  };
+
+  const handleBulkStatusUpdate = async (userIds, status) => {
+    await bulkUpdateStatus(userIds, status);
+    clearSelectedUsers();
+  };
+
+  const handleBulkAssign = () => {
+    // This would typically open a modal for team assignment
+    // For now, we'll just show a simple prompt
+    const team = prompt('Enter team name to assign users to:');
+    if (team) {
+      bulkAssignToTeam(selectedUsers, { team });
+      clearSelectedUsers();
+    }
+  };
+
+  const handleBulkDelete = async (userIds) => {
+    await bulkDeleteUsers(userIds);
+  };
+
+  const handleClearSelection = () => {
+    clearSelectedUsers();
+  };
+
+  const handleShowOperationManager = () => {
+    setShowBulkOperationManagerState(true);
+    getBulkOperationHistory();
+    getOperationQueueStatus();
+  };
+
+  const handleHideOperationManager = () => {
+    setShowBulkOperationManagerState(false);
   };
 
   // Get status badge styling
@@ -357,6 +787,44 @@ const UsersPage = () => {
         </div>
       )}
 
+      {/* Advanced Filter Panel */}
+      {showFilters && (
+        <AdvancedFilterPanel
+          filters={activeFilters}
+          onFiltersChange={handleFilterChange}
+          availableFilters={availableFilters}
+          className="mb-6"
+        />
+      )}
+
+      {/* Filter Presets */}
+      {showPresets && (
+        <FilterPreset
+          filters={activeFilters}
+          onFiltersChange={handleFilterChange}
+          availableFilters={availableFilters}
+          className="mb-6"
+          presets={filterPresets}
+          onSavePreset={handleSavePreset}
+          onUpdatePreset={handleUpdateFilterPreset}
+          onDeletePreset={handleDeleteFilterPreset}
+          onLoadPreset={handleLoadPreset}
+        />
+      )}
+
+      {/* Bulk Actions */}
+      <BulkActions
+        selectedUsers={selectedUsers}
+        onBulkEdit={handleBulkEdit}
+        onBulkKYC={handleBulkKYC}
+        onBulkCommunication={handleBulkCommunication}
+        onBulkExport={handleBulkExport}
+        onBulkStatusUpdate={handleBulkStatusUpdate}
+        onBulkAssign={handleBulkAssign}
+        onBulkDelete={handleBulkDelete}
+        onClearSelection={handleClearSelection}
+      />
+
       {/* Users Table */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
         <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
@@ -364,253 +832,215 @@ const UsersPage = () => {
             <h3 className="text-lg leading-6 font-medium text-gray-900">
               Users ({users.length})
             </h3>
-            {selectedUsers.length > 0 && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-500">
-                  {selectedUsers.length} selected
-                </span>
+            <div className="flex items-center space-x-2">
+              {/* Export Button */}
+              <div className="relative">
                 <button
                   type="button"
-                  className="text-sm text-red-600 hover:text-red-900"
-                  onClick={() => setSelectedUsers([])}
+                  className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  onClick={() => setShowColumnSettings(!showColumnSettings)}
                 >
-                  Clear selection
+                  <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Export
                 </button>
+                {showColumnSettings && (
+                  <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                    <div className="py-1">
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={() => handleExport({ format: 'csv' })}
+                      >
+                        Quick Export as CSV
+                      </button>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={() => handleExport({ format: 'excel' })}
+                      >
+                        Quick Export as Excel
+                      </button>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={() => handleExport({ format: 'pdf' })}
+                      >
+                        Quick Export as PDF
+                      </button>
+                      <div className="border-t border-gray-100"></div>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={handleAdvancedExport}
+                      >
+                        Advanced Export...
+                      </button>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={handleExportHistory}
+                      >
+                        Export History
+                      </button>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={handleExportTemplates}
+                      >
+                        Export Templates
+                      </button>
+                      <button
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                        onClick={handleExportScheduler}
+                      >
+                        Scheduled Exports
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* Filter Presets Button */}
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                onClick={() => setShowPresets(!showPresets)}
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                </svg>
+                Presets
+              </button>
+
+              {/* Bulk Operations Manager Button */}
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                onClick={handleShowOperationManager}
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2zM9 4a1 1 0 000 2v6a1 1 0 002 2h2a1 1 0 002-2V6a1 1 0 00-2-2H9z" />
+                </svg>
+                Bulk Operations
+              </button>
+
+              {selectedUsers.length > 0 && (
+                <>
+                  <span className="text-sm text-gray-500">
+                    {selectedUsers.length} selected
+                  </span>
+                  <button
+                    type="button"
+                    className="text-sm text-red-600 hover:text-red-900"
+                    onClick={() => setSelectedUsers([])}
+                  >
+                    Clear selection
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
-        
-        {users.length === 0 ? (
-          <div className="text-center py-12">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No users found</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {searchQuery ? 'Try adjusting your search criteria' : 'Get started by adding a new user.'}
-            </p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <input
-                      type="checkbox"
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                      checked={selectedUsers.length === users.length && users.length > 0}
-                      onChange={handleSelectAll}
-                    />
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    User
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contact
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Application
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Installation
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Joined Date
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {users.map((user) => (
-                  <tr key={user._id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <input
-                        type="checkbox"
-                        className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                        checked={selectedUsers.includes(user._id)}
-                        onChange={() => handleSelectUser(user._id)}
-                      />
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-10 w-10">
-                          <div className="h-10 w-10 rounded-full bg-primary-500 flex items-center justify-center">
-                            <span className="text-white font-medium">
-                              {user.firstName?.charAt(0)}{user.lastName?.charAt(0)}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.firstName} {user.lastName}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {user.userId || user._id.slice(-8)}
-                          </div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{user.email}</div>
-                      <div className="text-sm text-gray-500">{user.phone}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeClass(user.status)}`}>
-                        {formatStatus(user.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.applicationStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                        user.applicationStatus === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
-                        user.applicationStatus === 'submitted' ? 'bg-blue-100 text-blue-800' :
-                        user.applicationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {formatStatus(user.applicationStatus || 'not_submitted')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        user.installationStatus === 'completed' ? 'bg-green-100 text-green-800' :
-                        user.installationStatus === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                        user.installationStatus === 'scheduled' ? 'bg-yellow-100 text-yellow-800' :
-                        user.installationStatus === 'cancelled' ? 'bg-red-100 text-red-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {formatStatus(user.installationStatus || 'not_started')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(user.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <button
-                          onClick={() => navigate(`/users/${user._id}`)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          View
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button
-                          onClick={() => navigate(`/users/${user._id}/application`)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          Application
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <button
-                          onClick={() => navigate(`/users/${user._id}/installation`)}
-                          className="text-primary-600 hover:text-primary-900"
-                        >
-                          Installation
-                        </button>
-                        <span className="text-gray-300">|</span>
-                        <div className="relative">
-                          <button
-                            className="text-gray-400 hover:text-gray-600"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              // Handle dropdown menu
-                            }}
-                          >
-                            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                              <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        
-        {/* Pagination */}
-        {users.length > 0 && (
-          <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-            <div className="flex-1 flex justify-between sm:hidden">
-              <button
-                onClick={() => handlePageChange(pagination.page - 1)}
-                disabled={pagination.page <= 1}
-                className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Previous
-              </button>
-              <button
-                onClick={() => handlePageChange(pagination.page + 1)}
-                disabled={!pagination.hasNext}
-                className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Next
-              </button>
-            </div>
-            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  Showing <span className="font-medium">{(pagination.page - 1) * pagination.limit + 1}</span> to{' '}
-                  <span className="font-medium">{Math.min(pagination.page * pagination.limit, pagination.total || users.length)}</span> of{' '}
-                  <span className="font-medium">{pagination.total || users.length}</span> results
-                </p>
-              </div>
-              <div>
-                <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
-                  <button
-                    onClick={() => handlePageChange(pagination.page - 1)}
-                    disabled={pagination.page <= 1}
-                    className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Previous</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                  
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, Math.ceil((pagination.total || users.length) / pagination.limit)) }, (_, i) => {
-                    const pageNum = i + 1;
-                    const isActive = pageNum === pagination.page;
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          isActive
-                            ? 'z-10 bg-primary-50 border-primary-500 text-primary-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
-                  
-                  <button
-                    onClick={() => handlePageChange(pagination.page + 1)}
-                    disabled={!pagination.hasNext}
-                    className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <span className="sr-only">Next</span>
-                    <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </nav>
-              </div>
-            </div>
-          </div>
-        )}
+
+        <Table
+          columns={tableColumns}
+          data={users}
+          loading={isLoading}
+          emptyMessage={searchQuery || Object.keys(activeFilters).length > 0
+            ? 'No users found matching your criteria'
+            : 'No users found. Get started by adding a new user.'
+          }
+          selectable={true}
+          selectedRows={selectedUsers}
+          onSelectionChange={setSelectedUsers}
+          sortable={true}
+          onSort={handleSort}
+          defaultSortField={sortConfig.field}
+          defaultSortDirection={sortConfig.direction}
+          filterable={true}
+          onFilter={handleFilterChange}
+          columnVisibility={true}
+          pagination={true}
+          currentPage={pagination.page}
+          totalPages={Math.ceil((pagination.total || users.length) / pagination.limit)}
+          onPageChange={handlePageChange}
+          rowsPerPage={pagination.limit}
+          onRowsPerPageChange={(newLimit) => setPagination({ ...pagination, limit: newLimit, page: 1 })}
+          savedColumnConfigurations={columnConfigurations.users ? [columnConfigurations.users] : []}
+          onSaveColumnConfiguration={handleColumnConfigurationChange}
+          onLoadColumnConfiguration={handleLoadPreset}
+          exportable={true}
+          onExport={handleExport}
+        />
       </div>
+
+      {/* Bulk Operation Modals */}
+      <BulkEditModal
+        isOpen={showBulkEditModal}
+        onClose={hideBulkEditModal}
+        userIds={selectedUsers}
+        onSuccess={() => {
+          hideBulkEditModal();
+          getUsers(); // Refresh users list
+        }}
+        onError={(error) => {
+          console.error('Bulk edit failed:', error);
+        }}
+      />
+
+      <BulkCommunicationModal
+        isOpen={showBulkCommunicationModal}
+        onClose={hideBulkCommunicationModal}
+        userIds={selectedUsers}
+        onSuccess={() => {
+          hideBulkCommunicationModal();
+        }}
+        onError={(error) => {
+          console.error('Bulk communication failed:', error);
+        }}
+      />
+
+      <BulkKYCModal
+        isOpen={showBulkKYCModal}
+        onClose={hideBulkKYCModal}
+        userIds={selectedUsers}
+        onSuccess={() => {
+          hideBulkKYCModal();
+          getUsers(); // Refresh users list
+        }}
+        onError={(error) => {
+          console.error('Bulk KYC operation failed:', error);
+        }}
+      />
+
+      <BulkOperationManager
+        isOpen={showBulkOperationManagerState}
+        onClose={handleHideOperationManager}
+      />
+
+      {/* Export Modals */}
+      <ExportModal
+        isOpen={showExportModal}
+        onClose={() => setShowExportModal(false)}
+        onExport={handleExport}
+        initialData={currentExportData}
+        users={users}
+        selectedUsers={selectedUsers}
+        filters={activeFilters}
+        searchQuery={debouncedSearchQuery}
+        sortConfig={sortConfig}
+      />
+
+      <ExportHistory
+        isOpen={showExportHistory}
+        onClose={() => setShowExportHistory(false)}
+      />
+
+      <ExportTemplate
+        isOpen={showExportTemplate}
+        onClose={() => setShowExportTemplate(false)}
+      />
+
+      <ExportScheduler
+        isOpen={showExportScheduler}
+        onClose={() => setShowExportScheduler(false)}
+      />
     </div>
   );
 };

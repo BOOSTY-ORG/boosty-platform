@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
 
 /**
@@ -34,6 +34,11 @@ const Table = ({
   onFilter,
   columnVisibility = true,
   defaultVisibleColumns,
+  savedColumnConfigurations = [],
+  onSaveColumnConfiguration,
+  onLoadColumnConfiguration,
+  exportable = false,
+  onExport,
   ...props
 }) => {
   const [sortFields, setSortFields] = useState(
@@ -48,6 +53,10 @@ const Table = ({
     defaultVisibleColumns || columns.map(col => col.key)
   );
   const [showColumnMenu, setShowColumnMenu] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showColumnConfigMenu, setShowColumnConfigMenu] = useState(false);
+  const [columnConfigName, setColumnConfigName] = useState('');
+  const [isSavingConfig, setIsSavingConfig] = useState(false);
   
   const handleSort = (field) => {
     if (!sortable || !onSort) return;
@@ -84,7 +93,7 @@ const Table = ({
     }
   };
   
-  const handleFilter = (field, value) => {
+  const handleFilter = useCallback((field, value) => {
     if (!filterable || !onFilter) return;
     
     const newFilters = { ...filters };
@@ -96,7 +105,7 @@ const Table = ({
     
     setFilters(newFilters);
     onFilter(newFilters);
-  };
+  }, [filterable, onFilter, filters]);
   
   const toggleColumnVisibility = (columnKey) => {
     setVisibleColumns(prev =>
@@ -106,7 +115,7 @@ const Table = ({
     );
   };
   
-  const handleSelectAll = (checked) => {
+  const handleSelectAll = useCallback((checked) => {
     if (!selectable || !onSelectionChange) return;
     
     if (checked) {
@@ -115,9 +124,9 @@ const Table = ({
     } else {
       onSelectionChange([]);
     }
-  };
+  }, [selectable, onSelectionChange, selectedRows, data]);
   
-  const handleSelectRow = (id, checked) => {
+  const handleSelectRow = useCallback((id, checked) => {
     if (!selectable || !onSelectionChange) return;
     
     if (checked) {
@@ -125,7 +134,7 @@ const Table = ({
     } else {
       onSelectionChange(selectedRows.filter(rowId => rowId !== id));
     }
-  };
+  }, [selectable, onSelectionChange, selectedRows]);
   
   const isAllSelected = selectable && data.length > 0 && 
     data.every(row => selectedRows.includes(row.id || row._id));
@@ -243,6 +252,180 @@ const Table = ({
         );
     }
   };
+
+  // Save column configuration
+  const handleSaveColumnConfiguration = useCallback(async () => {
+    if (!columnConfigName.trim() || !onSaveColumnConfiguration) return;
+    
+    setIsSavingConfig(true);
+    try {
+      const config = {
+        name: columnConfigName.trim(),
+        columns: visibleColumns,
+        sortFields,
+        filters,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await onSaveColumnConfiguration(config);
+      setColumnConfigName('');
+      setShowColumnConfigMenu(false);
+    } catch (error) {
+      console.error('Error saving column configuration:', error);
+    } finally {
+      setIsSavingConfig(false);
+    }
+  }, [columnConfigName, visibleColumns, sortFields, filters, onSaveColumnConfiguration]);
+
+  // Load column configuration
+  const handleLoadColumnConfiguration = useCallback((config) => {
+    if (!onLoadColumnConfiguration) return;
+    
+    setVisibleColumns(config.columns);
+    if (config.sortFields) {
+      if (multiColumnSort) {
+        setSortFields(config.sortFields);
+        onSort && onSort(config.sortFields);
+      } else if (config.sortFields.length > 0) {
+        const { field, direction } = config.sortFields[0];
+        setSingleSortField(field);
+        setSingleSortDirection(direction);
+        onSort && onSort(field, direction);
+      }
+    }
+    if (config.filters) {
+      setFilters(config.filters);
+      onFilter && onFilter(config.filters);
+    }
+    
+    setShowColumnConfigMenu(false);
+  }, [multiColumnSort, onSort, onFilter, onLoadColumnConfiguration]);
+
+  // Export functionality
+  const handleExport = useCallback((format) => {
+    if (!onExport) return;
+    
+    const exportData = {
+      format,
+      columns: visibleColumns.map(key => columns.find(col => col.key === key)).filter(Boolean),
+      sortFields,
+      filters,
+      data: data.map(row => {
+        const exportRow = {};
+        visibleColumns.forEach(key => {
+          const column = columns.find(col => col.key === key);
+          if (column) {
+            exportRow[key] = column.render ? column.render(row[key], row) : row[key];
+          }
+        });
+        return exportRow;
+      }),
+    };
+    
+    onExport(exportData);
+    setShowExportMenu(false);
+  }, [onExport, visibleColumns, columns, sortFields, filters, data]);
+
+  // Advanced export functionality
+  const handleAdvancedExport = useCallback(() => {
+    if (!onExport) return;
+    
+    const exportData = {
+      format: 'xlsx', // Default format
+      columns: visibleColumns.map(key => columns.find(col => col.key === key)).filter(Boolean),
+      sortFields,
+      filters,
+      data: data.map(row => {
+        const exportRow = {};
+        visibleColumns.forEach(key => {
+          const column = columns.find(col => col.key === key);
+          if (column) {
+            exportRow[key] = column.render ? column.render(row[key], row) : row[key];
+          }
+        });
+        return exportRow;
+      }),
+      advanced: true, // Flag to trigger advanced export modal
+    };
+    
+    onExport(exportData);
+    setShowExportMenu(false);
+  }, [onExport, visibleColumns, columns, sortFields, filters, data]);
+
+  // Memoized filtered and sorted data
+  const processedData = useMemo(() => {
+    let result = [...data];
+    
+    // Apply filters
+    if (filterable && Object.keys(filters).length > 0) {
+      result = result.filter(row => {
+        return Object.entries(filters).every(([key, value]) => {
+          if (value === '' || value === null || value === undefined) return true;
+          if (Array.isArray(value) && value.length === 0) return true;
+          
+          const cellValue = row[key];
+          
+          if (Array.isArray(value)) {
+            return value.includes(cellValue);
+          }
+          
+          if (typeof value === 'object' && value !== null) {
+            if (value.min !== undefined && value.max !== undefined) {
+              return cellValue >= value.min && cellValue <= value.max;
+            }
+            if (value.start !== undefined && value.end !== undefined) {
+              const cellDate = new Date(cellValue);
+              return cellDate >= new Date(value.start) && cellDate <= new Date(value.end);
+            }
+          }
+          
+          return String(cellValue).toLowerCase().includes(String(value).toLowerCase());
+        });
+      });
+    }
+    
+    // Apply sorting
+    if (sortable && (singleSortField || sortFields.length > 0)) {
+      result.sort((a, b) => {
+        if (multiColumnSort) {
+          for (const { field, direction } of sortFields) {
+            const aValue = a[field];
+            const bValue = b[field];
+            
+            if (aValue !== bValue) {
+              let comparison = 0;
+              if (aValue == null) comparison = -1;
+              else if (bValue == null) comparison = 1;
+              else if (typeof aValue === 'string' && typeof bValue === 'string') {
+                comparison = aValue.localeCompare(bValue);
+              } else {
+                comparison = aValue - bValue;
+              }
+              
+              return direction === 'desc' ? -comparison : comparison;
+            }
+          }
+          return 0;
+        } else {
+          const aValue = a[singleSortField];
+          const bValue = b[singleSortField];
+          
+          let comparison = 0;
+          if (aValue == null) comparison = -1;
+          else if (bValue == null) comparison = 1;
+          else if (typeof aValue === 'string' && typeof bValue === 'string') {
+            comparison = aValue.localeCompare(bValue);
+          } else {
+            comparison = aValue - bValue;
+          }
+          
+          return singleSortDirection === 'desc' ? -comparison : comparison;
+        }
+      });
+    }
+    
+    return result;
+  }, [data, filterable, filters, sortable, singleSortField, singleSortDirection, sortFields, multiColumnSort]);
   
   if (loading) {
     return (
@@ -254,45 +437,197 @@ const Table = ({
   
   return (
     <div className={`overflow-x-auto ${className}`}>
-      {columnVisibility && (
-        <div className="mb-2 flex justify-end">
-          <div className="relative">
-            <button
-              type="button"
-              className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              onClick={() => setShowColumnMenu(!showColumnMenu)}
-            >
-              <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Columns
-            </button>
-            
-            {showColumnMenu && (
-              <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                <div className="py-1" role="menu">
-                  {columns.map((column) => (
-                    <label
-                      key={column.key}
-                      className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
-                      role="menuitem"
+      <div className="mb-2 flex justify-between items-center">
+        <div className="flex items-center space-x-2">
+          {/* Active filters display */}
+          {filterable && Object.keys(filters).length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(filters).map(([key, value]) => {
+                if (!value || (Array.isArray(value) && value.length === 0)) return null;
+                
+                const column = columns.find(col => col.key === key);
+                if (!column) return null;
+
+                let displayValue = value;
+                if (column.filterType === 'select') {
+                  const option = column.filterOptions?.find(opt => opt.value === value);
+                  displayValue = option?.label || value;
+                } else if (column.filterType === 'multiselect' && Array.isArray(value)) {
+                  displayValue = value.map(v => {
+                    const option = column.filterOptions?.find(opt => opt.value === v);
+                    return option?.label || v;
+                  }).join(', ');
+                } else if (column.filterType === 'daterange') {
+                  displayValue = `${value.start || ''} - ${value.end || ''}`;
+                } else if (column.filterType === 'number' && typeof value === 'object') {
+                  displayValue = `${value.min || ''} - ${value.max || ''}`;
+                }
+
+                return (
+                  <span
+                    key={key}
+                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800"
+                  >
+                    <span className="font-medium">{column.title}:</span>
+                    <span className="ml-1">{displayValue}</span>
+                    <button
+                      type="button"
+                      className="ml-2 text-gray-500 hover:text-gray-700"
+                      onClick={() => handleFilter(key, '')}
                     >
-                      <input
-                        type="checkbox"
-                        className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        checked={visibleColumns.includes(column.key)}
-                        onChange={() => toggleColumnVisibility(column.key)}
-                      />
-                      {column.title}
-                    </label>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </span>
+                );
+              })}
+            </div>
+          )}
         </div>
-      )}
+        
+        <div className="flex items-center space-x-2">
+          {/* Export button */}
+          {exportable && (
+            <div className="relative">
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => setShowExportMenu(!showExportMenu)}
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                Export
+              </button>
+              
+              {showExportMenu && (
+                <div className="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                  <div className="py-1" role="menu">
+                    <button
+                      type="button"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      onClick={() => handleExport('csv')}
+                    >
+                      Export as CSV
+                    </button>
+                    <button
+                      type="button"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      onClick={() => handleExport('excel')}
+                    >
+                      Export as Excel
+                    </button>
+                    <button
+                      type="button"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left"
+                      onClick={() => handleExport('pdf')}
+                    >
+                      Export as PDF
+                    </button>
+                    <div className="border-t border-gray-100 my-1"></div>
+                    <button
+                      type="button"
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 w-full text-left font-medium text-primary-600"
+                      onClick={handleAdvancedExport}
+                    >
+                      Advanced Export...
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Column configuration button */}
+          {onSaveColumnConfiguration && (
+            <div className="relative">
+              <button
+                type="button"
+                className="inline-flex items-center px-3 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                onClick={() => setShowColumnConfigMenu(!showColumnConfigMenu)}
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Columns
+              </button>
+              
+              {showColumnConfigMenu && (
+                <div className="absolute right-0 mt-2 w-64 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                  <div className="p-4">
+                    <div className="mb-3">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Save Current Configuration
+                      </label>
+                      <div className="flex space-x-2">
+                        <input
+                          type="text"
+                          className="flex-1 border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                          value={columnConfigName}
+                          onChange={(e) => setColumnConfigName(e.target.value)}
+                          placeholder="Configuration name..."
+                        />
+                        <button
+                          type="button"
+                          className="px-3 py-1 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                          onClick={handleSaveColumnConfiguration}
+                          disabled={!columnConfigName.trim() || isSavingConfig}
+                        >
+                          {isSavingConfig ? 'Saving...' : 'Save'}
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {savedColumnConfigurations.length > 0 && (
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Saved Configurations
+                        </label>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {savedColumnConfigurations.map((config, index) => (
+                            <button
+                              key={index}
+                              type="button"
+                              className="block w-full text-left px-2 py-1 text-sm text-gray-700 hover:bg-gray-100 rounded"
+                              onClick={() => handleLoadColumnConfiguration(config)}
+                            >
+                              {config.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="mt-3 pt-3 border-t border-gray-200">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Visible Columns
+                      </label>
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {columns.map((column) => (
+                          <label
+                            key={column.key}
+                            className="flex items-center"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mr-2 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                              checked={visibleColumns.includes(column.key)}
+                              onChange={() => toggleColumnVisibility(column.key)}
+                            />
+                            <span className="text-sm text-gray-700">{column.title}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
       
       <table className={`min-w-full divide-y divide-gray-200 ${tableClassName}`} {...props}>
         <thead className={`bg-gray-50 ${theadClassName}`}>
@@ -331,14 +666,14 @@ const Table = ({
           </tr>
         </thead>
         <tbody className={`bg-white divide-y divide-gray-200 ${tbodyClassName}`}>
-          {data.length === 0 ? (
+          {processedData.length === 0 ? (
             <tr>
               <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="px-6 py-4 text-center text-gray-500">
                 {emptyMessage}
               </td>
             </tr>
           ) : (
-            data.map((row, index) => (
+            processedData.map((row, index) => (
               <tr key={row.id || row._id || index} className={`hover:bg-gray-50 ${trClassName}`}>
                 {selectable && (
                   <td className="px-6 py-4 whitespace-nowrap">
@@ -382,15 +717,30 @@ const Table = ({
             </button>
           </div>
           <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-            <div>
+            <div className="flex items-center space-x-4">
               <p className="text-sm text-gray-700">
                 Showing{' '}
                 <span className="font-medium">{(currentPage - 1) * rowsPerPage + 1}</span> to{' '}
                 <span className="font-medium">
-                  {Math.min(currentPage * rowsPerPage, data.length)}
+                  {Math.min(currentPage * rowsPerPage, processedData.length)}
                 </span>{' '}
                 of <span className="font-medium">{totalPages * rowsPerPage}</span> results
               </p>
+              {onRowsPerPageChange && (
+                <div className="flex items-center space-x-2">
+                  <label className="text-sm text-gray-700">Rows per page:</label>
+                  <select
+                    className="border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    value={rowsPerPage}
+                    onChange={(e) => onRowsPerPageChange(Number(e.target.value))}
+                  >
+                    <option value={10}>10</option>
+                    <option value={25}>25</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                </div>
+              )}
             </div>
             <div>
               <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
@@ -497,6 +847,11 @@ Table.propTypes = {
   onFilter: PropTypes.func,
   columnVisibility: PropTypes.bool,
   defaultVisibleColumns: PropTypes.array,
+  savedColumnConfigurations: PropTypes.array,
+  onSaveColumnConfiguration: PropTypes.func,
+  onLoadColumnConfiguration: PropTypes.func,
+  exportable: PropTypes.bool,
+  onExport: PropTypes.func,
 };
 
 export default Table;

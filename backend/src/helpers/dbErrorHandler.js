@@ -44,4 +44,4 @@ const getErrorMessage = (err) => {
   return message;
 };
 
-export default { getErrorMessage, getUniqueErrorMessage };
+module.exports = { getErrorMessage, getUniqueErrorMessage };

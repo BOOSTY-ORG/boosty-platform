@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const kycDocumentSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -145,4 +145,4 @@ kycDocumentSchema.statics.getVerificationStats = async function(startDate, endDa
 
 const KYCDocument = mongoose.model('KYCDocument', kycDocumentSchema);
 
-export default KYCDocument;
+module.exports = KYCDocument;

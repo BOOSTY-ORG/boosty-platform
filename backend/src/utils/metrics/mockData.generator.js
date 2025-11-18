@@ -1,11 +1,11 @@
-import mongoose from "mongoose";
-import User from "../../models/user.model.js";
-import Investor from "../../models/metrics/investor.model.js";
-import SolarApplication from "../../models/metrics/solarApplication.model.js";
-import Transaction from "../../models/metrics/transaction.model.js";
-import Investment from "../../models/metrics/investment.model.js";
-import KYCDocument from "../../models/metrics/kycDocument.model.js";
-import bcrypt from "bcrypt";
+const mongoose = require("mongoose");
+const User = require("../../models/user.model.js");
+const Investor = require("../../models/metrics/investor.model.js");
+const SolarApplication = require("../../models/metrics/solarApplication.model.js");
+const Transaction = require("../../models/metrics/transaction.model.js");
+const Investment = require("../../models/metrics/investment.model.js");
+const KYCDocument = require("../../models/metrics/kycDocument.model.js");
+const bcrypt = require("bcrypt");
 
 // Configuration for mock data generation
 const MOCK_CONFIG = {
@@ -469,7 +469,7 @@ const generateRiskFactors = () => {
 };
 
 // Main function to generate all mock data
-export const generateMockData = async () => {
+const generateMockData = async () => {
   try {
     console.log('Starting mock data generation...');
     
@@ -567,7 +567,7 @@ const updateRelationships = async (applications, investors, investments, transac
 };
 
 // Function to generate specific data for testing
-export const generateTestUser = async () => {
+const generateTestUser = async () => {
   const testUser = {
     name: 'Test User',
     email: 'test@example.com',
@@ -579,7 +579,7 @@ export const generateTestUser = async () => {
   return await User.create(testUser);
 };
 
-export const generateTestInvestor = async (userId) => {
+const generateTestInvestor = async (userId) => {
   const testInvestor = {
     userId,
     investorType: 'individual',
@@ -617,7 +617,7 @@ export const generateTestInvestor = async (userId) => {
   return await Investor.create(testInvestor);
 };
 
-export default {
+module.exports = {
   generateMockData,
   generateTestUser,
   generateTestInvestor,

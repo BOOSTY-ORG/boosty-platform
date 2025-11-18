@@ -1,6 +1,6 @@
-import { beforeAll, afterAll, beforeEach, afterEach } from '@jest/globals';
-import mongoose from 'mongoose';
-import { setupTestDatabase, teardownTestDatabase } from './helpers/metrics.test.helpers.js';
+const { beforeAll, afterAll, beforeEach, afterEach } = require('@jest/globals');
+const mongoose = require('mongoose');
+const { setupTestDatabase, teardownTestDatabase } = require('./helpers/metrics.test.helpers.js');
 
 // Mock console methods to reduce noise in tests
 global.console = {

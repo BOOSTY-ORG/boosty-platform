@@ -1,17 +1,17 @@
-import express from "express";
-import { requireMetricsAuth } from "../middleware/metrics/auth.middleware.js";
-import { validateDateRange, validatePagination, validateSorting } from "../middleware/metrics/validation.middleware.js";
-import { standardRateLimit } from "../middleware/metrics/rateLimit.middleware.js";
-import { smartCache } from "../middleware/metrics/caching.middleware.js";
-import { applyQueryBuilder } from "../middleware/metrics/queryBuilder.middleware.js";
+const express = require("express");
+const { requireMetricsAuth } = require("../middleware/metrics/auth.middleware.js");
+const { validateDateRange, validatePagination, validateSorting } = require("../middleware/metrics/validation.middleware.js");
+const { standardRateLimit } = require("../middleware/metrics/rateLimit.middleware.js");
+const { smartCache } = require("../middleware/metrics/caching.middleware.js");
+const { applyQueryBuilder } = require("../middleware/metrics/queryBuilder.middleware.js");
 
 // Import route modules
-import dashboardRoutes from "./metrics/dashboard.routes.js";
-import investorRoutes from "./metrics/investor.routes.js";
-import userRoutes from "./metrics/user.routes.js";
-import transactionRoutes from "./metrics/transaction.routes.js";
-import kycRoutes from "./metrics/kyc.routes.js";
-import reportingRoutes from "./metrics/reporting.routes.js";
+const dashboardRoutes = require("./metrics/dashboard.routes.js");
+const investorRoutes = require("./metrics/investor.routes.js");
+const userRoutes = require("./metrics/user.routes.js");
+const transactionRoutes = require("./metrics/transaction.routes.js");
+const kycRoutes = require("./metrics/kyc.routes.js");
+const reportingRoutes = require("./metrics/reporting.routes.js");
 
 const router = express.Router();
 
@@ -62,4 +62,4 @@ router.use('/transactions', transactionRoutes);
 router.use('/kyc', kycRoutes);
 router.use('/reports', reportingRoutes);
 
-export default router;
+module.exports = router;

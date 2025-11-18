@@ -1,5 +1,5 @@
-import mongoose from "mongoose";
-import bcrypt from "bcrypt";
+const mongoose = require("mongoose");
+const bcrypt = require("bcrypt");
 
 const SALT_WORK_FACTOR = 10;
 const userSchema = new mongoose.Schema(
@@ -25,6 +25,39 @@ const userSchema = new mongoose.Schema(
     },
     resetToken: { type: String },
     tokenExpiry: { type: Date },
+    // Related data for exports
+    applications: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SolarApplication'
+    }],
+    installations: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Installation'
+    }],
+    communications: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Communication'
+    }],
+    documents: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'KYCDocument'
+    }],
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'pending', 'suspended'],
+      default: 'active'
+    },
+    phone: {
+      type: String,
+      trim: true
+    },
+    address: {
+      street: String,
+      city: String,
+      state: String,
+      postalCode: String,
+      country: String
+    }
   },
   {
     timestamps: true, // Timestamps
@@ -80,4 +113,4 @@ userSchema.set("toJSON", {
 
 const User = mongoose.model("User", userSchema);
 
-export default User;
+module.exports = User;

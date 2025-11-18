@@ -9,42 +9,22 @@ const FilterPreset = ({
   onFiltersChange,
   availableFilters = [],
   className = '',
+  presets = [],
+  onSavePreset,
+  onUpdatePreset,
+  onDeletePreset,
+  onLoadPreset,
 }) => {
-  const [presets, setPresets] = useState([]);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
   const [presetName, setPresetName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load presets from localStorage on component mount
-  useEffect(() => {
-    const savedPresets = localStorage.getItem('filterPresets');
-    if (savedPresets) {
-      try {
-        setPresets(JSON.parse(savedPresets));
-      } catch (error) {
-        console.error('Error loading filter presets:', error);
-      }
-    }
-  }, []);
-
-  // Save presets to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('filterPresets', JSON.stringify(presets));
-  }, [presets]);
-
   const savePreset = async () => {
-    if (!presetName.trim()) return;
+    if (!presetName.trim() || !onSavePreset) return;
 
     setIsSaving(true);
     try {
-      const newPreset = {
-        id: Date.now().toString(),
-        name: presetName.trim(),
-        filters: { ...filters },
-        createdAt: new Date().toISOString(),
-      };
-
-      setPresets([...presets, newPreset]);
+      await onSavePreset(presetName.trim(), filters);
       setPresetName('');
       setShowSaveDialog(false);
     } catch (error) {
@@ -55,23 +35,29 @@ const FilterPreset = ({
   };
 
   const loadPreset = (preset) => {
+    if (onLoadPreset) {
+      onLoadPreset(preset);
+    }
     onFiltersChange({ ...preset.filters });
   };
 
-  const deletePreset = (presetId) => {
-    setPresets(presets.filter(p => p.id !== presetId));
+  const deletePreset = async (presetId) => {
+    if (onDeletePreset) {
+      try {
+        await onDeletePreset(presetId);
+      } catch (error) {
+        console.error('Error deleting preset:', error);
+      }
+    }
   };
 
-  const updatePreset = (presetId) => {
-    const preset = presets.find(p => p.id === presetId);
-    if (preset) {
-      const updatedPreset = {
-        ...preset,
-        filters: { ...filters },
-        updatedAt: new Date().toISOString(),
-      };
-
-      setPresets(presets.map(p => p.id === presetId ? updatedPreset : p));
+  const updatePreset = async (presetId) => {
+    if (onUpdatePreset) {
+      try {
+        await onUpdatePreset(presetId, filters);
+      } catch (error) {
+        console.error('Error updating preset:', error);
+      }
     }
   };
 
@@ -342,6 +328,11 @@ FilterPreset.propTypes = {
     })
   ),
   className: PropTypes.string,
+  presets: PropTypes.array,
+  onSavePreset: PropTypes.func,
+  onUpdatePreset: PropTypes.func,
+  onDeletePreset: PropTypes.func,
+  onLoadPreset: PropTypes.func,
 };
 
 export default FilterPreset;
