@@ -221,6 +221,32 @@ const Table = ({
             ))}
           </select>
         );
+      
+      case 'daterange':
+        return (
+          <div className="flex space-x-1 mt-1">
+            <input
+              type="date"
+              className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+              value={filterValue.start || ''}
+              onChange={(e) => handleFilter(column.key, {
+                ...filterValue,
+                start: e.target.value
+              })}
+              placeholder="Start date"
+            />
+            <input
+              type="date"
+              className="mt-1 block w-full pl-3 pr-10 py-1 text-xs border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 rounded"
+              value={filterValue.end || ''}
+              onChange={(e) => handleFilter(column.key, {
+                ...filterValue,
+                end: e.target.value
+              })}
+              placeholder="End date"
+            />
+          </div>
+        );
       case 'date':
         return (
           <input

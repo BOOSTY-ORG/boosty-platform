@@ -42,6 +42,17 @@ const initialState = {
   showExportHistory: false,
   showExportTemplate: false,
   showExportScheduler: false,
+  // KYC filtering and sorting state
+  kycFilters: {
+    status: '',
+    submissionDateRange: { start: '', end: '' },
+    verificationDateRange: { start: '', end: '' },
+    lastUpdatedRange: { start: '', end: '' },
+  },
+  kycSort: {
+    field: 'createdAt',
+    direction: 'desc'
+  },
 };
 
 // Action types
@@ -107,6 +118,12 @@ const USER_ACTIONS = {
   HIDE_EXPORT_TEMPLATE: 'HIDE_EXPORT_TEMPLATE',
   SHOW_EXPORT_SCHEDULER: 'SHOW_EXPORT_SCHEDULER',
   HIDE_EXPORT_SCHEDULER: 'HIDE_EXPORT_SCHEDULER',
+  // KYC filtering and sorting actions
+  SET_KYC_FILTERS: 'SET_KYC_FILTERS',
+  UPDATE_KYC_FILTER: 'UPDATE_KYC_FILTER',
+  CLEAR_KYC_FILTERS: 'CLEAR_KYC_FILTERS',
+  SET_KYC_SORT: 'SET_KYC_SORT',
+  RESET_KYC_SORT: 'RESET_KYC_SORT',
 };
 
 // Reducer function
@@ -549,6 +566,39 @@ const userReducer = (state, action) => {
         showExportScheduler: false,
       };
 
+    case USER_ACTIONS.SET_KYC_FILTERS:
+      return {
+        ...state,
+        kycFilters: action.payload,
+      };
+
+    case USER_ACTIONS.UPDATE_KYC_FILTER:
+      return {
+        ...state,
+        kycFilters: {
+          ...state.kycFilters,
+          [action.payload.key]: action.payload.value,
+        },
+      };
+
+    case USER_ACTIONS.CLEAR_KYC_FILTERS:
+      return {
+        ...state,
+        kycFilters: initialState.kycFilters,
+      };
+
+    case USER_ACTIONS.SET_KYC_SORT:
+      return {
+        ...state,
+        kycSort: action.payload,
+      };
+
+    case USER_ACTIONS.RESET_KYC_SORT:
+      return {
+        ...state,
+        kycSort: initialState.kycSort,
+      };
+
     default:
       return state;
   }
@@ -861,6 +911,72 @@ export const UserProvider = ({ children }) => {
       return result;
     } catch (error) {
       const errorMessage = error.message || 'Failed to upload document';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Get user KYC documents
+  const getUserKYC = async (id) => {
+    try {
+      const response = await usersAPI.getUserKYC(id);
+      // Update documents state with KYC documents
+      dispatch({ type: USER_ACTIONS.SET_DOCUMENTS, payload: response.data?.documents || [] });
+      return response;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to fetch user KYC';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Upload user KYC document
+  const uploadUserKYCDocument = async (id, formData) => {
+    try {
+      dispatch({ type: USER_ACTIONS.SET_LOADING, payload: true });
+      const result = await usersAPI.uploadUserKYCDocument(id, formData);
+      toast.success('KYC document uploaded successfully');
+      // Refresh KYC documents
+      await getUserKYC(id);
+      return result;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to upload KYC document';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Verify user KYC document
+  const verifyUserKYCDocument = async (id, documentId, verificationData = {}) => {
+    try {
+      dispatch({ type: USER_ACTIONS.SET_LOADING, payload: true });
+      const result = await usersAPI.verifyUserKYCDocument(id, documentId, verificationData);
+      toast.success('KYC document verified successfully');
+      // Refresh KYC documents
+      await getUserKYC(id);
+      return result;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to verify KYC document';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Reject user KYC document
+  const rejectUserKYCDocument = async (id, documentId, rejectionData) => {
+    try {
+      dispatch({ type: USER_ACTIONS.SET_LOADING, payload: true });
+      const result = await usersAPI.rejectUserKYCDocument(id, documentId, rejectionData);
+      toast.success('KYC document rejected successfully');
+      // Refresh KYC documents
+      await getUserKYC(id);
+      return result;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to reject KYC document';
       dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
       toast.error(errorMessage);
       throw error;
@@ -1735,6 +1851,97 @@ export const UserProvider = ({ children }) => {
     dispatch({ type: USER_ACTIONS.HIDE_EXPORT_SCHEDULER });
   };
 
+  // KYC filtering and sorting functions
+  const setKYCFilters = (filters) => {
+    dispatch({ type: USER_ACTIONS.SET_KYC_FILTERS, payload: filters });
+  };
+
+  const updateKYCFilter = (key, value) => {
+    dispatch({ type: USER_ACTIONS.UPDATE_KYC_FILTER, payload: { key, value } });
+  };
+
+  const clearKYCFilters = () => {
+    dispatch({ type: USER_ACTIONS.CLEAR_KYC_FILTERS });
+  };
+
+  const setKYCSort = (sort) => {
+    dispatch({ type: USER_ACTIONS.SET_KYC_SORT, payload: sort });
+  };
+
+  const resetKYCSort = () => {
+    dispatch({ type: USER_ACTIONS.RESET_KYC_SORT });
+  };
+
+  // Get users with KYC filtering and sorting
+  const getUsersWithKYCFilters = async (params = {}) => {
+    try {
+      dispatch({ type: USER_ACTIONS.SET_LOADING, payload: true });
+      
+      // Combine KYC filters with other params
+      const combinedParams = {
+        page: pagination.page,
+        limit: pagination.limit,
+        dateRange,
+        ...filters,
+        ...params,
+        // Add KYC specific filters
+        kycStatus: state.kycFilters.status,
+        kycSubmissionDateFrom: state.kycFilters.submissionDateRange.start,
+        kycSubmissionDateTo: state.kycFilters.submissionDateRange.end,
+        kycVerificationDateFrom: state.kycFilters.verificationDateRange.start,
+        kycVerificationDateTo: state.kycFilters.verificationDateRange.end,
+        kycLastUpdatedFrom: state.kycFilters.lastUpdatedRange.start,
+        kycLastUpdatedTo: state.kycFilters.lastUpdatedRange.end,
+        // Add KYC sorting
+        sort: state.kycSort.field ? `${state.kycSort.field}:${state.kycSort.direction}` : undefined,
+      };
+      
+      const response = await usersAPI.getUsers(combinedParams);
+      
+      // Handle different response formats from backend
+      const users = response.data?.data || response.data || response;
+      
+      dispatch({ type: USER_ACTIONS.SET_USERS, payload: users });
+      return users;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to fetch users with KYC filters';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
+  // Get KYC statistics
+  const getKYCStats = async (customFilters = {}) => {
+    try {
+      dispatch({ type: USER_ACTIONS.SET_LOADING, payload: true });
+      
+      const statsParams = {
+        dateRange,
+        ...filters,
+        ...customFilters,
+        // Add KYC specific filters
+        kycStatus: state.kycFilters.status,
+        kycSubmissionDateFrom: state.kycFilters.submissionDateRange.start,
+        kycSubmissionDateTo: state.kycFilters.submissionDateRange.end,
+        kycVerificationDateFrom: state.kycFilters.verificationDateRange.start,
+        kycVerificationDateTo: state.kycFilters.verificationDateRange.end,
+        kycLastUpdatedFrom: state.kycFilters.lastUpdatedRange.start,
+        kycLastUpdatedTo: state.kycFilters.lastUpdatedRange.end,
+      };
+      
+      const stats = await usersAPI.getUserKYCMetrics(statsParams);
+      
+      dispatch({ type: USER_ACTIONS.SET_STATS, payload: stats });
+      return stats;
+    } catch (error) {
+      const errorMessage = error.message || 'Failed to fetch KYC statistics';
+      dispatch({ type: USER_ACTIONS.SET_ERROR, payload: errorMessage });
+      toast.error(errorMessage);
+      throw error;
+    }
+  };
+
   const value = {
     ...state,
     getUsers,
@@ -1754,6 +1961,10 @@ export const UserProvider = ({ children }) => {
     getUserActivity,
     getUserDocuments,
     uploadUserDocument,
+    getUserKYC,
+    uploadUserKYCDocument,
+    verifyUserKYCDocument,
+    rejectUserKYCDocument,
     clearUserData,
     saveFilterPreset,
     updateFilterPreset,
@@ -1762,6 +1973,14 @@ export const UserProvider = ({ children }) => {
     clearActivePreset,
     saveColumnConfiguration,
     getColumnConfiguration,
+    // KYC filtering and sorting functions
+    setKYCFilters,
+    updateKYCFilter,
+    clearKYCFilters,
+    setKYCSort,
+    resetKYCSort,
+    getUsersWithKYCFilters,
+    getKYCStats,
     // Communication functions
     getUserCommunications,
     createUserCommunication,

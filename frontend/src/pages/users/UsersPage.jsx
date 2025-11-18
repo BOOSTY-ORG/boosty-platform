@@ -33,6 +33,16 @@ const UsersPage = () => {
     saveColumnConfiguration,
     filterPresets,
     columnConfigurations,
+    // KYC filtering and sorting functions
+    kycFilters,
+    kycSort,
+    setKYCFilters,
+    updateKYCFilter,
+    clearKYCFilters,
+    setKYCSort,
+    resetKYCSort,
+    getUsersWithKYCFilters,
+    getKYCStats,
     // Bulk operations
     selectedUsers,
     setSelectedUsers,
@@ -100,6 +110,14 @@ const UsersPage = () => {
   const [activeFilters, setActiveFilters] = useState({});
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
   
+  // KYC filtering state
+  const [kycStatusFilter, setKycStatusFilter] = useState('all');
+  const [kycSubmissionDateRange, setKycSubmissionDateRange] = useState({ start: '', end: '' });
+  const [kycVerificationDateRange, setKycVerificationDateRange] = useState({ start: '', end: '' });
+  const [kycLastUpdatedRange, setKycLastUpdatedRange] = useState({ start: '', end: '' });
+  const [kycSortField, setKycSortField] = useState('createdAt');
+  const [kycSortDirection, setKycSortDirection] = useState('desc');
+  
   // Export state
   const [showExportModal, setShowExportModal] = useState(false);
   const [showExportHistory, setShowExportHistory] = useState(false);
@@ -127,6 +145,17 @@ const UsersPage = () => {
       ],
     },
     {
+      key: 'kycStatus',
+      label: 'KYC Status',
+      type: 'select',
+      options: [
+        { value: 'verified', label: 'Verified' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'not_started', label: 'Not Started' },
+      ],
+    },
+    {
       key: 'applicationStatus',
       label: 'Application Status',
       type: 'select',
@@ -151,6 +180,21 @@ const UsersPage = () => {
     {
       key: 'dateRange',
       label: 'Registration Date',
+      type: 'daterange',
+    },
+    {
+      key: 'kycSubmissionDateRange',
+      label: 'KYC Submission Date',
+      type: 'daterange',
+    },
+    {
+      key: 'kycVerificationDateRange',
+      label: 'KYC Verification Date',
+      type: 'daterange',
+    },
+    {
+      key: 'kycLastUpdatedRange',
+      label: 'KYC Last Updated',
       type: 'daterange',
     },
     {
@@ -272,6 +316,42 @@ const UsersPage = () => {
       ),
     },
     {
+      key: 'kycStatus',
+      title: 'KYC Status',
+      sortable: true,
+      filterable: true,
+      filterType: 'select',
+      filterOptions: [
+        { value: 'verified', label: 'Verified' },
+        { value: 'pending', label: 'Pending' },
+        { value: 'rejected', label: 'Rejected' },
+        { value: 'not_started', label: 'Not Started' },
+      ],
+      render: (value) => (
+        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+          value === 'verified' ? 'bg-green-100 text-green-800' :
+          value === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+          value === 'rejected' ? 'bg-red-100 text-red-800' :
+          value === 'not_started' ? 'bg-gray-100 text-gray-800' :
+          'bg-gray-100 text-gray-800'
+        }`}>
+          {value === 'verified' ? 'Verified' :
+           value === 'pending' ? 'Pending' :
+           value === 'rejected' ? 'Rejected' :
+           value === 'not_started' ? 'Not Started' :
+           'Unknown'}
+        </span>
+      ),
+    },
+    {
+      key: 'kycLastUpdated',
+      title: 'KYC Last Updated',
+      sortable: true,
+      filterable: true,
+      filterType: 'date',
+      render: (value) => value ? formatDate(value) : 'N/A',
+    },
+    {
       key: 'createdAt',
       title: 'Joined Date',
       sortable: true,
@@ -321,12 +401,21 @@ const UsersPage = () => {
       ...activeFilters,
     };
     
+    // Add KYC filters and sort if they're set
+    if (kycFilters && Object.keys(kycFilters).length > 0) {
+      params.kycFilters = kycFilters;
+    }
+    
+    if (kycSort && kycSort.field) {
+      params.kycSort = kycSort;
+    }
+    
     if (debouncedSearchQuery) {
       searchUsers(debouncedSearchQuery, params);
     } else {
       getUsers(params);
     }
-  }, [pagination.page, pagination.limit, statusFilter, activeFilters, debouncedSearchQuery, sortConfig]);
+  }, [pagination.page, pagination.limit, statusFilter, activeFilters, debouncedSearchQuery, sortConfig, kycFilters, kycSort]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -336,9 +425,58 @@ const UsersPage = () => {
 
   // Handle filter change
   const handleFilterChange = useCallback((newFilters) => {
+    // Handle KYC date range filters separately
+    const updatedKycSubmissionDateRange = {
+      start: newFilters.kycSubmissionDateRange?.start || '',
+      end: newFilters.kycSubmissionDateRange?.end || ''
+    };
+    const updatedKycVerificationDateRange = {
+      start: newFilters.kycVerificationDateRange?.start || '',
+      end: newFilters.kycVerificationDateRange?.end || ''
+    };
+    const updatedKycLastUpdatedRange = {
+      start: newFilters.kycLastUpdatedRange?.start || '',
+      end: newFilters.kycLastUpdatedRange?.end || ''
+    };
+    
+    setKycSubmissionDateRange(updatedKycSubmissionDateRange);
+    setKycVerificationDateRange(updatedKycVerificationDateRange);
+    setKycLastUpdatedRange(updatedKycLastUpdatedRange);
+    
+    // Update KYC status filter if present
+    if (newFilters.kycStatus) {
+      setKycStatusFilter(newFilters.kycStatus);
+    }
+    
     setActiveFilters(newFilters);
+    handleKYCFilterChange();
     setPagination({ ...pagination, page: 1 });
-  }, [pagination]);
+  }, [pagination, handleKYCFilterChange]);
+
+  // Handle KYC filter changes
+  const handleKYCFilterChange = useCallback(() => {
+    const kycFilters = {
+      ...(kycStatusFilter !== 'all' && { kycStatus: kycStatusFilter }),
+      ...(kycSubmissionDateRange.start && { kycSubmissionDateFrom: kycSubmissionDateRange.start }),
+      ...(kycSubmissionDateRange.end && { kycSubmissionDateTo: kycSubmissionDateRange.end }),
+      ...(kycVerificationDateRange.start && { kycVerificationDateFrom: kycVerificationDateRange.start }),
+      ...(kycVerificationDateRange.end && { kycVerificationDateTo: kycVerificationDateRange.end }),
+      ...(kycLastUpdatedRange.start && { kycLastUpdatedFrom: kycLastUpdatedRange.start }),
+      ...(kycLastUpdatedRange.end && { kycLastUpdatedTo: kycLastUpdatedRange.end }),
+    };
+    
+    setKYCFilters(kycFilters);
+    setPagination({ ...pagination, page: 1 });
+  }, [kycStatusFilter, kycSubmissionDateRange, kycVerificationDateRange, kycLastUpdatedRange, setKYCFilters, pagination]);
+
+  // Handle KYC sort change
+  const handleKYCSortChange = useCallback((field) => {
+    const newDirection = kycSortField === field && kycSortDirection === 'asc' ? 'desc' : 'asc';
+    setKycSortField(field);
+    setKycSortDirection(newDirection);
+    setKYCSort({ field, direction: newDirection });
+    setPagination({ ...pagination, page: 1 });
+  }, [kycSortField, kycSortDirection, setKYCSort, pagination]);
 
   // Handle sort change
   const handleSort = useCallback((field, direction) => {
@@ -681,6 +819,23 @@ const UsersPage = () => {
                   <option value="suspended">Suspended</option>
                 </select>
                 
+                <select
+                  id="kyc-status-filter"
+                  name="kyc-status-filter"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                  value={kycStatusFilter}
+                  onChange={(e) => {
+                    setKycStatusFilter(e.target.value);
+                    handleKYCFilterChange();
+                  }}
+                >
+                  <option value="all">All KYC Status</option>
+                  <option value="verified">Verified</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="not_started">Not Started</option>
+                </select>
+                
                 <button
                   type="button"
                   className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
@@ -950,7 +1105,14 @@ const UsersPage = () => {
           selectedRows={selectedUsers}
           onSelectionChange={setSelectedUsers}
           sortable={true}
-          onSort={handleSort}
+          onSort={(field, direction) => {
+            // Handle KYC columns separately
+            if (field === 'kycStatus' || field === 'kycLastUpdated') {
+              handleKYCSortChange(field);
+            } else {
+              handleSort(field, direction);
+            }
+          }}
           defaultSortField={sortConfig.field}
           defaultSortDirection={sortConfig.direction}
           filterable={true}

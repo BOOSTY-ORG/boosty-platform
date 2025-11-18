@@ -1,19 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import Modal from '../common/Modal';
+import DocumentPreview from './DocumentPreview.jsx';
 import { usersAPI } from '../../api/users';
+import { useRealtimeUserKYC } from '../../utils/realtimeUserKYC.js';
+import { formatStatus, formatDate } from '../../utils/formatters.js';
 
 /**
  * BulkKYCModal component for performing bulk KYC operations on users
  */
-const BulkKYCModal = ({ 
-  isOpen, 
-  onClose, 
-  userIds, 
-  onSuccess, 
-  onError 
+const BulkKYCModal = ({
+  isOpen,
+  onClose,
+  userIds,
+  onSuccess,
+  onError
 }) => {
   const [loading, setLoading] = useState(false);
+  const { kycDocuments, isConnected } = useRealtimeUserKYC(userIds[0]); // Use first user ID for real-time updates
   const [operation, setOperation] = useState('verify');
   const [reason, setReason] = useState('');
   const [documentTypes, setDocumentTypes] = useState([]);
@@ -22,6 +26,33 @@ const BulkKYCModal = ({
   const [selectedDocumentType, setSelectedDocumentType] = useState('');
   const [expiryDays, setExpiryDays] = useState('30');
   const [riskLevel, setRiskLevel] = useState('');
+  const [showDocumentPreview, setShowDocumentPreview] = useState(false);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [userDocuments, setUserDocuments] = useState({});
+  const [previewMode, setPreviewMode] = useState('single'); // 'single' or 'bulk'
+
+  // Fetch user documents when modal opens
+  useEffect(() => {
+    const fetchUserDocuments = async () => {
+      if (isOpen && userIds.length > 0) {
+        try {
+          const documentsByUser = {};
+          
+          // Fetch documents for each user
+          for (const userId of userIds) {
+            const response = await usersAPI.getUserKYC(userId);
+            documentsByUser[userId] = response.data?.documents || [];
+          }
+          
+          setUserDocuments(documentsByUser);
+        } catch (error) {
+          console.error('Error fetching user documents:', error);
+        }
+      }
+    };
+    
+    fetchUserDocuments();
+  }, [isOpen, userIds]);
 
   // Reset form when modal opens/closes
   useEffect(() => {
@@ -33,8 +64,27 @@ const BulkKYCModal = ({
       setExpiryDays('30');
       setRiskLevel('');
       setErrors({});
+      setShowDocumentPreview(false);
+      setSelectedDocument(null);
+      setPreviewMode('single');
     }
   }, [isOpen]);
+
+  const handleDocumentPreview = (userId, document) => {
+    setSelectedDocument(document);
+    setPreviewMode('single');
+    setShowDocumentPreview(true);
+  };
+
+  const handleBulkDocumentPreview = () => {
+    setPreviewMode('bulk');
+    setShowDocumentPreview(true);
+  };
+
+  const closeDocumentPreview = () => {
+    setShowDocumentPreview(false);
+    setSelectedDocument(null);
+  };
 
   const handleOperationChange = (value) => {
     setOperation(value);
@@ -117,6 +167,15 @@ const BulkKYCModal = ({
           
         default:
           throw new Error('Invalid operation');
+      }
+      
+      // Trigger real-time update for the first user in the list
+      if (userIds.length > 0) {
+        try {
+          await usersAPI.getUserKYC(userIds[0]);
+        } catch (error) {
+          console.error('Error refreshing KYC data:', error);
+        }
       }
       
       onSuccess && onSuccess({
@@ -382,6 +441,84 @@ const BulkKYCModal = ({
           </label>
         </div>
         
+        {/* Document Preview Section */}
+        <div className="border-t border-gray-200 pt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Document Preview</h3>
+            <div className="flex items-center space-x-2">
+              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                isConnected ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+              }`}>
+                {isConnected ? 'Connected' : 'Offline'}
+              </span>
+              {Object.keys(userDocuments).length > 0 && (
+                <button
+                  type="button"
+                  onClick={handleBulkDocumentPreview}
+                  className="text-sm text-blue-600 hover:text-blue-500 font-medium"
+                >
+                  View All Documents ({Object.values(userDocuments).flat().length})
+                </button>
+              )}
+            </div>
+          </div>
+          
+          {Object.keys(userDocuments).length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-lg">
+              <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <h3 className="mt-2 text-sm font-medium text-gray-900">No documents available</h3>
+              <p className="mt-1 text-sm text-gray-500">No KYC documents found for selected users</p>
+            </div>
+          ) : (
+            <div className="space-y-4 max-h-64 overflow-y-auto">
+              {Object.entries(userDocuments).map(([userId, documents]) => (
+                <div key={userId} className="border border-gray-200 rounded-lg p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-sm font-medium text-gray-900">User {userId}</h4>
+                    <span className="text-xs text-gray-500">{documents.length} document(s)</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {documents.slice(0, 4).map((doc) => (
+                      <div
+                        key={doc.id}
+                        onClick={() => handleDocumentPreview(userId, doc)}
+                        className="cursor-pointer group relative overflow-hidden rounded-md border border-gray-200 bg-gray-50 hover:border-blue-300 transition-colors"
+                      >
+                        {doc.fileType?.startsWith('image/') ? (
+                          <img
+                            src={doc.fileUrl}
+                            alt={doc.documentType}
+                            className="h-20 w-full object-cover group-hover:opacity-75 transition-opacity"
+                          />
+                        ) : (
+                          <div className="h-20 w-full flex items-center justify-center">
+                            <svg className="h-8 w-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 transition-opacity flex items-end">
+                          <div className="w-full bg-gradient-to-t from-black to-transparent p-1">
+                            <p className="text-xs text-white truncate">{doc.documentType}</p>
+                            <p className="text-xs text-gray-300">{formatStatus(doc.status)}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {documents.length > 4 && (
+                      <div className="flex items-center justify-center h-20 w-full border border-gray-200 rounded-md bg-gray-50">
+                        <span className="text-xs text-gray-500">+{documents.length - 4} more</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
         {/* Action Buttons */}
         <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
           <button
@@ -401,6 +538,18 @@ const BulkKYCModal = ({
           </button>
         </div>
       </form>
+      
+      {/* Document Preview Modal */}
+      {showDocumentPreview && (
+        <DocumentPreview
+          isOpen={showDocumentPreview}
+          onClose={closeDocumentPreview}
+          document={selectedDocument}
+          mode={previewMode}
+          documents={previewMode === 'bulk' ? Object.values(userDocuments).flat() : []}
+          userId={previewMode === 'single' ? selectedDocument?.userId : null}
+        />
+      )}
     </Modal>
   );
 };

@@ -1,17 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate, formatFileSize, formatStatus } from '../../utils/formatters.js';
 
-const DocumentPreview = ({ 
-  document, 
-  onClose, 
-  onVerify, 
-  onReject, 
+const DocumentPreview = ({
+  document,
+  onClose,
+  onVerify,
+  onReject,
   onRequestReupload,
+  onFlagForReview,
+  onRunAIAnalysis,
   showActions = true,
   aiAnalysis = null,
   verificationHistory = [],
   showMetadata = true,
-  allowBulkActions = false 
+  allowBulkActions = false,
+  onDownload,
+  onCompare,
+  relatedDocuments = []
 }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
@@ -291,7 +296,7 @@ const DocumentPreview = ({
   const renderAIAnalysis = () => (
     <div className="space-y-4">
       {aiAnalysis ? (
-        <>
+        <div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {aiAnalysis.authenticityScore && (
               <div>
@@ -318,18 +323,19 @@ const DocumentPreview = ({
                   </span>
                 </div>
               </div>
-            </div>
+            )}
 
-          {aiAnalysis.extractedData && (
-            <div>
-              <h4 className="text-sm font-medium text-gray-900 mb-2">Extracted Data</h4>
-              <div className="p-3 bg-gray-50 rounded-lg">
-                <pre className="text-xs text-gray-700 overflow-x-auto">
-                  {JSON.stringify(aiAnalysis.extractedData, null, 2)}
-                </pre>
+            {aiAnalysis.extractedData && (
+              <div>
+                <h4 className="text-sm font-medium text-gray-900 mb-2">Extracted Data</h4>
+                <div className="p-3 bg-gray-50 rounded-lg">
+                  <pre className="text-xs text-gray-700 overflow-x-auto">
+                    {JSON.stringify(aiAnalysis.extractedData, null, 2)}
+                  </pre>
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
 
           {aiAnalysis.flags && aiAnalysis.flags.length > 0 && (
             <div>
@@ -346,7 +352,7 @@ const DocumentPreview = ({
               </div>
             </div>
           )}
-        </>
+        </div>
       ) : (
         <div className="text-center py-8">
           <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -568,7 +574,7 @@ const DocumentPreview = ({
               {document.verificationStatus !== 'rejected' && (
                 <button
                   type="button"
-                  onClick={() => setActiveTab('metadata')}
+                  onClick={handleReject}
                   className="mt-3 w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
                 >
                   Reject Document

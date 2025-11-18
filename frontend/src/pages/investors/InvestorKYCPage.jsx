@@ -9,15 +9,23 @@ import { useRealtimeKYC, useDocumentEvents, useExpiryAlerts } from '../../utils/
 const InvestorKYCPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    currentInvestor, 
-    kycDocuments, 
-    isLoading, 
-    error, 
+  const {
+    currentInvestor,
+    kycDocuments,
+    isLoading,
+    error,
     getInvestorById,
     getInvestorKYC,
     uploadKYCDocument,
-    verifyKYCDocument
+    verifyKYCDocument,
+    rejectKYCDocument,
+    flagKYCDocument,
+    getDocumentHistory,
+    getDocumentAIAnalysis,
+    rerunAIAnalysis,
+    bulkVerifyDocuments,
+    bulkRejectDocuments,
+    compareDocuments
   } = useInvestor();
   
   const [activeTab, setActiveTab] = useState('documents');
@@ -45,6 +53,10 @@ const InvestorKYCPage = () => {
   const { kycDocuments: realtimeKYCDocuments, lastUpdate, isConnected } = useRealtimeKYC(id);
   const { events } = useDocumentEvents(id);
   const { alerts } = useExpiryAlerts(id);
+
+  // Calculate KYC completion progress
+  const [kycProgress, setKycProgress] = useState(0);
+  const [kycCompletionStatus, setKycCompletionStatus] = useState('incomplete');
 
   useEffect(() => {
     if (id) {
@@ -77,6 +89,30 @@ const InvestorKYCPage = () => {
       // If not, you might need to add this functionality
     }
   }, [realtimeKYCDocuments]);
+
+  // Calculate KYC progress and status
+  useEffect(() => {
+    if (kycDocuments && kycDocuments.length > 0) {
+      const totalDocuments = kycDocuments.length;
+      const verifiedDocuments = kycDocuments.filter(doc => doc.verificationStatus === 'verified').length;
+      const rejectedDocuments = kycDocuments.filter(doc => doc.verificationStatus === 'rejected').length;
+      const pendingDocuments = kycDocuments.filter(doc => doc.verificationStatus === 'pending').length;
+      
+      const progress = totalDocuments > 0 ? (verifiedDocuments / totalDocuments) * 100 : 0;
+      setKycProgress(Math.round(progress));
+      
+      // Determine completion status
+      if (rejectedDocuments > 0) {
+        setKycCompletionStatus('rejected');
+      } else if (pendingDocuments > 0) {
+        setKycCompletionStatus('pending');
+      } else if (verifiedDocuments === totalDocuments && totalDocuments > 0) {
+        setKycCompletionStatus('verified');
+      } else {
+        setKycCompletionStatus('incomplete');
+      }
+    }
+  }, [kycDocuments]);
 
   const loadKYCMetrics = async () => {
     setIsLoadingMetrics(true);
@@ -371,7 +407,7 @@ const InvestorKYCPage = () => {
             Manage Know Your Customer documents and verification status.
           </p>
         </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4">
+        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-4">
           <span className={`inline-flex px-3 py-2 text-sm font-semibold rounded-full ${
             currentInvestor.kycStatus === 'verified' ? 'bg-green-100 text-green-800' :
             currentInvestor.kycStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
@@ -380,6 +416,21 @@ const InvestorKYCPage = () => {
           }`}>
             KYC Status: {formatStatus(currentInvestor.kycStatus || 'not_submitted')}
           </span>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-600 mr-2">Progress:</span>
+            <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+              <div
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  kycCompletionStatus === 'verified' ? 'bg-green-600' :
+                  kycCompletionStatus === 'rejected' ? 'bg-red-600' :
+                  kycCompletionStatus === 'pending' ? 'bg-yellow-600' :
+                  'bg-blue-600'
+                }`}
+                style={{ width: `${kycProgress}%` }}
+              ></div>
+            </div>
+            <span className="text-sm font-medium text-gray-900">{kycProgress}%</span>
+          </div>
         </div>
       </div>
 

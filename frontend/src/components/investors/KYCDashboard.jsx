@@ -1,15 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { formatDate, formatStatus } from '../../utils/formatters.js';
+import { useRealtimeKYC } from '../../utils/realtimeKYC.js';
 
-const KYCDashboard = ({ 
-  kycMetrics, 
+const KYCDashboard = ({
+  kycMetrics,
   isLoading = false,
   onRefresh,
   dateRange,
-  onDateRangeChange 
+  onDateRangeChange,
+  investorId
 }) => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
   const [activeTab, setActiveTab] = useState('overview');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [documentTypeFilter, setDocumentTypeFilter] = useState('all');
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+  const [realtimeUpdates, setRealtimeUpdates] = useState([]);
+
+  // Real-time KYC updates
+  const { lastUpdate, isConnected } = useRealtimeKYC(investorId);
+
+  useEffect(() => {
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+  }, [isConnected]);
+
+  useEffect(() => {
+    if (lastUpdate) {
+      setRealtimeUpdates(prev => [
+        {
+          id: Date.now(),
+          type: 'kyc_update',
+          message: 'KYC data updated',
+          timestamp: lastUpdate
+        },
+        ...prev.slice(0, 9) // Keep last 10 updates
+      ]);
+    }
+  }, [lastUpdate]);
 
   useEffect(() => {
     if (dateRange) {
@@ -75,6 +102,63 @@ const KYCDashboard = ({
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
+      {/* KYC Progress Overview */}
+      <div className="bg-white shadow rounded-lg p-6 mb-6">
+        <h3 className="text-lg font-medium text-gray-900 mb-4">KYC Completion Progress</h3>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="text-center">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2m0 0l-2-2m6 0l-2 2m0 0l-2-2m2 6l2-2m0 0l-2 2m-2 6l2 2" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-green-600">
+                  {kycMetrics?.summary?.completionRate?.toFixed(1) || '0'}%
+                </span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-sm font-medium text-gray-900">Overall Completion</div>
+              <div className="text-xs text-gray-500">Across all investors</div>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-yellow-600">
+                  {kycMetrics?.summary?.pendingRate?.toFixed(1) || '0'}%
+                </span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-sm font-medium text-gray-900">Pending Review</div>
+              <div className="text-xs text-gray-500">Awaiting verification</div>
+            </div>
+          </div>
+          
+          <div className="text-center">
+            <div className="relative inline-flex items-center justify-center">
+              <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-red-600">
+                  {kycMetrics?.summary?.rejectionRate?.toFixed(1) || '0'}%
+                </span>
+              </div>
+            </div>
+            <div className="mt-2">
+              <div className="text-sm font-medium text-gray-900">Rejection Rate</div>
+              <div className="text-xs text-gray-500">Documents rejected</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Key Metrics */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <div className="bg-white overflow-hidden shadow rounded-lg">
@@ -402,6 +486,52 @@ const KYCDashboard = ({
 
   return (
     <div className="space-y-6">
+      {/* Connection Status and Real-time Updates */}
+      <div className="bg-white shadow rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className={`h-2 w-2 rounded-full mr-2 ${
+              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-400'
+            }`}></div>
+            <span className="text-sm text-gray-600">
+              {connectionStatus === 'connected' ? 'Real-time updates active' : 'Real-time updates disconnected'}
+            </span>
+          </div>
+          <div className="flex items-center">
+            <span className="text-sm text-gray-500 mr-2">Last update:</span>
+            <span className="text-sm font-medium text-gray-900">
+              {lastUpdate ? formatDate(lastUpdate) : 'Never'}
+            </span>
+          </div>
+        </div>
+        
+        {/* Real-time Updates */}
+        {realtimeUpdates.length > 0 && (
+          <div className="mt-4 border-t pt-4">
+            <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Real-time Updates</h4>
+            <div className="space-y-2 max-h-32 overflow-y-auto">
+              {realtimeUpdates.map((update) => (
+                <div key={update.id} className="flex items-center p-2 bg-blue-50 rounded">
+                  <div className="flex-shrink-0">
+                    <div className={`w-2 h-2 rounded-full ${
+                      update.type === 'kyc_update' ? 'bg-blue-500' :
+                      update.type === 'document_uploaded' ? 'bg-green-500' :
+                      update.type === 'document_verified' ? 'bg-green-600' :
+                      update.type === 'document_rejected' ? 'bg-red-500' :
+                      'bg-gray-500'
+                    }`}></div>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-gray-800">{update.message}</p>
+                    <p className="text-xs text-gray-500">{formatDate(update.timestamp)}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
@@ -413,6 +543,35 @@ const KYCDashboard = ({
           </p>
         </div>
         <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
+          {/* Status Filter */}
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          >
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="verified">Verified</option>
+            <option value="rejected">Rejected</option>
+          </select>
+
+          {/* Document Type Filter */}
+          <select
+            value={documentTypeFilter}
+            onChange={(e) => setDocumentTypeFilter(e.target.value)}
+            className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          >
+            <option value="all">All Document Types</option>
+            <option value="government_id">Government ID</option>
+            <option value="utility_bill">Utility Bill</option>
+            <option value="bank_statement">Bank Statement</option>
+            <option value="proof_of_income">Proof of Income</option>
+            <option value="property_document">Property Document</option>
+            <option value="passport">Passport</option>
+            <option value="drivers_license">Driver's License</option>
+            <option value="national_id">National ID</option>
+          </select>
+
           {/* Time Range Selector */}
           <select
             value={selectedTimeRange}

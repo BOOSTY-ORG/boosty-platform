@@ -520,4 +520,166 @@ export const usersAPI = {
   getExportAnalytics: async (params = {}) => {
     return api.get('/metrics/users/export/analytics', { params });
   },
+
+  // User KYC operations
+  // Get user KYC documents
+  getUserKYC: async (id) => {
+    try {
+      const response = await api.get(`/metrics/users/${id}/kyc`);
+      return response;
+    } catch (error) {
+      console.error('Error fetching user KYC:', error);
+      throw new Error(`Failed to fetch user KYC: ${error.message || error}`);
+    }
+  },
+
+  // Upload KYC document
+  uploadUserKYCDocument: async (id, formData) => {
+    try {
+      const response = await api.post(`/metrics/users/${id}/kyc`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response;
+    } catch (error) {
+      console.error('Error uploading user KYC document:', error);
+      throw new Error(`Failed to upload user KYC document: ${error.message || error}`);
+    }
+  },
+
+  // Verify KYC document
+  verifyUserKYCDocument: async (id, documentId, verificationData = {}) => {
+    try {
+      const response = await api.put(`/metrics/users/${id}/kyc/${documentId}/verify`, verificationData);
+      return response;
+    } catch (error) {
+      console.error('Error verifying user KYC document:', error);
+      throw new Error(`Failed to verify user KYC document: ${error.message || error}`);
+    }
+  },
+
+  // Reject KYC document
+  rejectUserKYCDocument: async (id, documentId, rejectionData) => {
+    try {
+      const response = await api.put(`/metrics/users/${id}/kyc/${documentId}/reject`, rejectionData);
+      return response;
+    } catch (error) {
+      console.error('Error rejecting user KYC document:', error);
+      throw new Error(`Failed to reject user KYC document: ${error.message || error}`);
+    }
+  },
+
+  // Flag KYC document for review
+  flagUserKYCDocument: async (id, documentId, flagData) => {
+    try {
+      const response = await api.put(`/metrics/users/${id}/kyc/${documentId}/flag`, flagData);
+      return response;
+    } catch (error) {
+      console.error('Error flagging user KYC document:', error);
+      throw new Error(`Failed to flag user KYC document: ${error.message || error}`);
+    }
+  },
+
+  // Get document verification history
+  getUserDocumentHistory: async (id, documentId) => {
+    return api.get(`/metrics/users/${id}/kyc/${documentId}/history`);
+  },
+
+  // Compare two documents
+  compareUserDocuments: async (id, documentIds) => {
+    return api.post(`/metrics/users/${id}/kyc/compare`, { documentIds });
+  },
+
+  // Get KYC metrics and analytics
+  getUserKYCMetrics: async (params = {}) => {
+    return api.get('/metrics/users/kyc', { params });
+  },
+
+  // Get KYC performance report
+  getUserKYCPerformanceReport: async (params = {}) => {
+    return api.get('/metrics/users/kyc/performance', { params });
+  },
+
+  // Get KYC analytics
+  getUserKYCAnalytics: async (params = {}) => {
+    return api.get('/metrics/users/kyc/analytics', { params });
+  },
+
+  // Get documents expiring soon
+  getUserExpiringDocuments: async (days = 30) => {
+    return api.get('/metrics/users/kyc/expiring', { params: { days } });
+  },
+
+  // Get documents with flags
+  getUserFlaggedDocuments: async (params = {}) => {
+    return api.get('/metrics/users/kyc/flagged', { params });
+  },
+
+  // Bulk verify documents
+  bulkVerifyUserDocuments: async (id, documentIds, verificationData = {}) => {
+    return api.post(`/metrics/users/${id}/kyc/bulk-verify`, {
+      documentIds,
+      ...verificationData
+    });
+  },
+
+  // Bulk reject documents
+  bulkRejectUserDocuments: async (id, documentIds, rejectionData) => {
+    return api.post(`/metrics/users/${id}/kyc/bulk-reject`, {
+      documentIds,
+      ...rejectionData
+    });
+  },
+
+  // Get document AI analysis
+  getUserDocumentAIAnalysis: async (id, documentId) => {
+    return api.get(`/metrics/users/${id}/kyc/${documentId}/ai-analysis`);
+  },
+
+  // Re-run AI analysis on document
+  rerunUserDocumentAIAnalysis: async (id, documentId) => {
+    return api.post(`/metrics/users/${id}/kyc/${documentId}/rerun-analysis`);
+  },
+
+  // Get document type validation rules
+  getUserDocumentTypeRules: async (documentType) => {
+    return api.get(`/metrics/users/kyc/document-rules/${documentType}`);
+  },
+
+  // Validate document against type rules
+  validateUserDocument: async (id, documentId, documentType) => {
+    return api.post(`/metrics/users/${id}/kyc/${documentId}/validate`, { documentType });
+  },
+
+  // KYC filtering and sorting
+  // Get users with KYC filters
+  getUsersWithKYCFilters: async (params = {}) => {
+    return api.get('/metrics/users/kyc/filtered', { params });
+  },
+
+  // Get KYC statistics
+  getKYCStats: async (params = {}) => {
+    return api.get('/metrics/users/kyc/stats', { params });
+  },
+
+  // Get KYC status distribution
+  getKYCStatusDistribution: async (params = {}) => {
+    return api.get('/metrics/users/kyc/status-distribution', { params });
+  },
+
+  // Get KYC verification trends
+  getKYCVerificationTrends: async (params = {}) => {
+    return api.get('/metrics/users/kyc/verification-trends', { params });
+  },
+
+  // Get KYC completion rate
+  getKYCCompletionRate: async (params = {}) => {
+    return api.get('/metrics/users/kyc/completion-rate', { params });
+  },
+
+  // Get KYC rejection reasons
+  getKYCRejectionReasons: async (params = {}) => {
+    return api.get('/metrics/users/kyc/rejection-reasons', { params });
+  },
 };
