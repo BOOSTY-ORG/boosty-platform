@@ -62,4 +62,4 @@ router.use('/transactions', transactionRoutes);
 router.use('/kyc', kycRoutes);
 router.use('/reports', reportingRoutes);
 
-module.exports = router;
+export default router;

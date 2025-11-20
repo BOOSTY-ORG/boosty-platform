@@ -130,3 +130,11 @@ config/local.json
 *.njsproj
 *.sln
 *.sw?
+
+# KiloCode configuration
+.kilocode
+.kilocode/
+.kilocode/rules
+.kilocode.md
+rules/
+rules

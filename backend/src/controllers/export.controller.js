@@ -6,7 +6,7 @@ import ScheduledExport from '../models/scheduledExport.model.js';
 import { exportUserData, getFileInfo, deleteExportFile } from '../utils/export.util.js';
 import { formatSuccessResponse, formatErrorResponse, formatPaginatedResponse } from '../utils/metrics/responseFormatter.util.js';
 import { buildPagination, buildPaginationMeta } from '../utils/metrics/pagination.util.js';
-import dbErrorHandler from '../helpers/dbErrorHandler.js';
+import { getErrorMessage } from '../helpers/dbErrorHandler.js';
 
 // Create a new export
 const createExport = async (req, res) => {
@@ -380,12 +380,13 @@ const getContentType = (format) => {
   return contentTypes[format.toLowerCase()] || 'application/octet-stream';
 };
 
-export default {
+export {
   createExport,
   getExportStatus,
   downloadExport,
   cancelExport,
   getExportHistory,
   deleteExport,
-  getExportAnalytics
+  getExportAnalytics,
+  processExport
 };

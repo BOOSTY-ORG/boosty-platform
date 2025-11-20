@@ -134,7 +134,7 @@ const remove = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   list,
   create,
   userByID,

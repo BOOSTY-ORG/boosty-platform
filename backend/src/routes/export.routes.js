@@ -1,8 +1,8 @@
-const express = require('express');
-const authCtrl = require('../controllers/auth.controller.js');
-const exportCtrl = require('../controllers/export.controller.js');
-const exportTemplateCtrl = require('../controllers/exportTemplate.controller.js');
-const scheduledExportCtrl = require('../controllers/scheduledExport.controller.js');
+import express from 'express';
+import authCtrl from '../controllers/auth.controller.js';
+import exportCtrl from '../controllers/export.controller.js';
+import exportTemplateCtrl from '../controllers/exportTemplate.controller.js';
+import scheduledExportCtrl from '../controllers/scheduledExport.controller.js';
 
 const router = express.Router();
 
@@ -73,4 +73,4 @@ router.route('/api/scheduled-exports/:scheduleId/run')
 router.route('/api/scheduled-exports/:scheduleId/history')
   .get(authCtrl.requireSignin, scheduledExportCtrl.getScheduledExportHistory);
 
-module.exports = router;
+export default router;

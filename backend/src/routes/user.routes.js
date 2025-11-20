@@ -23,4 +23,4 @@ router
 // Load user
 router.param("userId", userCtrl.userByID);
 
-module.exports = router;
+export default router;

@@ -5,6 +5,8 @@ import express from "express";
 import exportScheduler from "./services/exportScheduler.service.js";
 
 dotenv.config();
+
+dotenv.config();
 const port = process.env.PORT || 7000;
 
 app.use(cors());

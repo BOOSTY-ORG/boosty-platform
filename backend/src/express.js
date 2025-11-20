@@ -1,12 +1,12 @@
-const express = require("express");
+import express from "express";
 const cors = require("cors");
-const mongoose = require("mongoose");
-const userRoutes = require("./routes/user.routes.js");
-const authRoutes = require("./routes/auth.routes.js");
-const metricsRoutes = require("./routes/metrics.routes.js");
-const exportRoutes = require("./routes/export.routes.js");
-const cookieParser = require("cookie-parser");
-const path = require("path");
+import mongoose from "mongoose";
+import userRoutes from "./routes/user.routes.js";
+import authRoutes from "./routes/auth.routes.js";
+import metricsRoutes from "./routes/metrics.routes.js";
+import exportRoutes from "./routes/export.routes.js";
+import cookieParser from "cookie-parser";
+import path from "path";
 require("dotenv/config");
 
 // Since we're using CommonJS, we need to define __dirname manually
@@ -36,4 +36,4 @@ app.use("/metrics", metricsRoutes); // Mount metrics routes
 app.use("/", exportRoutes); // Mount export routes
 
 // ** export configured App **
-module.exports = app;
+export default app;
