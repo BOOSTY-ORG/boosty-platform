@@ -39,6 +39,8 @@ cp .env.example .env
 Update the following variables in your `.env` file:
 
 - `PORT`: Server port (default: 7000)
+- `NODE_ENV`: Environment mode (development/production)
+- `APP_VERSION`: Application version used in API responses (default: 1.0.0)
 - `DATABASE_URL`: MongoDB connection string
 - `JWT_SECRET`: Secret key for JWT token generation
 - `JWT_EXPIRE`: JWT token expiration time
@@ -46,7 +48,14 @@ Update the following variables in your `.env` file:
 - `EMAIL_PORT`: SMTP server port
 - `EMAIL_USER`: SMTP username
 - `EMAIL_PASS`: SMTP password
+- `API_URL`: Base URL for API testing scripts (default: http://localhost:7000)
 - `CORS_ORIGIN`: Allowed CORS origins
+
+### Important Notes
+
+- The `APP_VERSION` variable is included in API responses to help with version tracking and compatibility checks
+- The `API_URL` variable is used by testing scripts to connect to the running API instance
+- Always change the `JWT_SECRET` to a secure value in production environments
 
 ## Running the Application
 
