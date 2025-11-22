@@ -3,7 +3,7 @@ import api from './index.js';
 export const authAPI = {
   // Login user
   login: async (credentials) => {
-    return api.post('/auth/login', credentials);
+    return api.post('/auth/signin', credentials);
   },
 
   // Register new user
@@ -13,7 +13,7 @@ export const authAPI = {
 
   // Logout user
   logout: async () => {
-    return api.post('/auth/logout');
+    return api.get('/auth/signout');
   },
 
   // Refresh token
