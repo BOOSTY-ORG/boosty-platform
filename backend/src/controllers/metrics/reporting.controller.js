@@ -6,11 +6,10 @@ import Investment from "../../models/metrics/investment.model.js";
 import KYCDocument from "../../models/metrics/kycDocument.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
-import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
 
 export const generateFinancialReport = async (req, res) => {
   try {
-    const { startDate, endDate, format = 'json' } = req.query;
+    const { format = 'json' } = req.query;
     const { startDate: parsedStart, endDate: parsedEnd } = parseDateRange(req.query);
     
     // Get financial metrics
@@ -64,9 +63,9 @@ export const generateFinancialReport = async (req, res) => {
         }},
         { $group: { _id: null, total: { $sum: "$amount" } } }
       ]),
-      getMonthlyFinancials(parsedStart, parsedEnd),
-      getInvestorReturns(parsedStart, parsedEnd),
-      getPaymentMethodBreakdown(parsedStart, parsedEnd)
+      getMonthlyFinancials(),
+      getInvestorReturns(),
+      getPaymentMethodBreakdown()
     ]);
     
     // Calculate financial ratios
@@ -110,7 +109,7 @@ export const generateFinancialReport = async (req, res) => {
 
 export const generateOperationalReport = async (req, res) => {
   try {
-    const { startDate, endDate, format = 'json' } = req.query;
+    const { format = 'json' } = req.query;
     const { startDate: parsedStart, endDate: parsedEnd } = parseDateRange(req.query);
     
     // Get operational metrics
@@ -123,13 +122,13 @@ export const generateOperationalReport = async (req, res) => {
       systemPerformance,
       regionalBreakdown
     ] = await Promise.all([
-      getUserOperationalMetrics(parsedStart, parsedEnd),
-      getApplicationOperationalMetrics(parsedStart, parsedEnd),
-      getKYCOperationalMetrics(parsedStart, parsedEnd),
-      getInvestorOperationalMetrics(parsedStart, parsedEnd),
-      getTransactionOperationalMetrics(parsedStart, parsedEnd),
-      getSystemPerformanceMetrics(parsedStart, parsedEnd),
-      getRegionalBreakdown(parsedStart, parsedEnd)
+      getUserOperationalMetrics(),
+      getApplicationOperationalMetrics(),
+      getKYCOperationalMetrics(),
+      getInvestorOperationalMetrics(),
+      getTransactionOperationalMetrics(),
+      getSystemPerformanceMetrics(),
+      getRegionalBreakdown()
     ]);
     
     const report = {
@@ -174,7 +173,7 @@ export const generateOperationalReport = async (req, res) => {
 
 export const generateComplianceReport = async (req, res) => {
   try {
-    const { startDate, endDate, format = 'json' } = req.query;
+    const { format = 'json' } = req.query;
     const { startDate: parsedStart, endDate: parsedEnd } = parseDateRange(req.query);
     
     // Get compliance metrics
@@ -186,12 +185,12 @@ export const generateComplianceReport = async (req, res) => {
       riskAssessment,
       regulatoryMetrics
     ] = await Promise.all([
-      getKYCComplianceMetrics(parsedStart, parsedEnd),
-      getTransactionComplianceMetrics(parsedStart, parsedEnd),
-      getInvestorComplianceMetrics(parsedStart, parsedEnd),
-      getAuditTrail(parsedStart, parsedEnd),
-      getRiskAssessment(parsedStart, parsedEnd),
-      getRegulatoryMetrics(parsedStart, parsedEnd)
+      getKYCComplianceMetrics(),
+      getTransactionComplianceMetrics(),
+      getInvestorComplianceMetrics(),
+      getAuditTrail(),
+      getRiskAssessment(),
+      getRegulatoryMetrics()
     ]);
     
     const report = {
@@ -236,7 +235,7 @@ export const generateComplianceReport = async (req, res) => {
 
 export const generatePerformanceReport = async (req, res) => {
   try {
-    const { startDate, endDate, format = 'json' } = req.query;
+    const { format = 'json' } = req.query;
     const { startDate: parsedStart, endDate: parsedEnd } = parseDateRange(req.query);
     
     // Get performance metrics
@@ -248,12 +247,12 @@ export const generatePerformanceReport = async (req, res) => {
       applicationPerformance,
       transactionPerformance
     ] = await Promise.all([
-      getInvestmentPerformanceMetrics(parsedStart, parsedEnd),
-      getInvestorPerformanceMetrics(parsedStart, parsedEnd),
-      getSystemPerformanceMetrics(parsedStart, parsedEnd),
-      getUserEngagementMetrics(parsedStart, parsedEnd),
-      getApplicationPerformanceMetrics(parsedStart, parsedEnd),
-      getTransactionPerformanceMetrics(parsedStart, parsedEnd)
+      getInvestmentPerformanceMetrics(),
+      getInvestorPerformanceMetrics(),
+      getSystemPerformanceMetrics(),
+      getUserEngagementMetrics(),
+      getApplicationPerformanceMetrics(),
+      getTransactionPerformanceMetrics()
     ]);
     
     const report = {
@@ -295,7 +294,7 @@ export const generatePerformanceReport = async (req, res) => {
 
 export const getReportList = async (req, res) => {
   try {
-    const { startDate, endDate } = parseDateRange(req.query);
+    const { startDate: _startDate, endDate: _endDate } = parseDateRange(req.query);
     
     // Get available reports
     const reports = [
@@ -341,8 +340,8 @@ export const getReportList = async (req, res) => {
       reports,
       filters: {
         dateRange: {
-          startDate: startDate.toISOString(),
-          endDate: endDate.toISOString()
+          startDate: _startDate.toISOString(),
+          endDate: _endDate.toISOString()
         }
       }
     };
@@ -356,7 +355,7 @@ export const getReportList = async (req, res) => {
 
 export const scheduleReport = async (req, res) => {
   try {
-    const { reportId, schedule, recipients, format = 'json' } = req.body;
+    const { reportId, schedule, format = 'json' } = req.body;
     
     // Validate report exists
     const validReports = ['financial', 'operational', 'compliance', 'performance'];
@@ -381,7 +380,6 @@ export const scheduleReport = async (req, res) => {
       id: generateReportId(),
       reportId,
       schedule,
-      recipients,
       format,
       createdAt: new Date(),
       nextRun: calculateNextRun(schedule),
@@ -401,12 +399,11 @@ export const scheduleReport = async (req, res) => {
 };
 
 // Helper functions
-const getMonthlyFinancials = async (startDate, endDate) => {
+const getMonthlyFinancials = async () => {
   return Transaction.aggregate([
     {
       $match: {
-        status: 'completed',
-        completedAt: { $gte: startDate, $lte: endDate }
+        status: 'completed'
       }
     },
     {
@@ -424,7 +421,7 @@ const getMonthlyFinancials = async (startDate, endDate) => {
   ]);
 };
 
-const getInvestorReturns = async (startDate, endDate) => {
+const getInvestorReturns = async () => {
   return Investor.aggregate([
     {
       $match: {
@@ -443,12 +440,11 @@ const getInvestorReturns = async (startDate, endDate) => {
   ]);
 };
 
-const getPaymentMethodBreakdown = async (startDate, endDate) => {
+const getPaymentMethodBreakdown = async () => {
   return Transaction.aggregate([
     {
       $match: {
-        status: 'completed',
-        completedAt: { $gte: startDate, $lte: endDate }
+        status: 'completed'
       }
     },
     {
@@ -462,40 +458,40 @@ const getPaymentMethodBreakdown = async (startDate, endDate) => {
   ]);
 };
 
-const getUserOperationalMetrics = async (startDate, endDate) => {
+const getUserOperationalMetrics = async () => {
   const [totalUsers, activeUsers, newUsers] = await Promise.all([
-    User.countDocuments({ createdAt: { $lte: endDate } }),
-    User.countDocuments({ 
+    User.countDocuments(),
+    User.countDocuments({
       lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    User.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } })
+    User.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } })
   ]);
   
   return { totalUsers, activeUsers, newUsers };
 };
 
-const getApplicationOperationalMetrics = async (startDate, endDate) => {
+const getApplicationOperationalMetrics = async () => {
   const [totalApplications, approvedApplications, completedInstallations] = await Promise.all([
-    SolarApplication.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    SolarApplication.countDocuments({
       applicationStatus: 'approved',
-      approvedAt: { $gte: startDate, $lte: endDate }
+      approvedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({
       applicationStatus: 'installed',
-      installedAt: { $gte: startDate, $lte: endDate }
+      installedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
   return { totalApplications, approvedApplications, completedInstallations };
 };
 
-const getKYCOperationalMetrics = async (startDate, endDate) => {
+const getKYCOperationalMetrics = async () => {
   const [totalDocuments, verifiedDocuments] = await Promise.all([
-    KYCDocument.countDocuments({ uploadedAt: { $gte: startDate, $lte: endDate } }),
-    KYCDocument.countDocuments({ 
+    KYCDocument.countDocuments({ uploadedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    KYCDocument.countDocuments({
       verificationStatus: 'verified',
-      reviewedAt: { $gte: startDate, $lte: endDate }
+      reviewedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -504,24 +500,24 @@ const getKYCOperationalMetrics = async (startDate, endDate) => {
   return { totalDocuments, verifiedDocuments, complianceRate };
 };
 
-const getInvestorOperationalMetrics = async (startDate, endDate) => {
+const getInvestorOperationalMetrics = async () => {
   const [totalInvestors, activeInvestors] = await Promise.all([
-    Investor.countDocuments({ createdAt: { $lte: endDate } }),
+    Investor.countDocuments(),
     Investor.countDocuments({ isActive: true })
   ]);
   
   return { totalInvestors, activeInvestors };
 };
 
-const getTransactionOperationalMetrics = async (startDate, endDate) => {
-  const totalTransactions = await Transaction.countDocuments({ 
-    createdAt: { $gte: startDate, $lte: endDate } 
+const getTransactionOperationalMetrics = async () => {
+  const totalTransactions = await Transaction.countDocuments({
+    createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
   });
   
   return { totalTransactions };
 };
 
-const getSystemPerformanceMetrics = async (startDate, endDate) => {
+const getSystemPerformanceMetrics = async () => {
   // Mock system performance metrics
   return {
     uptime: 99.9,
@@ -531,9 +527,9 @@ const getSystemPerformanceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getRegionalBreakdown = async (startDate, endDate) => {
+const getRegionalBreakdown = async () => {
   return SolarApplication.aggregate([
-    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+    { $match: { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
     {
       $group: {
         _id: "$personalInfo.state",
@@ -544,12 +540,12 @@ const getRegionalBreakdown = async (startDate, endDate) => {
   ]);
 };
 
-const getKYCComplianceMetrics = async (startDate, endDate) => {
+const getKYCComplianceMetrics = async () => {
   const [totalDocuments, verifiedDocuments] = await Promise.all([
-    KYCDocument.countDocuments({ uploadedAt: { $gte: startDate, $lte: endDate } }),
-    KYCDocument.countDocuments({ 
+    KYCDocument.countDocuments({ uploadedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    KYCDocument.countDocuments({
       verificationStatus: 'verified',
-      reviewedAt: { $gte: startDate, $lte: endDate }
+      reviewedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -564,12 +560,12 @@ const getKYCComplianceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getTransactionComplianceMetrics = async (startDate, endDate) => {
+const getTransactionComplianceMetrics = async () => {
   const [totalTransactions, compliantTransactions] = await Promise.all([
-    Transaction.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-    Transaction.countDocuments({ 
+    Transaction.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    Transaction.countDocuments({
       status: 'completed',
-      completedAt: { $gte: startDate, $lte: endDate }
+      completedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -585,9 +581,9 @@ const getTransactionComplianceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getInvestorComplianceMetrics = async (startDate, endDate) => {
+const getInvestorComplianceMetrics = async () => {
   const [totalInvestors, verifiedInvestors] = await Promise.all([
-    Investor.countDocuments({ createdAt: { $lte: endDate } }),
+    Investor.countDocuments(),
     Investor.countDocuments({ verificationStatus: 'verified' })
   ]);
   
@@ -602,7 +598,7 @@ const getInvestorComplianceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getAuditTrail = async (startDate, endDate) => {
+const getAuditTrail = async () => {
   // Mock audit trail data
   return {
     totalAudits: 150,
@@ -616,7 +612,7 @@ const getAuditTrail = async (startDate, endDate) => {
   };
 };
 
-const getRiskAssessment = async (startDate, endDate) => {
+const getRiskAssessment = async () => {
   // Mock risk assessment
   return {
     overallRiskLevel: 'low',
@@ -630,7 +626,7 @@ const getRiskAssessment = async (startDate, endDate) => {
   };
 };
 
-const getRegulatoryMetrics = async (startDate, endDate) => {
+const getRegulatoryMetrics = async () => {
   // Mock regulatory metrics
   return {
     regulatoryComplianceScore: 95,
@@ -639,13 +635,13 @@ const getRegulatoryMetrics = async (startDate, endDate) => {
   };
 };
 
-const getInvestmentPerformanceMetrics = async (startDate, endDate) => {
+const getInvestmentPerformanceMetrics = async () => {
   const investments = await Investment.find({
-    startDate: { $gte: startDate, $lte: endDate }
+    startDate: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
   });
   
   const totalReturns = investments.reduce((sum, inv) => sum + inv.actualReturn, 0);
-  const averageROI = investments.length > 0 ? 
+  const averageROI = investments.length > 0 ?
     investments.reduce((sum, inv) => sum + inv.currentROI, 0) / investments.length : 0;
   
   return {
@@ -655,7 +651,7 @@ const getInvestmentPerformanceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getInvestorPerformanceMetrics = async (startDate, endDate) => {
+const getInvestorPerformanceMetrics = async () => {
   // Mock investor performance metrics
   return {
     satisfactionScore: 4.2,
@@ -664,10 +660,10 @@ const getInvestorPerformanceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getUserEngagementMetrics = async (startDate, endDate) => {
+const getUserEngagementMetrics = async () => {
   const [totalUsers, activeUsers] = await Promise.all([
-    User.countDocuments({ createdAt: { $lte: endDate } }),
-    User.countDocuments({ 
+    User.countDocuments(),
+    User.countDocuments({
       lastLoginAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
@@ -681,12 +677,12 @@ const getUserEngagementMetrics = async (startDate, endDate) => {
   };
 };
 
-const getApplicationPerformanceMetrics = async (startDate, endDate) => {
+const getApplicationPerformanceMetrics = async () => {
   const [totalApplications, approvedApplications] = await Promise.all([
-    SolarApplication.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    SolarApplication.countDocuments({
       applicationStatus: 'approved',
-      approvedAt: { $gte: startDate, $lte: endDate }
+      approvedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -699,12 +695,12 @@ const getApplicationPerformanceMetrics = async (startDate, endDate) => {
   };
 };
 
-const getTransactionPerformanceMetrics = async (startDate, endDate) => {
+const getTransactionPerformanceMetrics = async () => {
   const [totalTransactions, completedTransactions] = await Promise.all([
-    Transaction.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-    Transaction.countDocuments({ 
+    Transaction.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    Transaction.countDocuments({
       status: 'completed',
-      completedAt: { $gte: startDate, $lte: endDate }
+      completedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -721,7 +717,7 @@ const calculateOverallComplianceScore = (scores) => {
   return Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
 };
 
-const getLastReportDate = async (reportType) => {
+const getLastReportDate = async () => {
   // Mock implementation - in reality, this would query a reports collection
   return new Date(Date.now() - 24 * 60 * 60 * 1000);
 };

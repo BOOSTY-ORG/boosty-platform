@@ -22,10 +22,10 @@ export const formatSuccessResponse = (data, req, meta = {}) => {
   }
 
   // Add filters info if present
-  if (req.queryBuilder) {
+  if (req && req.queryBuilder) {
     response.meta.filters = {
-      dateRange: req.queryBuilder.dateRange ? 
-        `${req.queryBuilder.dateRange.startDate.toISOString()} to ${req.queryBuilder.dateRange.endDate.toISOString()}` : 
+      dateRange: req.queryBuilder.dateRange ?
+        `${req.queryBuilder.dateRange.startDate.toISOString()} to ${req.queryBuilder.dateRange.endDate.toISOString()}` :
         undefined,
       status: req.queryBuilder.filters.status?.$in,
       region: req.queryBuilder.filters['personalInfo.state'],
@@ -43,7 +43,7 @@ export const formatSuccessResponse = (data, req, meta = {}) => {
   return response;
 };
 
-export const formatErrorResponse = (error, req, statusCode = 500) => {
+export const formatErrorResponse = (error) => {
   const response = {
     success: false,
     error: {
@@ -85,22 +85,44 @@ export const formatValidationErrors = (errors) => {
   }));
 };
 
-export const formatPaginatedResponse = (data, pagination, req, additionalMeta = {}) => {
-  return formatSuccessResponse({
+export const formatPaginatedResponse = (data, pagination, additionalMeta = {}) => {
+  return {
+    success: true,
     data,
-    pagination
-  }, req, additionalMeta);
+    pagination,
+    meta: {
+      timestamp: new Date().toISOString(),
+      requestId: generateRequestId(),
+      ...additionalMeta
+    }
+  };
 };
 
-export const formatMetricsResponse = (metrics, req, additionalMeta = {}) => {
-  return formatSuccessResponse(metrics, req, additionalMeta);
+export const formatMetricsResponse = (metrics, additionalMeta = {}) => {
+  return {
+    success: true,
+    data: metrics,
+    meta: {
+      timestamp: new Date().toISOString(),
+      requestId: generateRequestId(),
+      ...additionalMeta
+    }
+  };
 };
 
-export const formatAggregationResponse = (aggregations, req, additionalMeta = {}) => {
-  return formatSuccessResponse(aggregations, req, additionalMeta);
+export const formatAggregationResponse = (aggregations, additionalMeta = {}) => {
+  return {
+    success: true,
+    data: aggregations,
+    meta: {
+      timestamp: new Date().toISOString(),
+      requestId: generateRequestId(),
+      ...additionalMeta
+    }
+  };
 };
 
-export const formatFileResponse = (fileInfo, req) => {
+export const formatFileResponse = (fileInfo) => {
   return {
     success: true,
     data: {
@@ -118,7 +140,7 @@ export const formatFileResponse = (fileInfo, req) => {
   };
 };
 
-export const formatStreamResponse = (stream, filename, contentType = 'application/json') => {
+export const formatStreamResponse = (stream, filename, contentType) => {
   return {
     headers: {
       'Content-Type': contentType,
@@ -169,7 +191,7 @@ export const formatRateLimitResponse = (rateLimitData) => {
   };
 };
 
-export const formatBulkResponse = (results, req, operation = 'update') => {
+export const formatBulkResponse = (results, operation = 'update') => {
   const successful = results.filter(r => r.success).length;
   const failed = results.filter(r => !r.success).length;
   
@@ -207,7 +229,7 @@ export const formatExportResponse = (exportData, format, filename) => {
   };
 };
 
-export const formatSearchResponse = (results, searchQuery, pagination, req) => {
+export const formatSearchResponse = (results, searchQuery, pagination) => {
   return {
     success: true,
     data: {
@@ -222,7 +244,7 @@ export const formatSearchResponse = (results, searchQuery, pagination, req) => {
   };
 };
 
-export const formatAnalyticsResponse = (analytics, req, timeRange) => {
+export const formatAnalyticsResponse = (analytics, timeRange) => {
   return {
     success: true,
     data: analytics,
@@ -235,7 +257,7 @@ export const formatAnalyticsResponse = (analytics, req, timeRange) => {
   };
 };
 
-export const formatReportResponse = (report, req) => {
+export const formatReportResponse = (report) => {
   return {
     success: true,
     data: {
@@ -254,7 +276,7 @@ export const formatReportResponse = (report, req) => {
   };
 };
 
-export const formatNotificationResponse = (notification, req) => {
+export const formatNotificationResponse = (notification) => {
   return {
     success: true,
     data: {
@@ -307,7 +329,7 @@ export const formatError = (code, message, details = null) => {
   return error;
 };
 
-export const handleControllerError = (error, req, res, next) => {
+export const handleControllerError = (error, req, res) => {
   console.error('Controller Error:', error);
   
   if (error.code) {
@@ -339,7 +361,7 @@ export const handleControllerError = (error, req, res, next) => {
   }
   
   // Default error handling
-  return res.status(500).json(formatErrorResponse(error, req, 500));
+  return res.status(500).json(formatErrorResponse(error, req));
 };
 
 export default {

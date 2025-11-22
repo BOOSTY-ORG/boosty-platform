@@ -216,7 +216,7 @@ const resetRateLimit = (key) => {
   rateLimitService.reset(key);
 };
 
-module.exports = {
+export {
   rateLimit,
   adminRateLimit,
   standardRateLimit,

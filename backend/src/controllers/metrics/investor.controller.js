@@ -1,11 +1,10 @@
 import Investor from "../../models/metrics/investor.model.js";
 import Investment from "../../models/metrics/investment.model.js";
 import Transaction from "../../models/metrics/transaction.model.js";
-import User from "../../models/user.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
-import { buildQuery, getQueryBuilder } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
+import { buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getInvestorMetrics = async (req, res) => {
   try {
@@ -52,7 +51,7 @@ export const getInvestorMetrics = async (req, res) => {
     ]);
     
     // Calculate investment metrics
-    const investmentMetrics = await getInvestmentMetrics(query, startDate, endDate);
+    const investmentMetrics = await getInvestmentMetrics(query);
     
     // Calculate performance metrics
     const performanceMetrics = await getPerformanceMetrics(query, startDate, endDate);
@@ -185,7 +184,11 @@ export const getInvestorList = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
-    const paginationOptions = getPaginationOptions(req.query);
+    const paginationOptions = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      skip: (parseInt(req.query.page) || 1 - 1) * (parseInt(req.query.limit) || 10)
+    };
     
     // Use the query builder sort options if available
     const sortOptions = req.queryBuilder?.sort || { createdAt: -1 };
@@ -235,7 +238,11 @@ export const searchInvestors = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
-    const paginationOptions = getPaginationOptions(req.query);
+    const paginationOptions = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      skip: (parseInt(req.query.page) || 1 - 1) * (parseInt(req.query.limit) || 10)
+    };
     
     // Add search term to query if provided
     if (req.query.q) {
@@ -343,7 +350,7 @@ export const getInvestorPerformanceMetrics = async (req, res) => {
 };
 
 // Helper functions
-const getInvestmentMetrics = async (query, startDate, endDate) => {
+const getInvestmentMetrics = async (query) => {
   const investorIds = await Investor.find(query).distinct('_id');
   
   const [totalInvestments, totalReturns, activeInvestments] = await Promise.all([
@@ -505,7 +512,7 @@ export const createInvestor = async (req, res) => {
   try {
     const investorData = {
       ...req.body,
-      userId: req.user?.id || req.body.userId, // Use authenticated user ID or provided ID
+      userId: req.user?.id || req.body.userId,
       createdAt: new Date(),
       isActive: true,
       verificationStatus: 'pending'
@@ -1107,6 +1114,7 @@ export const updateExportTemplate = async (req, res) => {
     };
     
     // In a real implementation, update in database
+    console.log(`Updating export template with ID: ${templateId}`);
     const template = {
       _id: templateId,
       ...updateData
@@ -1123,6 +1131,7 @@ export const deleteExportTemplate = async (req, res) => {
     const { templateId } = req.params;
     
     // In a real implementation, delete from database
+    console.log(`Deleting export template with ID: ${templateId}`);
     
     return res.json(formatSuccessResponse({
       message: 'Export template deleted successfully'
@@ -1139,11 +1148,7 @@ export const exportInvestorsAdvanced = async (req, res) => {
       scope = 'all',
       investorIds,
       filters,
-      columns,
-      includeRelatedData,
-      csvOptions,
-      excelOptions,
-      pdfOptions
+      columns
     } = req.body;
     
     let query = {};
@@ -1171,7 +1176,7 @@ export const exportInvestorsAdvanced = async (req, res) => {
     
     // Handle different export formats
     if (format === 'csv') {
-      const csv = convertToCSV(formattedData, csvOptions);
+      const csv = convertToCSV(formattedData);
       res.setHeader('Content-Type', 'text/csv');
       res.setHeader('Content-Disposition', `attachment; filename="investors_export_${new Date().toISOString().split('T')[0]}.csv"`);
       return res.send(csv);
@@ -1199,7 +1204,11 @@ export const exportInvestorsAdvanced = async (req, res) => {
 export const getExportHistory = async (req, res) => {
   try {
     const { page = 1, limit = 10, status, format, dateFrom, dateTo } = req.query;
-    const paginationOptions = getPaginationOptions({ page, limit });
+    const paginationOptions = {
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
+      skip: (parseInt(page) || 1 - 1) * (parseInt(limit) || 10)
+    };
     
     // Mock export history - in a real implementation, this would come from a database
     const mockExports = [
@@ -1323,6 +1332,7 @@ export const cancelExport = async (req, res) => {
     const { exportId } = req.params;
     
     // In a real implementation, this would cancel the export job
+    console.log(`Cancelling export with ID: ${exportId}`);
     
     return res.json(formatSuccessResponse({
       message: 'Export cancelled successfully'
@@ -1402,6 +1412,7 @@ export const deleteScheduledExport = async (req, res) => {
     const { scheduleId } = req.params;
     
     // In a real implementation, this would delete from the database
+    console.log(`Deleting scheduled export with ID: ${scheduleId}`);
     
     return res.json(formatSuccessResponse({
       message: 'Scheduled export deleted successfully'
@@ -1431,8 +1442,6 @@ export const getExportQueueStatus = async (req, res) => {
 
 export const getExportAnalytics = async (req, res) => {
   try {
-    const { startDate, endDate } = parseDateRange(req.query);
-    
     // Mock analytics - in a real implementation, this would aggregate export data
     const analytics = {
       totalExports: 245,
@@ -1472,6 +1481,7 @@ export const getInvestorPerformanceAnalytics = async (req, res) => {
     const { period = '1y' } = req.query;
     
     // Mock performance analytics data
+    console.log(`Getting performance analytics for investor: ${investorId}, period: ${period}`);
     const analyticsData = {
       period,
       performance: {
@@ -1511,6 +1521,7 @@ export const getPortfolioAnalysis = async (req, res) => {
     const { period = '1y' } = req.query;
     
     // Mock portfolio analysis data
+    console.log(`Getting portfolio analysis for investor: ${investorId}, period: ${period}`);
     const portfolioData = {
       period,
       distribution: [
@@ -1560,6 +1571,7 @@ export const getRiskAssessment = async (req, res) => {
     const { period = '1y' } = req.query;
     
     // Mock risk assessment data
+    console.log(`Getting risk assessment for investor: ${investorId}, period: ${period}`);
     const riskData = {
       period,
       overview: {
@@ -1632,6 +1644,7 @@ export const getInvestmentTimeline = async (req, res) => {
     const { period = '1y' } = req.query;
     
     // Mock investment timeline data
+    console.log(`Getting investment timeline for investor: ${investorId}, period: ${period}`);
     const timelineData = {
       period,
       investments: [
@@ -1778,6 +1791,7 @@ export const getFinancialSummary = async (req, res) => {
     const { period = '1y' } = req.query;
     
     // Mock financial summary data
+    console.log(`Getting financial summary for investor: ${investorId}, period: ${period}`);
     const financialData = {
       period,
       overview: {
@@ -1834,8 +1848,7 @@ const convertToCSV = (data, options = {}) => {
   
   const {
     delimiter = ',',
-    includeHeaders = true,
-    encoding = 'utf-8'
+    includeHeaders = true
   } = options;
   
   const headers = Object.keys(data[0]);

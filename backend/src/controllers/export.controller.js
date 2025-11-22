@@ -2,11 +2,10 @@ import { v4 as uuidv4 } from 'uuid';
 import User from '../models/user.model.js';
 import ExportTemplate from '../models/exportTemplate.model.js';
 import ExportHistory from '../models/exportHistory.model.js';
-import ScheduledExport from '../models/scheduledExport.model.js';
 import { exportUserData, getFileInfo, deleteExportFile } from '../utils/export.util.js';
 import { formatSuccessResponse, formatErrorResponse, formatPaginatedResponse } from '../utils/metrics/responseFormatter.util.js';
 import { buildPagination, buildPaginationMeta } from '../utils/metrics/pagination.util.js';
-import { getErrorMessage } from '../helpers/dbErrorHandler.js';
+import { createReadStream } from 'node:fs';
 
 // Create a new export
 const createExport = async (req, res) => {
@@ -44,7 +43,7 @@ const createExport = async (req, res) => {
     }
     
     // Start export process asynchronously
-    processExport(exportHistory._id, req.auth._id).catch(error => {
+    processExport(exportHistory._id).catch(error => {
       console.error('Export processing failed:', error);
     });
     
@@ -60,7 +59,7 @@ const createExport = async (req, res) => {
 };
 
 // Process export asynchronously
-const processExport = async (exportHistoryId, userId) => {
+const processExport = async (exportHistoryId) => {
   try {
     const exportHistory = await ExportHistory.findById(exportHistoryId);
     if (!exportHistory) {
@@ -194,7 +193,7 @@ const downloadExport = async (req, res) => {
     res.setHeader('Content-Length', fileInfo.size);
     
     // Stream file
-    const fileStream = require('fs').createReadStream(fileInfo.path);
+    const fileStream = createReadStream(fileInfo.path);
     fileStream.pipe(res);
     
     fileStream.on('error', (error) => {
@@ -328,15 +327,15 @@ const getExportAnalytics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
     
-    const dateRange = {};
+    const _dateRange = {};
     if (startDate) {
-      dateRange.startDate = new Date(startDate);
+      _dateRange.startDate = new Date(startDate);
     }
     if (endDate) {
-      dateRange.endDate = new Date(endDate);
+      _dateRange.endDate = new Date(endDate);
     }
     
-    const statistics = await ExportHistory.getStatistics(req.auth._id, dateRange);
+    const statistics = await ExportHistory.getStatistics(req.auth._id, _dateRange);
     
     // Get additional analytics
     const totalExports = await ExportHistory.countDocuments({ createdBy: req.auth._id });

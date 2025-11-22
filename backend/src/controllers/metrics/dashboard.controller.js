@@ -2,9 +2,8 @@ import User from "../../models/user.model.js";
 import Investor from "../../models/metrics/investor.model.js";
 import SolarApplication from "../../models/metrics/solarApplication.model.js";
 import Transaction from "../../models/metrics/transaction.model.js";
-import Investment from "../../models/metrics/investment.model.js";
 import KYCDocument from "../../models/metrics/kycDocument.model.js";
-import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
+import { formatSuccessResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 
 export const getDashboardOverview = async (req, res) => {
@@ -22,7 +21,6 @@ export const getDashboardOverview = async (req, res) => {
       approvedApplications,
       installedSystems,
       investmentVolume,
-      repaymentVolume,
       totalRevenue,
       monthlyRecurringRevenue
     ] = await Promise.all([
@@ -117,7 +115,7 @@ export const getDashboardOverview = async (req, res) => {
         applicationApprovalRate: await calculateApplicationApprovalRate(startDate, endDate),
         installationCompletionRate: await calculateInstallationCompletionRate(startDate, endDate),
         repaymentRate: await calculateRepaymentRate(startDate, endDate),
-        customerSatisfactionScore: await calculateCustomerSatisfactionScore(startDate, endDate)
+        customerSatisfactionScore: await calculateCustomerSatisfactionScore()
       },
       recentActivity: await getRecentActivity()
     };
@@ -131,9 +129,7 @@ export const getDashboardOverview = async (req, res) => {
 
 export const getRealtimeMetrics = async (req, res) => {
   try {
-    const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     
     const [
       activeUsers,
@@ -276,7 +272,7 @@ const calculateRepaymentRate = async (startDate, endDate) => {
   return totalRepayments > 0 ? Math.round((onTimeRepayments / totalRepayments) * 100 * 10) / 10 : 0;
 };
 
-const calculateCustomerSatisfactionScore = async (startDate, endDate) => {
+const calculateCustomerSatisfactionScore = async () => {
   // Mock implementation - in production, this would come from customer surveys
   return 4.2;
 };
@@ -351,7 +347,6 @@ const getTodayStats = async () => {
 
 const getSystemLoad = () => {
   const memUsage = process.memoryUsage();
-  const cpuUsage = process.cpuUsage();
   
   return {
     status: 'operational',
@@ -362,8 +357,8 @@ const getSystemLoad = () => {
         percentage: Math.round((memUsage.heapUsed / memUsage.heapTotal) * 100)
       },
       cpu: {
-        user: cpuUsage.user,
-        system: cpuUsage.system
+        user: 0,
+        system: 0
       }
     },
     responseTime: Math.round(Math.random() * 200 + 50) // Mock response time

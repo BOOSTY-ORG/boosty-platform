@@ -1,5 +1,5 @@
-const jwt = require("jsonwebtoken");
-const User = require("../../models/user.model.js");
+import jwt from "jsonwebtoken";
+import User from "../../models/user.model.js";
 
 const requireMetricsAuth = async (req, res, next) => {
   try {
@@ -90,7 +90,7 @@ const requireOwnershipOrAdmin = (resourceField = 'userId') => {
   };
 };
 
-module.exports = {
+export {
   requireMetricsAuth,
   requireMetricsRole,
   requireAdminRole,

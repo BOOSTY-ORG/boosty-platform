@@ -1,11 +1,10 @@
-const mongoose = require("mongoose");
-const User = require("../../models/user.model.js");
-const Investor = require("../../models/metrics/investor.model.js");
-const SolarApplication = require("../../models/metrics/solarApplication.model.js");
-const Transaction = require("../../models/metrics/transaction.model.js");
-const Investment = require("../../models/metrics/investment.model.js");
-const KYCDocument = require("../../models/metrics/kycDocument.model.js");
-const bcrypt = require("bcrypt");
+import User from "../../models/user.model.js";
+import Investor from "../../models/metrics/investor.model.js";
+import SolarApplication from "../../models/metrics/solarApplication.model.js";
+import Transaction from "../../models/metrics/transaction.model.js";
+import Investment from "../../models/metrics/investment.model.js";
+import KYCDocument from "../../models/metrics/kycDocument.model.js";
+import bcrypt from "bcrypt";
 
 // Configuration for mock data generation
 const MOCK_CONFIG = {
@@ -197,7 +196,6 @@ const generateSolarApplications = async (userIds) => {
 const generateTransactions = async (userIds, investorIds, applicationIds) => {
   const transactions = [];
   const types = ['investment', 'repayment', 'fee', 'refund', 'penalty'];
-  const entities = ['investor', 'user', 'system'];
   const paymentMethods = ['bank_transfer', 'card', 'wallet', 'auto_debit'];
   const statuses = ['pending', 'processing', 'completed', 'failed', 'cancelled'];
   
@@ -205,9 +203,9 @@ const generateTransactions = async (userIds, investorIds, applicationIds) => {
     const type = getRandomElement(types);
     const status = getRandomElement(statuses);
     const createdAt = getRandomDate(MOCK_CONFIG.dateRange.start, MOCK_CONFIG.dateRange.end);
-    const processedAt = status !== 'pending' ? 
+    const processedAt = status !== 'pending' ?
       getRandomDate(createdAt, MOCK_CONFIG.dateRange.end) : null;
-    const completedAt = status === 'completed' ? 
+    const completedAt = status === 'completed' ?
       getRandomDate(processedAt || createdAt, MOCK_CONFIG.dateRange.end) : null;
     
     let fromEntity, toEntity, fromEntityId, toEntityId;
@@ -617,7 +615,7 @@ const generateTestInvestor = async (userId) => {
   return await Investor.create(testInvestor);
 };
 
-module.exports = {
+export default {
   generateMockData,
   generateTestUser,
   generateTestInvestor,

@@ -5,7 +5,7 @@ import Transaction from "../../models/metrics/transaction.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getUserMetrics = async (req, res) => {
   try {
@@ -32,11 +32,11 @@ export const getUserMetrics = async (req, res) => {
         ...query, 
         createdAt: { $gte: startDate, $lte: endDate } 
       }),
-      getUserActivityStats(startDate, endDate),
-      getUserApplicationStats(startDate, endDate),
-      getUserKYCStats(startDate, endDate),
-      getUserTransactionStats(startDate, endDate),
-      getUserRegionalDistribution(startDate, endDate)
+      getUserActivityStats(),
+      getUserApplicationStats(),
+      getUserKYCStats(),
+      getUserTransactionStats(),
+      getUserRegionalDistribution()
     ]);
     
     // Calculate growth metrics
@@ -66,7 +66,7 @@ export const getUserMetrics = async (req, res) => {
       kycStatus: userKYCStatus,
       transactions: userTransactions,
       regionalDistribution,
-      trends: await getUserTrends(startDate, endDate)
+      trends: await getUserTrends()
     };
     
     return res.json(formatSuccessResponse(response, req));
@@ -165,7 +165,11 @@ export const getUserList = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
-    const paginationOptions = getPaginationOptions(req.query);
+    const paginationOptions = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      skip: (parseInt(req.query.page) || 1 - 1) * (parseInt(req.query.limit) || 10)
+    };
     
     const users = await User.find(query)
       .sort({ createdAt: -1 })
@@ -217,9 +221,7 @@ export const getUserList = async (req, res) => {
 export const getUserActivityMetrics = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
-    const query = buildQuery(req, { startDate, endDate });
-    
-    const activityMetrics = await getUserActivityStats(startDate, endDate);
+    const activityMetrics = await getUserActivityStats();
     
     // Get daily activity patterns
     const dailyActivity = await User.aggregate([
@@ -258,7 +260,7 @@ export const getUserActivityMetrics = async (req, res) => {
     ]);
     
     // Get user engagement metrics
-    const engagementMetrics = await getUserEngagementMetrics(startDate, endDate);
+    const engagementMetrics = await getUserEngagementMetrics();
     
     const response = {
       ...activityMetrics,
@@ -281,7 +283,7 @@ export const getUserActivityMetrics = async (req, res) => {
 };
 
 // Helper functions
-const getUserActivityStats = async (startDate, endDate) => {
+const getUserActivityStats = async () => {
   const now = new Date();
   const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const oneWeekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -300,20 +302,20 @@ const getUserActivityStats = async (startDate, endDate) => {
   };
 };
 
-const getUserApplicationStats = async (startDate, endDate) => {
+const getUserApplicationStats = async () => {
   const [totalApplications, approvedApplications, pendingApplications, rejectedApplications] = await Promise.all([
-    SolarApplication.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    SolarApplication.countDocuments({
       applicationStatus: 'approved',
-      approvedAt: { $gte: startDate, $lte: endDate }
+      approvedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({
       applicationStatus: 'pending',
-      submittedAt: { $gte: startDate, $lte: endDate }
+      submittedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    SolarApplication.countDocuments({ 
+    SolarApplication.countDocuments({
       applicationStatus: 'rejected',
-      reviewedAt: { $gte: startDate, $lte: endDate }
+      reviewedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -328,20 +330,20 @@ const getUserApplicationStats = async (startDate, endDate) => {
   };
 };
 
-const getUserKYCStats = async (startDate, endDate) => {
+const getUserKYCStats = async () => {
   const [totalDocuments, verifiedDocuments, pendingDocuments, rejectedDocuments] = await Promise.all([
-    KYCDocument.countDocuments({ uploadedAt: { $gte: startDate, $lte: endDate } }),
-    KYCDocument.countDocuments({ 
+    KYCDocument.countDocuments({ uploadedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    KYCDocument.countDocuments({
       verificationStatus: 'verified',
-      reviewedAt: { $gte: startDate, $lte: endDate }
+      reviewedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    KYCDocument.countDocuments({ 
+    KYCDocument.countDocuments({
       verificationStatus: 'pending',
-      uploadedAt: { $gte: startDate, $lte: endDate }
+      uploadedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     }),
-    KYCDocument.countDocuments({ 
+    KYCDocument.countDocuments({
       verificationStatus: 'rejected',
-      reviewedAt: { $gte: startDate, $lte: endDate }
+      reviewedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -356,16 +358,16 @@ const getUserKYCStats = async (startDate, endDate) => {
   };
 };
 
-const getUserTransactionStats = async (startDate, endDate) => {
+const getUserTransactionStats = async () => {
   const [transactionCount, totalVolume, completedTransactions] = await Promise.all([
-    Transaction.countDocuments({ createdAt: { $gte: startDate, $lte: endDate } }),
+    Transaction.countDocuments({ createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
     Transaction.aggregate([
-      { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+      { $match: { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
       { $group: { _id: null, total: { $sum: "$amount" } } }
     ]),
-    Transaction.countDocuments({ 
+    Transaction.countDocuments({
       status: 'completed',
-      completedAt: { $gte: startDate, $lte: endDate }
+      completedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
     })
   ]);
   
@@ -380,9 +382,9 @@ const getUserTransactionStats = async (startDate, endDate) => {
   };
 };
 
-const getUserRegionalDistribution = async (startDate, endDate) => {
+const getUserRegionalDistribution = async () => {
   const applications = await SolarApplication.aggregate([
-    { $match: { createdAt: { $gte: startDate, $lte: endDate } } },
+    { $match: { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } } },
     {
       $group: {
         _id: "$personalInfo.state",
@@ -398,12 +400,12 @@ const getUserRegionalDistribution = async (startDate, endDate) => {
   }, {});
 };
 
-const getUserTrends = async (startDate, endDate) => {
+const getUserTrends = async () => {
   // Get monthly new user signups
   const monthlySignups = await User.aggregate([
     {
       $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
+        createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
       }
     },
     {
@@ -422,7 +424,7 @@ const getUserTrends = async (startDate, endDate) => {
   const monthlyApplications = await SolarApplication.aggregate([
     {
       $match: {
-        submittedAt: { $gte: startDate, $lte: endDate }
+        submittedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
       }
     },
     {
@@ -449,14 +451,14 @@ const getUserTrends = async (startDate, endDate) => {
   };
 };
 
-const getUserEngagementMetrics = async (startDate, endDate) => {
+const getUserEngagementMetrics = async () => {
   const [usersWithApplications, usersWithKYC, usersWithTransactions] = await Promise.all([
-    SolarApplication.distinct('userId', { createdAt: { $gte: startDate, $lte: endDate } }),
-    KYCDocument.distinct('userId', { uploadedAt: { $gte: startDate, $lte: endDate } }),
-    Transaction.distinct('fromEntityId', { createdAt: { $gte: startDate, $lte: endDate } })
+    SolarApplication.distinct('userId', { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    KYCDocument.distinct('userId', { uploadedAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } }),
+    Transaction.distinct('fromEntityId', { createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) } })
   ]);
   
-  const totalUsers = await User.countDocuments({ createdAt: { $lte: endDate } });
+  const totalUsers = await User.countDocuments();
   
   return {
     applicationEngagement: totalUsers > 0 ? (usersWithApplications.length / totalUsers) * 100 : 0,

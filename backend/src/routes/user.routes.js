@@ -1,6 +1,6 @@
-const express = require("express");
-const userCtrl = require("../controllers/user.controller.js");
-const authCtrl = require("../controllers/auth.controller.js");
+import express from "express";
+import * as userCtrl from "../controllers/user.controller.js";
+import * as authCtrl from "../controllers/auth.controller.js";
 
 const router = express.Router();
 

@@ -6,7 +6,6 @@ import { promisify } from 'util';
 import csv from 'csv-writer';
 import ExcelJS from 'exceljs';
 import PDFDocument from 'pdfkit';
-import { formatSuccessResponse, formatErrorResponse } from './metrics/responseFormatter.util.js';
 
 const writeFile = promisify(fs.writeFile);
 const mkdir = promisify(fs.mkdir);

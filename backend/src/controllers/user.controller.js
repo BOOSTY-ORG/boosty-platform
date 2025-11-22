@@ -1,5 +1,5 @@
-const User = require("../models/user.model.js");
-const dbErrorHandler = require("../helpers/dbErrorHandler.js");
+import User from "../models/user.model.js";
+import { getErrorMessage } from "../helpers/dbErrorHandler.js";
 
 /*
  ** List all users. **
@@ -51,7 +51,7 @@ const list = async (req, res) => {
     res.json(users);
   } catch (err) {
     return res.status(400).json({
-      error: dbErrorHandler.getErrorMessage(err),
+      error: getErrorMessage(err),
     });
   }
 };
@@ -68,7 +68,7 @@ const create = async (req, res) => {
     });
   } catch (err) {
     return res.status(400).json({
-      error: dbErrorHandler.getErrorMessage(err),
+      error: getErrorMessage(err),
     });
   }
 };
@@ -114,7 +114,7 @@ const update = async (req, res) => {
     res.json(user);
   } catch (err) {
     return res.status(400).json({
-      error: dbErrorHandler.getErrorMessage(err),
+      error: getErrorMessage(err),
     });
   }
 };
@@ -129,7 +129,7 @@ const remove = async (req, res) => {
     res.json(deletedUser);
   } catch (err) {
     return res.status(400).json({
-      error: dbErrorHandler.getErrorMessage(err),
+      error: getErrorMessage(err),
     });
   }
 };

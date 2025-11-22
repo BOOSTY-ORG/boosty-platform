@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const solarApplicationSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
@@ -130,4 +130,4 @@ solarApplicationSchema.pre('save', async function(next) {
 
 const SolarApplication = mongoose.model('SolarApplication', solarApplicationSchema);
 
-module.exports = SolarApplication;
+export default SolarApplication;

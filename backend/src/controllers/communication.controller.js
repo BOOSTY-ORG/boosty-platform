@@ -1,6 +1,6 @@
 import Communication from '../models/communication.model.js';
 import CommunicationTemplate from '../models/communicationTemplate.model.js';
-import CommunicationResponse from '../models/communicationResponse.model.js';
+import mongoose from 'mongoose';
 import { sendEmail, sendSMS, sendInAppNotification, sendPushNotification } from '../services/communication.service.js';
 import { parseTemplate } from '../utils/templateParser.js';
 
@@ -87,7 +87,7 @@ export const createUserCommunication = async (req, res) => {
       await communication.save();
       
       // Schedule the communication
-      scheduleCommunication(communication);
+      scheduleCommunicationJob(communication);
     } else {
       // Send immediately
       await sendCommunication(communication);
@@ -238,7 +238,7 @@ export const scheduleCommunication = async (req, res) => {
     await communication.save();
 
     // Add to scheduling queue
-    await addToScheduleQueue(communication);
+    await scheduleCommunicationJob(communication);
 
     res.status(201).json({
       success: true,
@@ -492,12 +492,12 @@ export const exportCommunications = async (req, res) => {
       res.setHeader('Content-Disposition', `attachment; filename=communications_${Date.now()}.csv`);
       res.send(csv);
     } else if (format === 'excel') {
-      const workbook = convertToExcel(communications);
+      const workbook = convertToExcel();
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename=communications_${Date.now()}.xlsx`);
       await workbook.xlsx.write(res);
     } else if (format === 'pdf') {
-      const pdfBuffer = await convertToPDF(communications);
+      const pdfBuffer = await convertToPDF();
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `attachment; filename=communications_${Date.now()}.pdf`);
       res.send(pdfBuffer);
@@ -544,16 +544,12 @@ const sendCommunication = async (communication) => {
   }
 };
 
-const scheduleCommunication = async (communication) => {
+const scheduleCommunicationJob = async (communication) => {
   // Add to scheduling queue (implementation depends on your job queue system)
   // This is a placeholder - implement based on your scheduling system
   console.log(`Scheduling communication ${communication._id} for ${communication.scheduledAt}`);
 };
 
-const addToScheduleQueue = async (communication) => {
-  // Implementation depends on your job queue system
-  console.log(`Adding communication ${communication._id} to schedule queue`);
-};
 
 const removeFromScheduleQueue = async (communicationId) => {
   // Implementation depends on your job queue system
@@ -579,14 +575,14 @@ const convertToCSV = (communications) => {
   return csvContent;
 };
 
-const convertToExcel = (communications) => {
+const convertToExcel = () => {
   // Implementation depends on your Excel library
   // This is a placeholder - implement based on your preferred Excel library
   console.log('Converting communications to Excel');
   return null;
 };
 
-const convertToPDF = async (communications) => {
+const convertToPDF = async () => {
   // Implementation depends on your PDF library
   // This is a placeholder - implement based on your preferred PDF library
   console.log('Converting communications to PDF');

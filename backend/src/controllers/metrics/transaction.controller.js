@@ -1,12 +1,10 @@
 import Transaction from "../../models/metrics/transaction.model.js";
-import Investment from "../../models/metrics/investment.model.js";
-import SolarApplication from "../../models/metrics/solarApplication.model.js";
 import Investor from "../../models/metrics/investor.model.js";
 import User from "../../models/user.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getTransactionMetrics = async (req, res) => {
   try {
@@ -75,7 +73,7 @@ export const getTransactionMetrics = async (req, res) => {
     );
     
     // Get performance metrics
-    const performanceMetrics = await getTransactionPerformanceMetrics(query, startDate, endDate);
+    const performanceMetrics = await getTransactionPerformanceMetrics(query);
     
     const response = {
       summary: {
@@ -98,7 +96,7 @@ export const getTransactionMetrics = async (req, res) => {
         status: formatStatusBreakdown(statusBreakdown)
       },
       performance: performanceMetrics,
-      trends: await getTransactionTrends(startDate, endDate)
+      trends: await getTransactionTrends()
     };
     
     return res.json(formatSuccessResponse(response, req));
@@ -183,7 +181,11 @@ export const getTransactionList = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
-    const paginationOptions = getPaginationOptions(req.query);
+    const paginationOptions = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      skip: (parseInt(req.query.page) || 1 - 1) * (parseInt(req.query.limit) || 10)
+    };
     
     const transactions = await Transaction.find(query)
       .populate('fromEntityId', 'name email')
@@ -227,7 +229,7 @@ export const getTransactionPerformanceReport = async (req, res) => {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
     
-    const performanceMetrics = await getTransactionPerformanceMetrics(query, startDate, endDate);
+    const performanceMetrics = await getTransactionPerformanceMetrics(query);
     
     // Get processing time analysis
     const processingTimeAnalysis = await Transaction.aggregate([
@@ -421,7 +423,7 @@ export const getTransactionAnalytics = async (req, res) => {
 };
 
 // Helper functions
-const getTransactionPerformanceMetrics = async (query, startDate, endDate) => {
+const getTransactionPerformanceMetrics = async (query) => {
   const [totalTransactions, completedTransactions, failedTransactions, avgProcessingTime] = await Promise.all([
     Transaction.countDocuments(query),
     Transaction.countDocuments({ ...query, status: 'completed' }),
@@ -462,12 +464,12 @@ const formatStatusBreakdown = (breakdown) => {
   }, {});
 };
 
-const getTransactionTrends = async (startDate, endDate) => {
+const getTransactionTrends = async () => {
   // Get daily transaction trends
   const dailyTrends = await Transaction.aggregate([
     {
       $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
+        createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
       }
     },
     {
@@ -493,7 +495,7 @@ const getTransactionTrends = async (startDate, endDate) => {
   const monthlyTypeTrends = await Transaction.aggregate([
     {
       $match: {
-        createdAt: { $gte: startDate, $lte: endDate }
+        createdAt: { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) }
       }
     },
     {

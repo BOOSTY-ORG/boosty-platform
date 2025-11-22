@@ -168,7 +168,7 @@ const invalidateCache = (patterns = []) => {
   };
 };
 
-module.exports = {
+export {
   cacheMiddleware,
   generateCacheKey,
   clearCache,
