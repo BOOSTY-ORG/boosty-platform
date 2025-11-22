@@ -1,5 +1,5 @@
 import express from "express";
-const cors = require("cors");
+import cors from "cors";
 import mongoose from "mongoose";
 import userRoutes from "./routes/user.routes.js";
 import authRoutes from "./routes/auth.routes.js";
@@ -7,9 +7,11 @@ import metricsRoutes from "./routes/metrics.routes.js";
 import exportRoutes from "./routes/export.routes.js";
 import cookieParser from "cookie-parser";
 import path from "path";
-require("dotenv/config");
+import { fileURLToPath } from "url";
+import "dotenv/config";
 
-// Since we're using CommonJS, we need to define __dirname manually
+// Since we're using ES modules, we need to define __dirname manually
+const __filename = fileURLToPath(import.meta.url);
 const currentDirname = path.dirname(__filename);
 
 const app = express();
@@ -24,10 +26,17 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(currentDirname, '../uploads')));
 
 // ** Database Connection **
+console.log("[DEBUG] Attempting to connect to MongoDB with URL:", process.env.DATABASE_URL);
 mongoose
   .connect(process.env.DATABASE_URL)
-  .then(() => console.log("Mongodb connected Successfully!!!"))
-  .catch((error) => console.error({ "Mongodb connection error!!!": error }));
+  .then(() => {
+    console.log("[DEBUG] Mongodb connected Successfully!!!");
+    console.log("[DEBUG] Connection state:", mongoose.connection.readyState);
+  })
+  .catch((error) => {
+    console.error("[DEBUG] Mongodb connection error!!!:", error);
+    console.error("[DEBUG] Connection state after error:", mongoose.connection.readyState);
+  });
 
 // ** Routes **
 app.use("/", userRoutes); // Mount user routes

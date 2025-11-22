@@ -1,12 +1,11 @@
 import KYCDocument from "../../models/metrics/kycDocument.model.js";
 import User from "../../models/user.model.js";
 import SolarApplication from "../../models/metrics/solarApplication.model.js";
-import Investor from "../../models/metrics/investor.model.js";
 import Investment from "../../models/metrics/investment.model.js";
 import { formatSuccessResponse, formatErrorResponse, handleControllerError } from "../../utils/metrics/responseFormatter.util.js";
 import { parseDateRange } from "../../utils/metrics/dateRange.util.js";
 import { buildQuery } from "../../middleware/metrics/queryBuilder.middleware.js";
-import { getPaginationOptions, buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
+import { buildPaginationMeta } from "../../utils/metrics/pagination.util.js";
 
 export const getKYCMetrics = async (req, res) => {
   try {
@@ -177,7 +176,11 @@ export const getKYCList = async (req, res) => {
   try {
     const { startDate, endDate } = parseDateRange(req.query);
     const query = buildQuery(req, { startDate, endDate });
-    const paginationOptions = getPaginationOptions(req.query);
+    const paginationOptions = {
+      page: parseInt(req.query.page) || 1,
+      limit: parseInt(req.query.limit) || 10,
+      skip: (parseInt(req.query.page) || 1 - 1) * (parseInt(req.query.limit) || 10)
+    };
     
     const documents = await KYCDocument.find(query)
       .populate('userId', 'name email')
@@ -514,7 +517,7 @@ const getVerificationScoreStats = async (startDate, endDate) => {
   };
 };
 
-const getKYCPerformanceMetrics = async (query, startDate, endDate) => {
+const getKYCPerformanceMetrics = async (query) => {
   const [totalDocuments, verifiedDocuments, rejectedDocuments, avgProcessingTime] = await Promise.all([
     KYCDocument.countDocuments(query),
     KYCDocument.countDocuments({ ...query, verificationStatus: 'verified' }),

@@ -1,4 +1,5 @@
 import CommunicationTemplate from '../models/communicationTemplate.model.js';
+import Communication from '../models/communication.model.js';
 
 /**
  * Get all communication templates

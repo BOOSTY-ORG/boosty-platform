@@ -1,6 +1,6 @@
 import express from 'express';
-import authCtrl from '../controllers/auth.controller.js';
-import exportCtrl from '../controllers/export.controller.js';
+import * as authCtrl from '../controllers/auth.controller.js';
+import * as exportCtrl from '../controllers/export.controller.js';
 import exportTemplateCtrl from '../controllers/exportTemplate.controller.js';
 import scheduledExportCtrl from '../controllers/scheduledExport.controller.js';
 

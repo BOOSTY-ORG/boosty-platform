@@ -6,10 +6,7 @@ import { buildPagination, buildPaginationMeta } from '../utils/metrics/paginatio
 const getExportTemplates = async (req, res) => {
   try {
     const pagination = buildPagination(req.query.page, req.query.limit);
-    const { search, format, isPublic } = req.query;
-    
-    // Build filter
-    const filter = {};
+    const { search, format } = req.query;
     
     // Get user's templates and public templates
     const templates = await ExportTemplate.find({
@@ -36,9 +33,9 @@ const getExportTemplates = async (req, res) => {
       filteredTemplates = filteredTemplates.filter(template => template.format === format);
     }
     
-    if (isPublic !== undefined) {
-      const isPublicBool = isPublic === 'true';
-      filteredTemplates = filteredTemplates.filter(template => 
+    if (req.query.isPublic !== undefined) {
+      const isPublicBool = req.query.isPublic === 'true';
+      filteredTemplates = filteredTemplates.filter(template =>
         template.isPublic === isPublicBool
       );
     }

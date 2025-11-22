@@ -1,5 +1,5 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcrypt");
+import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
 const SALT_WORK_FACTOR = 10;
 const userSchema = new mongoose.Schema(
@@ -93,8 +93,16 @@ userSchema.pre("save", async function (next) {
 // Instance Method for Authentication
 userSchema.methods.comparePassword = async function (candidatePassword) {
   try {
-    return await bcrypt.compare(candidatePassword, this.password);
+    console.log("[DEBUG] Comparing password for user:", this.email);
+    console.log("[DEBUG] Has stored password hash:", !!this.password);
+    console.log("[DEBUG] Candidate password provided:", !!candidatePassword);
+    
+    const result = await bcrypt.compare(candidatePassword, this.password);
+    console.log("[DEBUG] bcrypt.compare result:", result);
+    
+    return result;
   } catch (error) {
+    console.error("[DEBUG] Password comparison error:", error);
     return false;
   }
 };

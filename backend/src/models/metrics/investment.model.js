@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const investmentSchema = new mongoose.Schema({
   investmentId: { type: String, unique: true, required: true },
@@ -155,4 +155,4 @@ investmentSchema.pre('save', function(next) {
 
 const Investment = mongoose.model('Investment', investmentSchema);
 
-module.exports = Investment;
+export default Investment;

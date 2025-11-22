@@ -10,20 +10,43 @@ dotenv.config();
 const signin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log("[DEBUG] Signin attempt with email:", email);
+    
+    // Check if JWT_SECRET is available
+    if (!process.env.JWT_SECRET) {
+      console.error("[DEBUG] JWT_SECRET is missing from environment variables");
+      return res.status(500).json({ error: "Server configuration error." });
+    }
+    
     // Find user by email
+    console.log("[DEBUG] Searching for user in database...");
     const user = await User.findOne({ email });
+    console.log("[DEBUG] User found:", !!user);
+    
     if (!user) {
+      console.log("[DEBUG] User not found in database");
       return res.status(401).json({ error: "User not found." });
     }
+    
     // Compare passwords
+    console.log("[DEBUG] Comparing passwords...");
     const isMatch = await user.comparePassword(password);
+    console.log("[DEBUG] Password match result:", isMatch);
+    
     if (!isMatch) {
+      console.log("[DEBUG] Passwords do not match");
       return res.status(401).json({ error: "Email and password don't match." });
     }
+    
     // Generate JWT
+    console.log("[DEBUG] Generating JWT token...");
     const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    console.log("[DEBUG] JWT token generated successfully");
+    
     // Set cookie and send response
     res.cookie("t", token, { expire: new Date() + 9999 });
+    console.log("[DEBUG] Signin successful for user:", email);
+    
     return res.json({
       token,
       user: {
@@ -33,6 +56,8 @@ const signin = async (req, res) => {
       },
     });
   } catch (err) {
+    console.error("[DEBUG] Signin error:", err);
+    console.error("[DEBUG] Error stack:", err.stack);
     return res.status(401).json({
       error: "Could not sign in.",
     });

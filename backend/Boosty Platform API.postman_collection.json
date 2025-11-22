@@ -1,0 +1,3581 @@
+{
+  "info": {
+    "_postman_id": "boosty-platform-api",
+    "name": "Boosty Platform API",
+    "description": "Comprehensive API collection for the Boosty solar investment platform backend",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "investorId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "communicationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "exportId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "templateId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global pre-request script",
+          "// Add any global logic here"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global test script",
+          "pm.test(\"Response time is less than 5000ms\", function () {",
+          "    pm.expect(pm.response.responseTime).to.be.below(5000);",
+          "});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Sign In",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has token\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.token).to.exist;",
+                  "    pm.collectionVariables.set('authToken', jsonData.token);",
+                  "});",
+                  "",
+                  "pm.test(\"Response has user data\", function () {",
+                  "    const jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.user).to.exist;",
+                  "    pm.expect(jsonData.user._id).to.exist;",
+                  "    pm.collectionVariables.set('userId', jsonData.user._id);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/signin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signin"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Sign Out",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/signout",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "signout"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Forgot Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/forgot-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forgot-password"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reset Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"password\": \"newPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reset-password/{{resetToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reset-password",
+                "{{resetToken}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users?page=1&limit=20&status=active&search=john&sortBy=createdAt&sortOrder=desc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of users per page"
+                },
+                {
+                  "key": "status",
+                  "value": "active",
+                  "description": "Filter by user status"
+                },
+                {
+                  "key": "search",
+                  "value": "john",
+                  "description": "Search term for name, email, or phone"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "createdAt",
+                  "description": "Field to sort by"
+                },
+                {
+                  "key": "sortOrder",
+                  "value": "desc",
+                  "description": "Sort order (asc or desc)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"johndoe@example.com\",\n  \"password\": \"password123\",\n  \"phone\": \"+1234567890\",\n  \"address\": \"123 Main St, City, Country\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Updated\",\n  \"email\": \"johnupdated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Communications",
+      "item": [
+        {
+          "name": "Get User Communications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications?page=1&limit=20&sort={\"createdAt\":-1}&filters={\"type\":\"email\",\"status\":\"sent\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of communications per page"
+                },
+                {
+                  "key": "sort",
+                  "value": "{\"createdAt\":-1}",
+                  "description": "Sort options as JSON string"
+                },
+                {
+                  "key": "filters",
+                  "value": "{\"type\":\"email\",\"status\":\"sent\"}",
+                  "description": "Filter options as JSON string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Communication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"recipient\": \"recipient@example.com\",\n  \"subject\": \"Test Communication\",\n  \"content\": \"This is a test communication message\",\n  \"category\": \"marketing\",\n  \"priority\": \"normal\",\n  \"variables\": {\n    \"userName\": \"John Doe\",\n    \"companyName\": \"Boosty Platform\"\n  },\n  \"templateId\": \"{{templateId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Communication",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"sent\",\n  \"priority\": \"high\",\n  \"category\": \"updates\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/{{communicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "{{communicationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Communication",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/{{communicationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "{{communicationId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Communication Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/stats?dateRange={\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}&category=marketing&type=email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "stats"
+              ],
+              "query": [
+                {
+                  "key": "dateRange",
+                  "value": "{\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}",
+                  "description": "Date range as JSON string"
+                },
+                {
+                  "key": "category",
+                  "value": "marketing",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "type",
+                  "value": "email",
+                  "description": "Filter by communication type"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Schedule Communication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"email\",\n  \"recipient\": \"recipient@example.com\",\n  \"subject\": \"Scheduled Communication\",\n  \"content\": \"This is a scheduled communication\",\n  \"scheduledAt\": \"2023-12-31T10:00:00Z\",\n  \"category\": \"marketing\",\n  \"priority\": \"normal\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Scheduled Communication",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/{{communicationId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "{{communicationId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Resend Communication",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/{{communicationId}}/resend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "{{communicationId}}",
+                "resend"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Communication Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/analytics?dateRange={\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}&category=marketing&type=email",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "dateRange",
+                  "value": "{\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}",
+                  "description": "Date range as JSON string"
+                },
+                {
+                  "key": "category",
+                  "value": "marketing",
+                  "description": "Filter by category"
+                },
+                {
+                  "key": "type",
+                  "value": "email",
+                  "description": "Filter by communication type"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Communications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/search?q=test&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "test",
+                  "description": "Search query"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of results per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Communications",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/{{userId}}/communications/export.csv?filters={\"type\":\"email\",\"status\":\"sent\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "{{userId}}",
+                "communications",
+                "export.csv"
+              ],
+              "query": [
+                {
+                  "key": "filters",
+                  "value": "{\"type\":\"email\",\"status\":\"sent\"}",
+                  "description": "Filter options as JSON string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Communication Templates",
+      "item": [
+        {
+          "name": "Get Communication Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates?page=1&limit=20&filters={}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of templates per page"
+                },
+                {
+                  "key": "filters",
+                  "value": "{}",
+                  "description": "Filter options as JSON string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Popular Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/popular?limit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "popular"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of templates to return"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get System Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/system",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "system"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Templates by Category",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/category/marketing",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "category",
+                "marketing"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Communication Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Communication Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Welcome Email\",\n  \"description\": \"Template for welcoming new users\",\n  \"subject\": \"Welcome to Boosty Platform\",\n  \"content\": \"Hello {{userName}}, welcome to Boosty Platform!\",\n  \"type\": \"email\",\n  \"category\": \"onboarding\",\n  \"variables\": [\"userName\", \"companyName\"],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Communication Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Welcome Email\",\n  \"description\": \"Updated template for welcoming new users\",\n  \"subject\": \"Welcome to Boosty Platform - Updated\",\n  \"content\": \"Hello {{userName}}, welcome to the updated Boosty Platform!\",\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Communication Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate Communication Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Welcome Email - Copy\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}",
+                "duplicate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Usage",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}/usage?dateRange={\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}",
+                "usage"
+              ],
+              "query": [
+                {
+                  "key": "dateRange",
+                  "value": "{\"start\":\"2023-01-01\",\"end\":\"2023-12-31\"}",
+                  "description": "Date range as JSON string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Update Templates",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"templateIds\": [\"templateId1\", \"templateId2\"],\n  \"updateData\": {\n    \"isActive\": false,\n    \"category\": \"archived\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/bulk-update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "bulk-update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Test Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"variables\": {\n    \"userName\": \"John Doe\",\n    \"companyName\": \"Boosty Platform\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/communication-templates/{{templateId}}/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "communication-templates",
+                "{{templateId}}",
+                "test"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Exports",
+      "item": [
+        {
+          "name": "Create Export",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"xlsx\",\n  \"fields\": [\"name\", \"email\", \"phone\", \"status\", \"createdAt\"],\n  \"includeRelated\": {\n    \"applications\": true,\n    \"installations\": false,\n    \"communications\": false,\n    \"documents\": false\n  },\n  \"filters\": {\n    \"status\": [\"active\"],\n    \"dateRange\": {\n      \"startDate\": \"2023-01-01\",\n      \"endDate\": \"2023-12-31\"\n    }\n  },\n  \"templateId\": \"{{templateId}}\",\n  \"customFilename\": \"users_export_2023.xlsx\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/analytics?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for analytics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for analytics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/history?page=1&limit=20&status=completed&format=xlsx&startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of exports per page"
+                },
+                {
+                  "key": "status",
+                  "value": "completed",
+                  "description": "Filter by export status"
+                },
+                {
+                  "key": "format",
+                  "value": "xlsx",
+                  "description": "Filter by export format"
+                },
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Filter by start date"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "Filter by end date"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/{{exportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "{{exportId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Export",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/{{exportId}}/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "{{exportId}}",
+                "download"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Export",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/{{exportId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "{{exportId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Export",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/exports/{{exportId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "exports",
+                "{{exportId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Export Templates",
+      "item": [
+        {
+          "name": "Get Export Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates?page=1&limit=20&search=user&format=xlsx&isPublic=false",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of templates per page"
+                },
+                {
+                  "key": "search",
+                  "value": "user",
+                  "description": "Search term"
+                },
+                {
+                  "key": "format",
+                  "value": "xlsx",
+                  "description": "Filter by format"
+                },
+                {
+                  "key": "isPublic",
+                  "value": "false",
+                  "description": "Filter by public status"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Public Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/public",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "public"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Default Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "default"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Template Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Template",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Export Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard User Export\",\n  \"description\": \"Basic user information export template\",\n  \"format\": \"xlsx\",\n  \"fields\": [\"name\", \"email\", \"phone\", \"status\", \"createdAt\"],\n  \"includeRelated\": {\n    \"applications\": false,\n    \"installations\": false,\n    \"communications\": false,\n    \"documents\": false\n  },\n  \"filters\": {\n    \"status\": \"active\"\n  },\n  \"sortBy\": {\n    \"field\": \"createdAt\",\n    \"order\": \"desc\"\n  },\n  \"isDefault\": false,\n  \"isPublic\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Export Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Standard User Export\",\n  \"description\": \"Updated basic user information export template\",\n  \"fields\": [\"name\", \"email\", \"phone\", \"status\", \"createdAt\", \"updatedAt\"],\n  \"isDefault\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Export Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Duplicate Export Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Standard User Export - Copy\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/{{templateId}}/duplicate",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "{{templateId}}",
+                "duplicate"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Set Default Template",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/export-templates/{{templateId}}/set-default",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "export-templates",
+                "{{templateId}}",
+                "set-default"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Scheduled Exports",
+      "item": [
+        {
+          "name": "Get Scheduled Exports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of scheduled exports per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Scheduled Export",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekly User Export\",\n  \"description\": \"Export active users every week\",\n  \"frequency\": \"weekly\",\n  \"dayOfWeek\": 1,\n  \"time\": \"09:00\",\n  \"format\": \"xlsx\",\n  \"fields\": [\"name\", \"email\", \"phone\", \"status\"],\n  \"filters\": {\n    \"status\": \"active\"\n  },\n  \"recipients\": [\"admin@example.com\"],\n  \"isActive\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scheduled Export Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "stats"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scheduled Export",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Scheduled Export",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Weekly User Export\",\n  \"frequency\": \"weekly\",\n  \"dayOfWeek\": 2,\n  \"time\": \"10:00\",\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Scheduled Export",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Scheduled Export",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}/toggle",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}",
+                "toggle"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Run Scheduled Export",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}/run",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}",
+                "run"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scheduled Export History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/scheduled-exports/{{scheduleId}}/history?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "scheduled-exports",
+                "{{scheduleId}}",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of history items per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Metrics",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "health"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "API Documentation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/docs",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "docs"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard Metrics",
+      "item": [
+        {
+          "name": "Get Dashboard Overview",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/dashboard/overview?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "dashboard",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Realtime Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/dashboard/realtime",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "dashboard",
+                "realtime"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Investor Metrics",
+      "item": [
+        {
+          "name": "Create Investor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"+1234567890\",\n  \"investorType\": \"individual\",\n  \"riskProfile\": \"moderate\",\n  \"investmentPreferences\": {\n    \"preferredRegions\": [\"North America\", \"Europe\"],\n    \"minInvestment\": 1000,\n    \"maxInvestment\": 50000\n  },\n  \"bankAccounts\": [\n    {\n      \"bankName\": \"Example Bank\",\n      \"accountNumber\": \"1234567890\",\n      \"accountType\": \"checking\",\n      \"isDefault\": true\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Investor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"John Updated\",\n  \"lastName\": \"Doe Updated\",\n  \"riskProfile\": \"aggressive\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Investor",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/metrics?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "metrics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of investors per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor Performance Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/performance?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "performance"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Search Investors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/search?q=john&page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "john",
+                  "description": "Search query"
+                },
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of results per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for data"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for data"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor Performance Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/performance-analytics?period=1y",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "performance-analytics"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y",
+                  "description": "Time period for analytics (1m, 3m, 6m, 1y, etc.)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Portfolio Analysis",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/portfolio-analysis?period=1y",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "portfolio-analysis"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y",
+                  "description": "Time period for analysis (1m, 3m, 6m, 1y, etc.)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Risk Assessment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/risk-assessment?period=1y",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "risk-assessment"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y",
+                  "description": "Time period for assessment (1m, 3m, 6m, 1y, etc.)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investment Timeline",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/investment-timeline?period=1y",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "investment-timeline"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y",
+                  "description": "Time period for timeline (1m, 3m, 6m, 1y, etc.)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Financial Summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/financial-summary?period=1y",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "financial-summary"
+              ],
+              "query": [
+                {
+                  "key": "period",
+                  "value": "1y",
+                  "description": "Time period for summary (1m, 3m, 6m, 1y, etc.)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload KYC Document",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "documentType",
+                  "value": "passport",
+                  "type": "text"
+                },
+                {
+                  "key": "documentNumber",
+                  "value": "AB1234567",
+                  "type": "text"
+                },
+                {
+                  "key": "issuingAuthority",
+                  "value": "Government",
+                  "type": "text"
+                },
+                {
+                  "key": "issueDate",
+                  "value": "2020-01-01",
+                  "type": "text"
+                },
+                {
+                  "key": "expiryDate",
+                  "value": "2030-01-01",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Investor KYC Documents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify KYC Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationScore\": 95,\n  \"notes\": {\n    \"verifiedFields\": [\"name\", \"documentNumber\", \"photo\"],\n    \"comments\": \"Document appears authentic and matches user information\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/{{documentId}}/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "{{documentId}}",
+                "verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject KYC Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Document expired\",\n  \"notes\": {\n    \"rejectedFields\": [\"expiryDate\"],\n    \"comments\": \"Document has expired and needs renewal\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/{{documentId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "{{documentId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Flag KYC Document",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"flagReason\": \"Suspicious activity\",\n  \"notes\": {\n    \"flaggedFields\": [\"photo\"],\n    \"comments\": \"Photo appears to be manipulated\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/{{documentId}}/flag",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "{{documentId}}",
+                "flag"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Document History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/{{documentId}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "{{documentId}}",
+                "history"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Compare Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\"docId1\", \"docId2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/compare",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "compare"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Verify Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\"docId1\", \"docId2\"],\n  \"verificationData\": {\n    \"verificationScore\": 90,\n    \"notes\": \"Bulk verification completed\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/bulk-verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "bulk-verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Reject Documents",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentIds\": [\"docId1\", \"docId2\"],\n  \"rejectionData\": {\n    \"rejectionReason\": \"Incomplete information\",\n    \"notes\": \"Bulk rejection due to missing information\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/{{investorId}}/kyc/bulk-reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "{{investorId}}",
+                "kyc",
+                "bulk-reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Update Investors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"],\n  \"updateData\": {\n    \"riskProfile\": \"moderate\",\n    \"isActive\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-update",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-update"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Verify KYC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"],\n  \"verificationData\": {\n    \"verificationStatus\": \"verified\",\n    \"notes\": \"Bulk KYC verification\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-kyc-verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-kyc-verify"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Reject KYC",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"],\n  \"rejectionData\": {\n    \"verificationStatus\": \"rejected\",\n    \"rejectionReason\": \"Incomplete documentation\",\n    \"notes\": \"Bulk KYC rejection\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-kyc-reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-kyc-reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Investors Advanced",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"format\": \"xlsx\",\n  \"scope\": \"all\",\n  \"investorIds\": [],\n  \"filters\": {\n    \"status\": \"active\",\n    \"verificationStatus\": \"verified\"\n  },\n  \"columns\": [\"investorId\", \"firstName\", \"lastName\", \"email\", \"totalInvestment\", \"roi\"],\n  \"includeRelatedData\": {\n    \"investments\": true,\n    \"transactions\": false,\n    \"kycDocuments\": false\n  },\n  \"csvOptions\": {\n    \"delimiter\": \",\",\n    \"includeHeaders\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Templates",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Export Template",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Investor Performance Export\",\n  \"description\": \"Template for exporting investor performance data\",\n  \"format\": \"xlsx\",\n  \"columns\": [\"investorId\", \"firstName\", \"lastName\", \"email\", \"totalInvestment\", \"roi\", \"status\"],\n  \"includeRelatedData\": {\n    \"investments\": true,\n    \"transactions\": false,\n    \"kycDocuments\": false\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/templates",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "templates"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Export Template",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Investor Performance Export\",\n  \"description\": \"Updated template for exporting investor performance data\",\n  \"columns\": [\"investorId\", \"firstName\", \"lastName\", \"email\", \"totalInvestment\", \"roi\", \"status\", \"lastLogin\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Export Template",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/templates/{{templateId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "templates",
+                "{{templateId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/history?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of exports per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/{{exportId}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "{{exportId}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Download Export File",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/{{exportId}}/download",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "{{exportId}}",
+                "download"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Export",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/{{exportId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "{{exportId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Schedule Export",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Monthly Investor Export\",\n  \"frequency\": \"monthly\",\n  \"dayOfMonth\": 1,\n  \"time\": \"09:00\",\n  \"format\": \"xlsx\",\n  \"templateId\": \"{{templateId}}\",\n  \"recipients\": [\"admin@example.com\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Scheduled Exports",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/scheduled",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "scheduled"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Scheduled Export",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Monthly Investor Export\",\n  \"frequency\": \"monthly\",\n  \"dayOfMonth\": 5,\n  \"time\": \"10:00\",\n  \"isActive\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/scheduled/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "scheduled",
+                "{{scheduleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Scheduled Export",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/scheduled/{{scheduleId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "scheduled",
+                "{{scheduleId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Queue Status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/queue-status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "queue-status"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Export Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/export/analytics?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "export",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for analytics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for analytics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Export Investors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"],\n  \"format\": \"xlsx\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Delete Investors",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-delete",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-delete"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Bulk Send Communication",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"investorIds\": [\"investorId1\", \"investorId2\"],\n  \"type\": \"email\",\n  \"subject\": \"Investment Update\",\n  \"message\": \"Dear investor, here is your latest investment update\",\n  \"template\": \"investment-update\",\n  \"sendImmediately\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/investors/bulk-communication",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "investors",
+                "bulk-communication"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Metrics",
+      "item": [
+        {
+          "name": "Get User Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/users?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "users"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/users/list?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "users",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of users per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Activity Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/users/activity?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "users",
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get User Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/users/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "users",
+                "{{userId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Transaction Metrics",
+      "item": [
+        {
+          "name": "Get Transaction Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/transactions?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "transactions"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/transactions/list?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "transactions",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of transactions per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Performance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/transactions/performance?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "transactions",
+                "performance"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/transactions/analytics?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "transactions",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for analytics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for analytics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Transaction Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/transactions/{{transactionId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "transactions",
+                "{{transactionId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "KYC Metrics",
+      "item": [
+        {
+          "name": "Get KYC Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/kyc?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "kyc"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for metrics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for metrics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get KYC List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/kyc/list?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "kyc",
+                "list"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of KYC records per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get KYC Performance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/kyc/performance?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "kyc",
+                "performance"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get KYC Analytics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/kyc/analytics?startDate=2023-01-01&endDate=2023-12-31",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "kyc",
+                "analytics"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for analytics"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for analytics"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get KYC Details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/kyc/{{documentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "kyc",
+                "{{documentId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reporting",
+      "item": [
+        {
+          "name": "Generate Financial Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports/financial?startDate=2023-01-01&endDate=2023-12-31&format=pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports",
+                "financial"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                },
+                {
+                  "key": "format",
+                  "value": "pdf",
+                  "description": "Report format (pdf, excel, csv)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Operational Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports/operational?startDate=2023-01-01&endDate=2023-12-31&format=pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports",
+                "operational"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                },
+                {
+                  "key": "format",
+                  "value": "pdf",
+                  "description": "Report format (pdf, excel, csv)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Compliance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports/compliance?startDate=2023-01-01&endDate=2023-12-31&format=pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports",
+                "compliance"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                },
+                {
+                  "key": "format",
+                  "value": "pdf",
+                  "description": "Report format (pdf, excel, csv)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Performance Report",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports/performance?startDate=2023-01-01&endDate=2023-12-31&format=pdf",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports",
+                "performance"
+              ],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2023-01-01",
+                  "description": "Start date for report"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2023-12-31",
+                  "description": "End date for report"
+                },
+                {
+                  "key": "format",
+                  "value": "pdf",
+                  "description": "Report format (pdf, excel, csv)"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Report List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number for pagination"
+                },
+                {
+                  "key": "limit",
+                  "value": "20",
+                  "description": "Number of reports per page"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Schedule Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reportType\": \"financial\",\n  \"frequency\": \"monthly\",\n  \"dayOfMonth\": 1,\n  \"time\": \"09:00\",\n  \"format\": \"pdf\",\n  \"recipients\": [\"admin@example.com\"],\n  \"filters\": {\n    \"startDate\": \"2023-01-01\",\n    \"endDate\": \"2023-12-31\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/metrics/reports/schedule",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "metrics",
+                "reports",
+                "schedule"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

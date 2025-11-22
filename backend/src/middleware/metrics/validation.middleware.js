@@ -202,7 +202,7 @@ const validateInvestorFilters = (req, res, next) => {
 };
 
 const validateTransactionFilters = (req, res, next) => {
-  const { transactionType, paymentMethod, currency, minAmount, maxAmount } = req.query;
+  const { transactionType, paymentMethod, minAmount, maxAmount } = req.query;
   
   if (transactionType !== undefined) {
     const validTypes = ['investment', 'repayment', 'fee', 'refund', 'penalty'];
@@ -266,7 +266,7 @@ const validateTransactionFilters = (req, res, next) => {
 };
 
 const validateReportParameters = (req, res, next) => {
-  const { format, includeSections } = req.query;
+  const { format } = req.query;
   
   if (format !== undefined) {
     const validFormats = ['json', 'pdf', 'excel'];
@@ -281,9 +281,9 @@ const validateReportParameters = (req, res, next) => {
     }
   }
   
-  if (includeSections !== undefined) {
+  if (req.query.includeSections !== undefined) {
     const validSections = ['overview', 'investors', 'users', 'transactions', 'kyc'];
-    const sectionsArray = Array.isArray(includeSections) ? includeSections : [includeSections];
+    const sectionsArray = Array.isArray(req.query.includeSections) ? req.query.includeSections : [req.query.includeSections];
     const invalidSections = sectionsArray.filter(s => !validSections.includes(s));
     
     if (invalidSections.length > 0) {
@@ -300,7 +300,7 @@ const validateReportParameters = (req, res, next) => {
   next();
 };
 
-module.exports = {
+export {
   validateDateRange,
   validatePagination,
   validateSorting,

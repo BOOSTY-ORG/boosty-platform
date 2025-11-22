@@ -3,6 +3,8 @@ import ExportTemplate from '../models/exportTemplate.model.js';
 import ExportHistory from '../models/exportHistory.model.js';
 import { formatSuccessResponse, formatErrorResponse, formatPaginatedResponse } from '../utils/metrics/responseFormatter.util.js';
 import { buildPagination, buildPaginationMeta } from '../utils/metrics/pagination.util.js';
+import { v4 as uuidv4 } from 'uuid';
+import { processExport } from '../controllers/export.controller.js';
 
 // Get all scheduled exports for a user
 const getScheduledExports = async (req, res) => {
@@ -325,8 +327,6 @@ const runScheduledExport = async (req, res) => {
     }
     
     // Create export history record
-    const ExportHistory = require('../models/exportHistory.model.js').default;
-    const { v4: uuidv4 } = require('uuid');
     
     const exportHistory = new ExportHistory({
       exportId: uuidv4(),
@@ -343,7 +343,6 @@ const runScheduledExport = async (req, res) => {
     await exportHistory.save();
     
     // Start export process asynchronously
-    const { processExport } = require('../controllers/export.controller.js');
     processExport(exportHistory._id, req.auth._id).catch(error => {
       console.error('Manual scheduled export failed:', error);
     });

@@ -347,7 +347,7 @@ const buildGroupStage = (groupBy, aggregates) => {
   return { $group: groupStage };
 };
 
-module.exports = {
+export {
   buildQuery,
   getQueryBuilder,
   parseDateRange,
