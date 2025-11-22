@@ -1,11 +1,11 @@
-const { describe, it, expect, beforeEach, afterEach } = require('@jest/globals');
-const request = require('supertest');
-const app = require('../../../src/express.js');
-const { createTestData, createMockRequest, createMockResponse, createMockNext } = require('../../helpers/metrics.test.helpers.js');
-const User = require('../../../src/models/user.model.js');
-const SolarApplication = require('../../../src/models/metrics/solarApplication.model.js');
-const KYCDocument = require('../../../src/models/metrics/kycDocument.model.js');
-const Transaction = require('../../../src/models/metrics/transaction.model.js');
+import { describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import request from 'supertest';
+import app from '../../../src/express.js';
+import { createTestData, createMockRequest, createMockResponse, createMockNext } from '../../helpers/metrics.test.helpers.js';
+import User from '../../../src/models/user.model.js';
+import SolarApplication from '../../../src/models/metrics/solarApplication.model.js';
+import KYCDocument from '../../../src/models/metrics/kycDocument.model.js';
+import Transaction from '../../../src/models/metrics/transaction.model.js';
 
 // Mock models to control their behavior in tests
 jest.mock('../../../src/models/user.model.js');
