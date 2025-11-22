@@ -42,7 +42,7 @@ class CacheService {
 
 const cacheService = new CacheService();
 
-export const cacheMiddleware = (ttl = 300000) => {
+const cacheMiddleware = (ttl = 300000) => {
   return (req, res, next) => {
     // Skip caching for non-GET requests
     if (req.method !== 'GET') {
@@ -72,14 +72,14 @@ export const cacheMiddleware = (ttl = 300000) => {
   };
 };
 
-export const generateCacheKey = (req) => {
+const generateCacheKey = (req) => {
   const url = req.originalUrl || req.url;
   const query = JSON.stringify(req.query);
   const user = req.auth ? req.auth._id : 'anonymous';
   return `metrics:${user}:${url}:${query}`;
 };
 
-export const clearCache = (pattern = null) => {
+const clearCache = (pattern = null) => {
   if (pattern) {
     // Clear cache entries matching pattern
     for (const key of cacheService.cache.keys()) {
@@ -93,7 +93,7 @@ export const clearCache = (pattern = null) => {
   }
 };
 
-export const getCacheStats = () => {
+const getCacheStats = () => {
   return {
     size: cacheService.size(),
     keys: Array.from(cacheService.cache.keys())
@@ -101,7 +101,7 @@ export const getCacheStats = () => {
 };
 
 // Cache configuration for different endpoint types
-export const cacheConfig = {
+const cacheConfig = {
   dashboard: 300000,        // 5 minutes
   overview: 900000,         // 15 minutes
   performance: 1800000,      // 30 minutes
@@ -111,14 +111,14 @@ export const cacheConfig = {
 };
 
 // Middleware for specific cache durations
-export const dashboardCache = cacheMiddleware(cacheConfig.dashboard);
-export const overviewCache = cacheMiddleware(cacheConfig.overview);
-export const performanceCache = cacheMiddleware(cacheConfig.performance);
-export const reportsCache = cacheMiddleware(cacheConfig.reports);
-export const analyticsCache = cacheMiddleware(cacheConfig.analytics);
+const dashboardCache = cacheMiddleware(cacheConfig.dashboard);
+const overviewCache = cacheMiddleware(cacheConfig.overview);
+const performanceCache = cacheMiddleware(cacheConfig.performance);
+const reportsCache = cacheMiddleware(cacheConfig.reports);
+const analyticsCache = cacheMiddleware(cacheConfig.analytics);
 
 // Conditional caching based on endpoint
-export const smartCache = (req, res, next) => {
+const smartCache = (req, res, next) => {
   const path = req.path;
   
   if (path.includes('/realtime')) {
@@ -150,7 +150,7 @@ export const smartCache = (req, res, next) => {
 };
 
 // Cache invalidation middleware for data updates
-export const invalidateCache = (patterns = []) => {
+const invalidateCache = (patterns = []) => {
   return (req, res, next) => {
     const originalJson = res.json;
     
@@ -168,4 +168,18 @@ export const invalidateCache = (patterns = []) => {
   };
 };
 
-export default cacheService;
+module.exports = {
+  cacheMiddleware,
+  generateCacheKey,
+  clearCache,
+  getCacheStats,
+  cacheConfig,
+  dashboardCache,
+  overviewCache,
+  performanceCache,
+  reportsCache,
+  analyticsCache,
+  smartCache,
+  invalidateCache,
+  cacheService
+};

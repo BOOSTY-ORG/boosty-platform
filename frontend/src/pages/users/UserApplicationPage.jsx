@@ -2,20 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
+import { useRealtimeUserKYC, useUserDocumentEvents } from '../../utils/realtimeUserKYC.js';
+import KYCProgressIndicator from '../../components/users/KYCProgressIndicator.jsx';
 
 const UserApplicationPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    currentUser, 
-    applications, 
-    isLoading, 
-    error, 
+  const {
+    currentUser,
+    applications,
+    isLoading,
+    error,
     getUserById,
     getUserApplications,
     createUserApplication,
-    updateUserApplication
+    updateUserApplication,
+    getUserKYC
   } = useUser();
+  
+  // Real-time KYC hooks
+  const { kycDocuments, lastUpdate, isConnected } = useRealtimeUserKYC(id);
+  const { events } = useUserDocumentEvents(id);
   
   const [activeTab, setActiveTab] = useState('current');
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +42,7 @@ const UserApplicationPage = () => {
     if (id) {
       getUserById(id);
       getUserApplications(id);
+      getUserKYC(id); // Fetch KYC data for real-time updates
     }
   }, [id]);
 
@@ -168,6 +176,12 @@ const UserApplicationPage = () => {
             <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
               User Applications
             </h2>
+            {isConnected && (
+              <span className="ml-3 flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+              </span>
+            )}
           </div>
           <p className="mt-1 text-sm text-gray-500">
             Manage and review solar energy applications for {currentUser?.firstName} {currentUser?.lastName}.
@@ -519,6 +533,198 @@ const UserApplicationPage = () => {
                   </p>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* KYC Status Section */}
+      <div className="bg-white shadow rounded-lg mt-6">
+        <div className="px-4 py-5 sm:px-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">KYC Verification Status</h3>
+            {isConnected && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-green-600">Real-time updates active</span>
+                <span className="flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+        <div className="p-6">
+          <KYCProgressIndicator
+            kycDocuments={kycDocuments}
+            showDetails={true}
+            compact={false}
+          />
+          
+          {/* Document Upload Section */}
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <h4 className="text-md font-medium text-gray-900 mb-4">Document Upload</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {['government_id', 'utility_bill', 'bank_statement', 'proof_of_income', 'property_document'].map(docType => {
+                const document = kycDocuments?.find(doc => doc.documentType === docType);
+                const isUploaded = !!document;
+                
+                return (
+                  <div key={docType} className={`border rounded-lg p-4 ${isUploaded ? 'border-green-300 bg-green-50' : 'border-gray-300'}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h5 className="text-sm font-medium text-gray-900">
+                        {formatStatus(docType)}
+                      </h5>
+                      {isUploaded ? (
+                        <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+                        </svg>
+                      )}
+                    </div>
+                    
+                    {isUploaded ? (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-600">
+                          Uploaded: {formatDate(document.uploadedAt || document.createdAt)}
+                        </p>
+                        <p className="text-xs text-gray-600">
+                          Status: <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                            document.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                            document.verificationStatus === 'pending' || document.verificationStatus === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+                            document.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {formatStatus(document.verificationStatus)}
+                          </span>
+                        </p>
+                        {document.verificationScore && (
+                          <div className="flex items-center">
+                            <div className="flex-1 mr-2">
+                              <div className="w-full bg-gray-200 rounded-full h-1.5">
+                                <div
+                                  className={`h-1.5 rounded-full ${
+                                    document.verificationScore >= 90 ? 'bg-green-600' :
+                                    document.verificationScore >= 70 ? 'bg-yellow-600' :
+                                    'bg-red-600'
+                                  }`}
+                                  style={{ width: `${document.verificationScore}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                            <span className={`text-xs font-medium ${
+                              document.verificationScore >= 90 ? 'text-green-600' :
+                              document.verificationScore >= 70 ? 'text-yellow-600' :
+                              'text-red-600'
+                            }`}>
+                              {document.verificationScore}%
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              // Preview document
+                              console.log('Preview document:', document._id);
+                            }}
+                            className="text-xs text-primary-600 hover:text-primary-800"
+                          >
+                            Preview
+                          </button>
+                          {document.verificationStatus !== 'verified' && (
+                            <button
+                              onClick={() => {
+                                // Re-upload document
+                                console.log('Re-upload document:', docType);
+                              }}
+                              className="text-xs text-blue-600 hover:text-blue-800"
+                            >
+                              Re-upload
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-xs text-gray-500">Not uploaded</p>
+                        <button
+                          onClick={() => {
+                            // Open upload dialog for this document type
+                            console.log('Upload document:', docType);
+                          }}
+                          className="w-full inline-flex justify-center px-2 py-1 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                        >
+                          Upload
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+            
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={() => {
+                  // Open bulk upload modal
+                  console.log('Open bulk upload modal');
+                }}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              >
+                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                </svg>
+                Upload Multiple Documents
+              </button>
+            </div>
+          </div>
+          
+          {/* KYC Completion Progress */}
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <h4 className="text-md font-medium text-gray-900 mb-4">KYC Completion Progress</h4>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-700">Overall Completion</span>
+                <span className="text-sm font-bold text-gray-900">
+                  {kycDocuments && kycDocuments.length > 0
+                    ? Math.round((kycDocuments.filter(doc => doc.verificationStatus === 'verified').length / 5) * 100)
+                    : 0}%
+                </span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-3">
+                <div
+                  className="bg-primary-600 h-3 rounded-full transition-all duration-300"
+                  style={{
+                    width: kycDocuments && kycDocuments.length > 0
+                      ? `${Math.round((kycDocuments.filter(doc => doc.verificationStatus === 'verified').length / 5) * 100)}%`
+                      : '0%'
+                  }}
+                ></div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mt-4">
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
+                    {kycDocuments ? kycDocuments.filter(doc => doc.verificationStatus === 'verified').length : 0}
+                  </div>
+                  <div className="text-sm text-gray-500">Verified Documents</div>
+                </div>
+                <div className="text-center p-3 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-yellow-600">
+                    {kycDocuments ? kycDocuments.filter(doc => ['pending', 'under_review'].includes(doc.verificationStatus)).length : 0}
+                  </div>
+                  <div className="text-sm text-gray-500">Pending Documents</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {lastUpdate && (
+            <div className="mt-4 text-xs text-gray-500 text-right">
+              Last updated: {lastUpdate.toLocaleString()}
             </div>
           )}
         </div>

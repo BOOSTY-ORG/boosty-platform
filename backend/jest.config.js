@@ -1,14 +1,10 @@
 export default {
   testEnvironment: 'node',
-  transform: {},
-  extensionsToTreatAsEsm: ['.js'],
+  extensionsToTreatAsEsm: ['.jsx'],
   globals: {
     'ts-jest': {
       useESM: true
     }
-  },
-  moduleNameMapping: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
   },
   setupFilesAfterEnv: ['<rootDir>/tests/setup.js'],
   testMatch: [
@@ -20,5 +16,8 @@ export default {
     '!src/server.js'
   ],
   coverageDirectory: 'coverage',
-  coverageReporters: ['text', 'lcov', 'html']
+  coverageReporters: ['text', 'lcov', 'html'],
+  transformIgnorePatterns: [
+    'node_modules/(?!supertest)'
+  ]
 };

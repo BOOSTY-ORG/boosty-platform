@@ -36,7 +36,17 @@ const InvestorsPage = () => {
     getInvestors,
     searchInvestors,
     updateInvestor,
-    stats
+    stats,
+    // KYC filtering and sorting functions
+    kycFilters,
+    kycSort,
+    setKYCFilters,
+    updateKYCFilter,
+    clearKYCFilters,
+    setKYCSort,
+    resetKYCSort,
+    getInvestorsWithKYCFilters,
+    getKYCStats
   } = useInvestor();
   const { setPagination, setFilters, pagination, filters } = useApp();
   const { showNotification } = useNotification();
@@ -53,6 +63,14 @@ const InvestorsPage = () => {
   const [visibleColumns, setVisibleColumns] = useState([
     'investor', 'contact', 'status', 'kycStatus', 'totalInvestment', 'joinedDate', 'actions'
   ]);
+  
+  // KYC specific state
+  const [kycStatusFilter, setKycStatusFilter] = useState('');
+  const [kycSubmissionDateRange, setKycSubmissionDateRange] = useState({ start: '', end: '' });
+  const [kycVerificationDateRange, setKycVerificationDateRange] = useState({ start: '', end: '' });
+  const [kycLastUpdatedRange, setKycLastUpdatedRange] = useState({ start: '', end: '' });
+  const [kycSortField, setKycSortField] = useState('createdAt');
+  const [kycSortDirection, setKycSortDirection] = useState('desc');
   
   // Bulk operation states
   const [showBulkEditModal, setShowBulkEditModal] = useState(false);
@@ -94,8 +112,24 @@ const InvestorsPage = () => {
         { value: 'verified', label: 'Verified' },
         { value: 'pending', label: 'Pending' },
         { value: 'rejected', label: 'Rejected' },
+        { value: 'not_started', label: 'Not Started' },
         { value: 'not_submitted', label: 'Not Submitted' },
       ],
+    },
+    {
+      key: 'kycSubmissionDate',
+      label: 'KYC Submission Date',
+      type: 'daterange',
+    },
+    {
+      key: 'kycVerificationDate',
+      label: 'KYC Verification Date',
+      type: 'daterange',
+    },
+    {
+      key: 'kycLastUpdated',
+      label: 'KYC Last Updated',
+      type: 'daterange',
     },
     {
       key: 'investmentRange',
@@ -284,17 +318,35 @@ const InvestorsPage = () => {
         }
       });
     } else {
-      getInvestors(params).then(response => {
-        // Update pagination with total from response if available
-        if (response.pagination) {
-          setPagination(prev => ({
-            ...prev,
-            total: response.pagination.total
-          }));
-        }
-      });
+      // Use KYC-specific filtering if any KYC filters are active
+      const hasKYCFilters = kycFilters.status ||
+        kycFilters.submissionDateRange.start || kycFilters.submissionDateRange.end ||
+        kycFilters.verificationDateRange.start || kycFilters.verificationDateRange.end ||
+        kycFilters.lastUpdatedRange.start || kycFilters.lastUpdatedRange.end;
+      
+      if (hasKYCFilters) {
+        getInvestorsWithKYCFilters(params).then(response => {
+          // Update pagination with total from response if available
+          if (response.pagination) {
+            setPagination(prev => ({
+              ...prev,
+              total: response.pagination.total
+            }));
+          }
+        });
+      } else {
+        getInvestors(params).then(response => {
+          // Update pagination with total from response if available
+          if (response.pagination) {
+            setPagination(prev => ({
+              ...prev,
+              total: response.pagination.total
+            }));
+          }
+        });
+      }
     }
-  }, [pagination.page, pagination.limit, statusFilter, filters, searchQuery, sortFields, tableFilters, dateRange]);
+  }, [pagination.page, pagination.limit, statusFilter, filters, searchQuery, sortFields, tableFilters, dateRange, kycFilters]);
 
   // Handle search
   const handleSearch = (e) => {
@@ -327,6 +379,50 @@ const InvestorsPage = () => {
   // Handle date range change
   const handleDateRangeChange = (range) => {
     setDateRange(range);
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle KYC sort
+  const handleKYCSort = (field, direction) => {
+    setKYCSort({ field, direction });
+    setKycSortField(field);
+    setKycSortDirection(direction);
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Handle KYC filter changes
+  const handleKYCFilterChange = (key, value) => {
+    updateKYCFilter(key, value);
+    
+    // Update local state for form controls
+    switch (key) {
+      case 'status':
+        setKycStatusFilter(value);
+        break;
+      case 'submissionDateRange':
+        setKycSubmissionDateRange(value);
+        break;
+      case 'verificationDateRange':
+        setKycVerificationDateRange(value);
+        break;
+      case 'lastUpdatedRange':
+        setKycLastUpdatedRange(value);
+        break;
+    }
+    
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  // Clear all KYC filters
+  const handleClearKYCFilters = () => {
+    clearKYCFilters();
+    setKycStatusFilter('');
+    setKycSubmissionDateRange({ start: '', end: '' });
+    setKycVerificationDateRange({ start: '', end: '' });
+    setKycLastUpdatedRange({ start: '', end: '' });
+    resetKYCSort();
+    setKycSortField('createdAt');
+    setKycSortDirection('desc');
     setPagination({ ...pagination, page: 1 });
   };
 
@@ -806,6 +902,21 @@ const InvestorsPage = () => {
                   <option value="suspended">Suspended</option>
                 </select>
                 
+                <select
+                  id="kyc-status-filter"
+                  name="kyc-status-filter"
+                  className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md"
+                  value={kycStatusFilter}
+                  onChange={(e) => handleKYCFilterChange('status', e.target.value)}
+                >
+                  <option value="">All KYC Status</option>
+                  <option value="verified">Verified</option>
+                  <option value="pending">Pending</option>
+                  <option value="rejected">Rejected</option>
+                  <option value="not_started">Not Started</option>
+                  <option value="not_submitted">Not Submitted</option>
+                </select>
+                
                 <DateRangePicker
                   value={dateRange}
                   onChange={handleDateRangeChange}
@@ -823,6 +934,21 @@ const InvestorsPage = () => {
                   </svg>
                   Advanced
                 </button>
+                
+                {(kycStatusFilter || kycSubmissionDateRange.start || kycSubmissionDateRange.end ||
+                  kycVerificationDateRange.start || kycVerificationDateRange.end ||
+                  kycLastUpdatedRange.start || kycLastUpdatedRange.end) && (
+                  <button
+                    type="button"
+                    className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                    onClick={handleClearKYCFilters}
+                  >
+                    <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Clear KYC Filters
+                  </button>
+                )}
                 
                 <button
                   type="button"
@@ -882,12 +1008,39 @@ const InvestorsPage = () => {
       {showAdvancedFilters && (
         <div className="mb-6">
           <AdvancedFilterPanel
-            filters={{ ...tableFilters, ...(dateRange.start && dateRange.end && { dateRange }) }}
+            filters={{
+              ...tableFilters,
+              ...(dateRange.start && dateRange.end && { dateRange }),
+              ...kycFilters,
+              // Map KYC filters to expected format
+              kycSubmissionDate: kycFilters.submissionDateRange,
+              kycVerificationDate: kycFilters.verificationDateRange,
+              kycLastUpdated: kycFilters.lastUpdatedRange,
+            }}
             onFiltersChange={(filters) => {
               const { dateRange: newDateRange, ...otherFilters } = filters;
               if (newDateRange) {
                 setDateRange(newDateRange);
               }
+              
+              // Extract KYC filters and update them
+              const kycFiltersToUpdate = {};
+              if (filters.kycSubmissionDate) {
+                kycFiltersToUpdate.submissionDateRange = filters.kycSubmissionDate;
+                handleKYCFilterChange('submissionDateRange', filters.kycSubmissionDate);
+              }
+              if (filters.kycVerificationDate) {
+                kycFiltersToUpdate.verificationDateRange = filters.kycVerificationDate;
+                handleKYCFilterChange('verificationDateRange', filters.kycVerificationDate);
+              }
+              if (filters.kycLastUpdated) {
+                kycFiltersToUpdate.lastUpdatedRange = filters.kycLastUpdated;
+                handleKYCFilterChange('lastUpdatedRange', filters.kycLastUpdated);
+              }
+              if (filters.kycStatus) {
+                handleKYCFilterChange('status', filters.kycStatus);
+              }
+              
               setTableFilters(otherFilters);
             }}
             availableFilters={availableFilters}

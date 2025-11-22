@@ -10,15 +10,18 @@ import {
   InvestmentTimeline,
   FinancialSummary
 } from '../../components/investors/index.js';
+import { useRealtimeKYC, useDocumentEvents, useExpiryAlerts } from '../../utils/realtimeKYC.js';
 
 const InvestorDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    currentInvestor, 
-    isLoading, 
-    error, 
+  const {
+    currentInvestor,
+    kycDocuments,
+    isLoading,
+    error,
     getInvestorById,
+    getInvestorKYC,
     getInvestorInvestments,
     getInvestorTransactions,
     investments,
@@ -28,14 +31,68 @@ const InvestorDetailsPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('1y');
   const [isExporting, setIsExporting] = useState(false);
+  const [kycProgress, setKycProgress] = useState(0);
+  const [kycMetrics, setKycMetrics] = useState(null);
+  const [showKYCDetails, setShowKYCDetails] = useState(false);
+  const [realtimeEvents, setRealtimeEvents] = useState([]);
+  const [expiryAlerts, setExpiryAlerts] = useState([]);
+  const [connectionStatus, setConnectionStatus] = useState('disconnected');
+
+  // Real-time KYC updates
+  const { kycDocuments: realtimeKYCDocuments, lastUpdate, isConnected } = useRealtimeKYC(id);
+  const { events } = useDocumentEvents(id);
+  const { alerts } = useExpiryAlerts(id);
 
   useEffect(() => {
     if (id) {
       getInvestorById(id);
+      getInvestorKYC(id);
       getInvestorInvestments(id);
       getInvestorTransactions(id);
+      loadKYCMetrics();
     }
   }, [id]);
+
+  // Update connection status
+  useEffect(() => {
+    setConnectionStatus(isConnected ? 'connected' : 'disconnected');
+  }, [isConnected]);
+
+  // Update real-time events
+  useEffect(() => {
+    setRealtimeEvents(events);
+  }, [events]);
+
+  // Update expiry alerts
+  useEffect(() => {
+    setExpiryAlerts(alerts);
+  }, [alerts]);
+
+  // Update documents list when real-time data changes
+  useEffect(() => {
+    if (realtimeKYCDocuments && realtimeKYCDocuments.length > 0) {
+      // The context will handle updating the documents
+    }
+  }, [realtimeKYCDocuments]);
+
+  // Calculate KYC progress
+  useEffect(() => {
+    if (kycDocuments && kycDocuments.length > 0) {
+      const totalDocuments = kycDocuments.length;
+      const verifiedDocuments = kycDocuments.filter(doc => doc.verificationStatus === 'verified').length;
+      const progress = totalDocuments > 0 ? (verifiedDocuments / totalDocuments) * 100 : 0;
+      setKycProgress(Math.round(progress));
+    }
+  }, [kycDocuments]);
+
+  const loadKYCMetrics = async () => {
+    try {
+      const response = await investorsAPI.getKYCMetrics({ investorId: id });
+      setKycMetrics(response.data);
+    } catch (error) {
+      console.error('Failed to load KYC metrics:', error);
+    }
+  };
 
   const handleExportReport = async () => {
     try {
@@ -236,6 +293,210 @@ const InvestorDetailsPage = () => {
               </dd>
             </div>
           </dl>
+        </div>
+      </div>
+
+      {/* KYC Status Section */}
+      <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+        <div className="px-4 py-5 sm:px-6">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg leading-6 font-medium text-gray-900">KYC Status</h3>
+            <button
+              type="button"
+              onClick={() => setShowKYCDetails(!showKYCDetails)}
+              className="text-primary-600 hover:text-primary-800 text-sm font-medium"
+            >
+              {showKYCDetails ? 'Hide Details' : 'Show Details'}
+            </button>
+          </div>
+        </div>
+        <div className="border-t border-gray-200">
+          <div className="px-4 py-5 sm:p-6">
+            {/* Connection Status */}
+            <div className="flex items-center justify-end mb-4">
+              <div className="flex items-center">
+                <div className={`h-2 w-2 rounded-full mr-2 ${
+                  connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-400'
+                }`}></div>
+                <span className="text-xs text-gray-600">
+                  {connectionStatus === 'connected' ? 'Real-time updates active' : 'Real-time updates disconnected'}
+                </span>
+              </div>
+            </div>
+
+            {/* Real-time Events */}
+            {realtimeEvents.length > 0 && (
+              <div className="mb-4 bg-blue-50 border-l-4 border-blue-400 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-blue-800">Recent Activity</h3>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <ul className="space-y-1">
+                        {realtimeEvents.slice(0, 3).map((event, index) => (
+                          <li key={index}>
+                            {event.type === 'document_uploaded' && 'New document uploaded'}
+                            {event.type === 'document_verified' && 'Document verified'}
+                            {event.type === 'document_rejected' && 'Document rejected'}
+                            {event.type === 'document_flagged' && 'Document flagged for review'}
+                            {event.timestamp && ` (${formatDate(event.timestamp)})`}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Expiry Alerts */}
+            {expiryAlerts.length > 0 && (
+              <div className="mb-4 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+                <div className="flex">
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-yellow-800">Expiry Alerts</h3>
+                    <div className="mt-2 text-sm text-yellow-700">
+                      <ul className="space-y-1">
+                        {expiryAlerts.slice(0, 3).map((alert, index) => (
+                          <li key={index}>
+                            {alert.documentType} expiring on {formatDate(alert.expiryDate)}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* KYC Progress */}
+            <div className="mb-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">KYC Completion</span>
+                <span className="text-sm font-medium text-gray-900">{kycProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div
+                  className="bg-primary-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${kycProgress}%` }}
+                ></div>
+              </div>
+            </div>
+
+            {/* KYC Status Overview */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 mb-6">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">
+                  {kycDocuments?.filter(doc => doc.verificationStatus === 'verified').length || 0}
+                </div>
+                <div className="text-sm text-gray-500">Verified Documents</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">
+                  {kycDocuments?.filter(doc => doc.verificationStatus === 'pending').length || 0}
+                </div>
+                <div className="text-sm text-gray-500">Pending Documents</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-red-600">
+                  {kycDocuments?.filter(doc => doc.verificationStatus === 'rejected').length || 0}
+                </div>
+                <div className="text-sm text-gray-500">Rejected Documents</div>
+              </div>
+            </div>
+
+            {/* Quick Actions */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                onClick={() => navigate(`/investors/${id}/kyc`)}
+              >
+                Manage KYC Documents
+              </button>
+              {kycDocuments?.filter(doc => doc.verificationStatus === 'pending').length > 0 && (
+                <button
+                  type="button"
+                  className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  onClick={() => navigate(`/investors/${id}/kyc?tab=verification`)}
+                >
+                  Review Pending Documents
+                </button>
+              )}
+            </div>
+
+            {/* Detailed KYC Information */}
+            {showKYCDetails && kycDocuments && kycDocuments.length > 0 && (
+              <div className="mt-6 border-t pt-6">
+                <h4 className="text-md font-medium text-gray-900 mb-4">Document Details</h4>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Document Type
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Upload Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          AI Score
+                        </th>
+                        <th className="relative px-6 py-3">
+                          <span className="sr-only">Actions</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {kycDocuments.map((document) => (
+                        <tr key={document._id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {formatStatus(document.documentType)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              document.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                              document.verificationStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                              document.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {formatStatus(document.verificationStatus)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(document.createdAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {document.verificationScore ? (
+                              <span className={`font-bold ${
+                                document.verificationScore >= 90 ? 'text-green-600' :
+                                document.verificationScore >= 70 ? 'text-yellow-600' :
+                                'text-red-600'
+                              }`}>
+                                {document.verificationScore}%
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">N/A</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              className="text-primary-600 hover:text-primary-900"
+                              onClick={() => navigate(`/investors/${id}/kyc?document=${document._id}`)}
+                            >
+                              View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -1,9 +1,11 @@
 import User from "../models/user.model.js";
 import jwt from "jsonwebtoken";
-import "dotenv/config";
+import dotenv from "dotenv";
 import crypto from "crypto";
 import bcrypt from "bcrypt";
 import nodemailer from "nodemailer";
+
+dotenv.config();
 
 const signin = async (req, res) => {
   try {
@@ -119,7 +121,7 @@ const hasAuthorization = (req, res, next) => {
   next();
 };
 
-export default {
+export {
   signin,
   signout,
   forgotPassword,

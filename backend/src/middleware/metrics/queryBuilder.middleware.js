@@ -1,6 +1,6 @@
 // Query builder middleware for consistent query handling across metrics endpoints
 
-export const buildQuery = (req, res, next) => {
+const buildQuery = (req, res, next) => {
   req.queryBuilder = {
     filters: {},
     options: {},
@@ -143,7 +143,7 @@ export const buildQuery = (req, res, next) => {
 };
 
 // Helper function to get query builder object for use in controllers
-export const getQueryBuilder = (req) => {
+const getQueryBuilder = (req) => {
   return req.queryBuilder || {
     filters: {},
     options: {},
@@ -259,7 +259,7 @@ const buildSearchFields = (searchRegex, path) => {
 };
 
 // Apply query builder to Mongoose query
-export const applyQueryBuilder = (model, queryBuilder) => {
+const applyQueryBuilder = (model, queryBuilder) => {
   let query = model.find(queryBuilder.filters);
 
   // Apply sort
@@ -285,7 +285,7 @@ export const applyQueryBuilder = (model, queryBuilder) => {
 };
 
 // Build aggregation pipeline from query builder
-export const buildAggregationPipeline = (queryBuilder) => {
+const buildAggregationPipeline = (queryBuilder) => {
   const pipeline = [];
 
   // Match stage
@@ -347,4 +347,12 @@ const buildGroupStage = (groupBy, aggregates) => {
   return { $group: groupStage };
 };
 
-export default buildQuery;
+module.exports = {
+  buildQuery,
+  getQueryBuilder,
+  parseDateRange,
+  buildSearchFields,
+  applyQueryBuilder,
+  buildAggregationPipeline,
+  buildGroupStage
+};

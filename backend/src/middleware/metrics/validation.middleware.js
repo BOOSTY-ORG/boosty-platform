@@ -1,6 +1,6 @@
 // Validation middleware for metrics endpoints
 
-export const validateDateRange = (req, res, next) => {
+const validateDateRange = (req, res, next) => {
   const { startDate, endDate, dateRange } = req.query;
   
   try {
@@ -67,7 +67,7 @@ export const validateDateRange = (req, res, next) => {
   }
 };
 
-export const validatePagination = (req, res, next) => {
+const validatePagination = (req, res, next) => {
   const { page, limit } = req.query;
   
   if (page !== undefined) {
@@ -99,7 +99,7 @@ export const validatePagination = (req, res, next) => {
   next();
 };
 
-export const validateSorting = (req, res, next) => {
+const validateSorting = (req, res, next) => {
   const { sortBy, sortOrder } = req.query;
   
   if (sortBy !== undefined) {
@@ -135,7 +135,7 @@ export const validateSorting = (req, res, next) => {
   next();
 };
 
-export const validateStatusFilter = (req, res, next) => {
+const validateStatusFilter = (req, res, next) => {
   const { status } = req.query;
   
   if (status !== undefined) {
@@ -163,7 +163,7 @@ export const validateStatusFilter = (req, res, next) => {
   next();
 };
 
-export const validateInvestorFilters = (req, res, next) => {
+const validateInvestorFilters = (req, res, next) => {
   const { investorType, riskProfile } = req.query;
   
   if (investorType !== undefined) {
@@ -201,7 +201,7 @@ export const validateInvestorFilters = (req, res, next) => {
   next();
 };
 
-export const validateTransactionFilters = (req, res, next) => {
+const validateTransactionFilters = (req, res, next) => {
   const { transactionType, paymentMethod, currency, minAmount, maxAmount } = req.query;
   
   if (transactionType !== undefined) {
@@ -265,7 +265,7 @@ export const validateTransactionFilters = (req, res, next) => {
   next();
 };
 
-export const validateReportParameters = (req, res, next) => {
+const validateReportParameters = (req, res, next) => {
   const { format, includeSections } = req.query;
   
   if (format !== undefined) {
@@ -298,4 +298,14 @@ export const validateReportParameters = (req, res, next) => {
   }
   
   next();
+};
+
+module.exports = {
+  validateDateRange,
+  validatePagination,
+  validateSorting,
+  validateStatusFilter,
+  validateInvestorFilters,
+  validateTransactionFilters,
+  validateReportParameters
 };

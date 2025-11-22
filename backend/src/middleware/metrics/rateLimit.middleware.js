@@ -59,7 +59,7 @@ class RateLimitService {
 
 const rateLimitService = new RateLimitService();
 
-export const rateLimit = (options = {}) => {
+const rateLimit = (options = {}) => {
   const {
     windowMs = 15 * 60 * 1000, // 15 minutes
     max = 100, // limit each IP to 100 requests per windowMs
@@ -110,31 +110,31 @@ export const rateLimit = (options = {}) => {
 };
 
 // Predefined rate limit configurations for different endpoint types
-export const adminRateLimit = rateLimit({
+const adminRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 1000, // 1000 requests per hour
   message: 'Too many admin requests, please try again later.'
 });
 
-export const standardRateLimit = rateLimit({
+const standardRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 500, // 500 requests per hour
   message: 'Too many requests, please try again later.'
 });
 
-export const reportRateLimit = rateLimit({
+const reportRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 50, // 50 reports per hour
   message: 'Too many report generation requests, please try again later.'
 });
 
-export const realtimeRateLimit = rateLimit({
+const realtimeRateLimit = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 200, // 200 real-time requests per hour
   message: 'Too many real-time requests, please try again later.'
 });
 
-export const authRateLimit = rateLimit({
+const authRateLimit = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 5, // 5 authentication attempts per 15 minutes
   message: 'Too many authentication attempts, please try again later.',
@@ -142,7 +142,7 @@ export const authRateLimit = rateLimit({
 });
 
 // User-based rate limiting
-export const userRateLimit = (options = {}) => {
+const userRateLimit = (options = {}) => {
   return rateLimit({
     ...options,
     keyGenerator: (req) => {
@@ -156,7 +156,7 @@ export const userRateLimit = (options = {}) => {
 };
 
 // Role-based rate limiting
-export const roleBasedRateLimit = (req, res, next) => {
+const roleBasedRateLimit = (req, res, next) => {
   const userRole = req.user?.role;
   
   switch (userRole) {
@@ -175,7 +175,7 @@ export const roleBasedRateLimit = (req, res, next) => {
 };
 
 // Endpoint-specific rate limiting based on path
-export const smartRateLimit = (req, res, next) => {
+const smartRateLimit = (req, res, next) => {
   const path = req.path;
   
   if (path.includes('/reports')) {
@@ -200,7 +200,7 @@ const generateRequestId = () => {
 };
 
 // Get rate limit statistics
-export const getRateLimitStats = () => {
+const getRateLimitStats = () => {
   return {
     totalKeys: rateLimitService.requests.size,
     activeKeys: Array.from(rateLimitService.requests.keys()).map(key => ({
@@ -212,8 +212,22 @@ export const getRateLimitStats = () => {
 };
 
 // Reset rate limit for a specific key
-export const resetRateLimit = (key) => {
+const resetRateLimit = (key) => {
   rateLimitService.reset(key);
 };
 
-export default rateLimitService;
+module.exports = {
+  rateLimit,
+  adminRateLimit,
+  standardRateLimit,
+  reportRateLimit,
+  realtimeRateLimit,
+  authRateLimit,
+  userRateLimit,
+  roleBasedRateLimit,
+  smartRateLimit,
+  generateRequestId,
+  getRateLimitStats,
+  resetRateLimit,
+  rateLimitService
+};

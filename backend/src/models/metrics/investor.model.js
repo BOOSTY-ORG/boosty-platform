@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require("mongoose");
 
 const investorSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }, // Made optional for admin creation
@@ -134,4 +134,4 @@ investorSchema.pre('save', function(next) {
 
 const Investor = mongoose.model('Investor', investorSchema);
 
-export default Investor;
+module.exports = Investor;

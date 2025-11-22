@@ -2,22 +2,30 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
+import { useRealtimeUserKYC, useUserDocumentEvents } from '../../utils/realtimeUserKYC.js';
+import CommunicationHistory from '../../components/users/CommunicationHistory.jsx';
+import KYCProgressIndicator from '../../components/users/KYCProgressIndicator.jsx';
 
 const UserDetailsPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { 
-    currentUser, 
-    isLoading, 
-    error, 
+  const {
+    currentUser,
+    isLoading,
+    error,
     getUserById,
     getUserApplications,
     getUserInstallations,
     getUserActivity,
     applications,
     installations,
-    documents
+    documents,
+    getUserKYC
   } = useUser();
+  
+  // Real-time KYC hooks
+  const { kycDocuments, lastUpdate, isConnected } = useRealtimeUserKYC(id);
+  const { events } = useUserDocumentEvents(id);
   
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -27,6 +35,7 @@ const UserDetailsPage = () => {
       getUserApplications(id);
       getUserInstallations(id);
       getUserActivity(id);
+      getUserKYC(id); // Fetch KYC data for real-time updates
     }
   }, [id]);
 
@@ -250,13 +259,45 @@ const UserDetailsPage = () => {
             </button>
             <button
               onClick={() => setActiveTab('documents')}
-              className={`py-2 px-4 text-sm font-medium ${
+              className={`py-2 px-4 text-sm font-medium relative ${
                 activeTab === 'documents'
                   ? 'border-primary-500 text-primary-600 border-b-2'
                   : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
               }`}
             >
               Documents
+              {isConnected && (
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('kyc')}
+              className={`py-2 px-4 text-sm font-medium relative ${
+                activeTab === 'kyc'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              KYC Status
+              {isConnected && (
+                <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => setActiveTab('communications')}
+              className={`py-2 px-4 text-sm font-medium ${
+                activeTab === 'communications'
+                  ? 'border-primary-500 text-primary-600 border-b-2'
+                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+              }`}
+            >
+              Communications
             </button>
           </nav>
         </div>
@@ -486,8 +527,19 @@ const UserDetailsPage = () => {
 
           {activeTab === 'documents' && (
             <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-900">User Documents</h3>
-              {documents && documents.length > 0 ? (
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">User Documents</h3>
+                {isConnected && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-green-600">Real-time updates active</span>
+                    <span className="flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              {kycDocuments && kycDocuments.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
@@ -510,8 +562,8 @@ const UserDetailsPage = () => {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {documents.map((document) => (
-                        <tr key={document._id}>
+                      {kycDocuments.map((document) => (
+                        <tr key={document._id} className="hover:bg-gray-50 transition-colors">
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                             {document.name}
                           </td>
@@ -520,20 +572,28 @@ const UserDetailsPage = () => {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              document.status === 'verified' ? 'bg-green-100 text-green-800' :
-                              document.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                              document.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                              document.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                              document.verificationStatus === 'pending' || document.verificationStatus === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+                              document.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
                               'bg-gray-100 text-gray-800'
                             }`}>
-                              {formatStatus(document.status)}
+                              {formatStatus(document.verificationStatus)}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(document.createdAt)}
+                            {formatDate(document.uploadedAt || document.createdAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button className="text-primary-600 hover:text-primary-900">
+                            <button className="text-primary-600 hover:text-primary-900 mr-2">
                               Download
+                            </button>
+                            {document.verificationStatus === 'pending' && (
+                              <button className="text-green-600 hover:text-green-900 mr-2">
+                                Verify
+                              </button>
+                            )}
+                            <button className="text-red-600 hover:text-red-900">
+                              Reject
                             </button>
                           </td>
                         </tr>
@@ -543,9 +603,233 @@ const UserDetailsPage = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <p className="text-gray-500">No documents found for this user.</p>
+                  <p className="text-gray-500">No KYC documents found for this user.</p>
                 </div>
               )}
+              {lastUpdate && (
+                <div className="mt-4 text-xs text-gray-500 text-right">
+                  Last updated: {lastUpdate.toLocaleString()}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'kyc' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">KYC Verification Status</h3>
+                {isConnected && (
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm text-green-600">Real-time updates active</span>
+                    <span className="flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                    </span>
+                  </div>
+                )}
+              </div>
+              
+              <KYCProgressIndicator
+                kycDocuments={kycDocuments}
+                showDetails={true}
+              />
+              
+              {/* KYC Actions */}
+              <div className="bg-white shadow rounded-lg p-6">
+                <h4 className="text-md font-medium text-gray-900 mb-4">KYC Actions</h4>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => {
+                      // Navigate to document upload or open upload modal
+                      navigate(`/users/${id}/application`);
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload Documents
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      // Open bulk KYC modal for this user
+                      if (currentUser) {
+                        // This would typically open a modal with just this user selected
+                        console.log('Open bulk KYC modal for user:', id);
+                      }
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Manage Documents
+                  </button>
+                  
+                  <button
+                    onClick={() => {
+                      // Refresh KYC data
+                      getUserKYC(id);
+                    }}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  >
+                    <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+              
+              {/* Document Verification History */}
+              {kycDocuments && kycDocuments.length > 0 && (
+                <div className="bg-white shadow rounded-lg p-6">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">Document Verification Status</h4>
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Document Type
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Status
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Uploaded Date
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Verification Score
+                          </th>
+                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Actions
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {kycDocuments.map((document) => (
+                          <tr key={document._id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {formatStatus(document.documentType)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                                document.verificationStatus === 'verified' ? 'bg-green-100 text-green-800' :
+                                document.verificationStatus === 'pending' || document.verificationStatus === 'under_review' ? 'bg-yellow-100 text-yellow-800' :
+                                document.verificationStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                              }`}>
+                                {formatStatus(document.verificationStatus)}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {formatDate(document.uploadedAt || document.createdAt)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {document.verificationScore ? (
+                                <div className="flex items-center">
+                                  <div className="flex-1 mr-2">
+                                    <div className="w-full bg-gray-200 rounded-full h-2">
+                                      <div
+                                        className={`h-2 rounded-full ${
+                                          document.verificationScore >= 90 ? 'bg-green-600' :
+                                          document.verificationScore >= 70 ? 'bg-yellow-600' :
+                                          'bg-red-600'
+                                        }`}
+                                        style={{ width: `${document.verificationScore}%` }}
+                                      ></div>
+                                    </div>
+                                  </div>
+                                  <span className={`font-medium ${
+                                    document.verificationScore >= 90 ? 'text-green-600' :
+                                    document.verificationScore >= 70 ? 'text-yellow-600' :
+                                    'text-red-600'
+                                  }`}>
+                                    {document.verificationScore}%
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="text-gray-400">N/A</span>
+                              )}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <button
+                                onClick={() => {
+                                  // Open document preview modal
+                                  console.log('Preview document:', document._id);
+                                }}
+                                className="text-primary-600 hover:text-primary-900 mr-3"
+                              >
+                                Preview
+                              </button>
+                              {document.verificationStatus === 'pending' && (
+                                <>
+                                  <button
+                                    onClick={() => {
+                                      // Verify document
+                                      verifyUserKYCDocument(id, document._id);
+                                    }}
+                                    className="text-green-600 hover:text-green-900 mr-3"
+                                  >
+                                    Verify
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      // Reject document
+                                      rejectUserKYCDocument(id, document._id, { reason: 'Manual rejection' });
+                                    }}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    Reject
+                                  </button>
+                                </>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+              
+              {events && events.length > 0 && (
+                <div className="bg-white shadow rounded-lg p-6">
+                  <h4 className="text-md font-medium text-gray-900 mb-4">Recent KYC Events</h4>
+                  <div className="space-y-2">
+                    {events.slice(0, 5).map((event, index) => (
+                      <div key={index} className="flex items-center justify-between py-2 border-b border-gray-100">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            event.type === 'document_verified' ? 'bg-green-500' :
+                            event.type === 'document_uploaded' ? 'bg-blue-500' :
+                            event.type === 'document_rejected' ? 'bg-red-500' :
+                            event.type === 'document_flagged' ? 'bg-yellow-500' :
+                            'bg-gray-500'
+                          }`}></div>
+                          <span className="text-sm text-gray-900">
+                            {event.type === 'document_verified' ? 'Document Verified' :
+                             event.type === 'document_uploaded' ? 'Document Uploaded' :
+                             event.type === 'document_rejected' ? 'Document Rejected' :
+                             event.type === 'document_flagged' ? 'Document Flagged' :
+                             'Unknown Event'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500">
+                          {new Date(event.timestamp).toLocaleString()}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'communications' && (
+            <div className="space-y-4">
+              <CommunicationHistory userId={id} />
             </div>
           )}
         </div>

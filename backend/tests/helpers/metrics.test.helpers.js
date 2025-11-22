@@ -1,14 +1,14 @@
-import mongoose from 'mongoose';
-import { generateMockData, generateTestUser, generateTestInvestor } from '../../src/utils/metrics/mockData.generator.js';
-import User from '../../src/models/user.model.js';
-import Investor from '../../src/models/metrics/investor.model.js';
-import SolarApplication from '../../src/models/metrics/solarApplication.model.js';
-import Transaction from '../../src/models/metrics/transaction.model.js';
-import Investment from '../../src/models/metrics/investment.model.js';
-import KYCDocument from '../../src/models/metrics/kycDocument.model.js';
+const mongoose = require('mongoose');
+const { generateMockData, generateTestUser, generateTestInvestor } = require('../../src/utils/metrics/mockData.generator.js');
+const User = require('../../src/models/user.model.js');
+const Investor = require('../../src/models/metrics/investor.model.js');
+const SolarApplication = require('../../src/models/metrics/solarApplication.model.js');
+const Transaction = require('../../src/models/metrics/transaction.model.js');
+const Investment = require('../../src/models/metrics/investment.model.js');
+const KYCDocument = require('../../src/models/metrics/kycDocument.model.js');
 
 // Test database setup
-export const setupTestDatabase = async () => {
+const setupTestDatabase = async () => {
   // Use a test database
   const mongoUri = process.env.DATABASE_URL || 'mongodb://localhost:27017/boosty_metrics_test';
   
@@ -27,14 +27,14 @@ export const setupTestDatabase = async () => {
   ]);
 };
 
-export const teardownTestDatabase = async () => {
+const teardownTestDatabase = async () => {
   if (mongoose.connection.readyState !== 0) {
     await mongoose.connection.close();
   }
 };
 
 // Create test data
-export const createTestData = async (options = {}) => {
+const createTestData = async (options = {}) => {
   const {
     users = 5,
     investors = 2,
@@ -217,7 +217,7 @@ export const createTestData = async (options = {}) => {
 };
 
 // Mock authentication middleware
-export const mockAuthMiddleware = (req, res, next) => {
+const mockAuthMiddleware = (req, res, next) => {
   req.user = {
     id: new mongoose.Types.ObjectId(),
     email: 'test@example.com',
@@ -227,7 +227,7 @@ export const mockAuthMiddleware = (req, res, next) => {
 };
 
 // Mock request object
-export const createMockRequest = (overrides = {}) => {
+const createMockRequest = (overrides = {}) => {
   return {
     query: {},
     params: {},
@@ -242,7 +242,7 @@ export const createMockRequest = (overrides = {}) => {
 };
 
 // Mock response object
-export const createMockResponse = () => {
+const createMockResponse = () => {
   const res = {};
   res.status = jest.fn().mockReturnValue(res);
   res.json = jest.fn().mockReturnValue(res);
@@ -252,10 +252,10 @@ export const createMockResponse = () => {
 };
 
 // Mock next function
-export const createMockNext = () => jest.fn();
+const createMockNext = () => jest.fn();
 
 // Generate test dates
-export const generateTestDates = () => {
+const generateTestDates = () => {
   const now = new Date();
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
   const sixtyDaysAgo = new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000);
@@ -270,7 +270,7 @@ export const generateTestDates = () => {
 };
 
 // Common test data
-export const commonTestData = {
+const commonTestData = {
   validUser: {
     name: 'Test User',
     email: 'test@example.com',
@@ -323,7 +323,7 @@ export const commonTestData = {
   }
 };
 
-export default {
+module.exports = {
   setupTestDatabase,
   teardownTestDatabase,
   createTestData,
