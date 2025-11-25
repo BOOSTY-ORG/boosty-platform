@@ -14,6 +14,7 @@ import Login from './pages/auth/Login.jsx';
 import Register from './pages/auth/Register.jsx';
 import Onboarding from './pages/auth/Onboarding.jsx';
 import GetStarted from './pages/auth/GetStarted.jsx';
+import Roles from './pages/auth/Roles.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
 import DashboardHome from './pages/dashboard/DashboardHome.jsx';
@@ -42,6 +43,7 @@ function App() {
               {/* Full-screen auth routes (without AuthLayout) */}
               <Route path="/auth/onboarding" element={<Onboarding />} />
               <Route path="/auth/get-started" element={<GetStarted />} />
+              <Route path="/auth/roles" element={<Roles />} />
               
               {/* Landing Route - Onboarding */}
               <Route path="/" element={<Onboarding />} />

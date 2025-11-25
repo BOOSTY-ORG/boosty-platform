@@ -49,11 +49,11 @@ const GetStarted = () => {
     const isRightSwipe = distance < -minSwipeDistance;
     
     if (isLeftSwipe) {
-      // Swipe left → Navigate to Log In page
-      navigate('/auth/login');
+      // Swipe left → Navigate to Roles page
+      navigate('/auth/roles');
     }
     if (isRightSwipe) {
-      // Swipe right → Navigate to Sign Up page
+      // Swipe right → Navigate to Register page
       navigate('/auth/register');
     }
   };
@@ -73,7 +73,7 @@ const GetStarted = () => {
   }, [slides.length]);
 
   const handleLoginClick = () => {
-    navigate('/auth/login');
+    navigate('/auth/roles');
   };
 
   const handleRegisterClick = () => {

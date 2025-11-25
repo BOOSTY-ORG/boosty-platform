@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { validateEmail, validatePassword } from '../../utils/validators.js';
 
 const Login = () => {
+  const [searchParams] = useSearchParams();
+  const [userRole, setUserRole] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -13,6 +15,13 @@ const Login = () => {
   
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const role = searchParams.get('role');
+    if (role) {
+      setUserRole(role);
+    }
+  }, [searchParams]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,13 +65,30 @@ const Login = () => {
     <div className="sm:mx-auto sm:w-full sm:max-w-md">
       <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-900">Sign in to your account</h2>
+          <h2 className="text-3xl font-bold text-gray-900">
+            {userRole === 'admin' ? 'Admin Sign In' : userRole === 'user' ? 'User Sign In' : 'Sign in to your account'}
+          </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Or{' '}
-            <Link to="/auth/register" className="font-medium text-primary-600 hover:text-primary-500">
-              create a new account
-            </Link>
+            {userRole === 'admin' ? 'Sign in to your admin account' :
+             userRole === 'user' ? 'Sign in to your user account' :
+             'Or '}
+            {userRole ? '' : (
+              <>
+                Or{' '}
+                <Link to="/auth/register" className="font-medium text-primary-600 hover:text-primary-500">
+                  create a new account
+                </Link>
+              </>
+            )}
           </p>
+          {userRole && (
+            <p className="mt-2 text-sm text-gray-600">
+              Not a {userRole}?{' '}
+              <Link to="/auth/roles" className="font-medium text-primary-600 hover:text-primary-500">
+                Choose a different role
+              </Link>
+            </p>
+          )}
         </div>
 
         {errors.general && (
