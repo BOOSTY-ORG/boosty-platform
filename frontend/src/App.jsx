@@ -17,6 +17,7 @@ import GetStarted from './pages/auth/GetStarted.jsx';
 import Roles from './pages/auth/Roles.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
+import SignInTest from './pages/auth/SignInTest.jsx';
 import DashboardHome from './pages/dashboard/DashboardHome.jsx';
 import AdminDashboard from './pages/dashboard/AdminDashboard.jsx';
 import FinanceDashboard from './pages/dashboard/FinanceDashboard.jsx';
@@ -55,6 +56,9 @@ function App() {
                 <Route path="forgot-password" element={<ForgotPassword />} />
                 <Route path="reset-password" element={<ResetPassword />} />
               </Route>
+
+              {/* Test Route */}
+              <Route path="/test/signin" element={<SignInTest />} />
 
               {/* Dashboard Routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>

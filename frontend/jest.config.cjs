@@ -7,7 +7,7 @@ module.exports = {
   preset: null,
   
   // Test environment
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   
   // Module file extensions
   moduleFileExtensions: ['js', 'jsx', 'json'],
