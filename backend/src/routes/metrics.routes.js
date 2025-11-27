@@ -66,14 +66,31 @@ router.get('/docs', (req, res) => {
   });
 });
 
-// Mount sub-routes
-router.use('/dashboard', dashboardRoutes);
-router.use('/investors', investorRoutes);
-router.use('/users', userRoutes);
-router.use('/transactions', transactionRoutes);
-router.use('/kyc', kycRoutes);
-router.use('/reports', reportingRoutes);
-router.use('/crm', crmRoutes);
-router.use('/crm/tickets', ticketRoutes);
+// Mount sub-routes with error handling
+try {
+  router.use('/dashboard', dashboardRoutes);
+  router.use('/investors', investorRoutes);
+  router.use('/users', userRoutes);
+  router.use('/transactions', transactionRoutes);
+  router.use('/kyc', kycRoutes);
+  router.use('/reports', reportingRoutes);
+  router.use('/crm', crmRoutes);
+  // Note: Ticket routes are now handled within the CRM routes module
+  // to avoid conflicts and maintain proper route hierarchy
+} catch (error) {
+  console.error('Error mounting metrics routes:', error);
+  // Add error handling middleware for route registration failures
+  router.use((err, req, res, next) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Route registration error',
+        message: 'There was an error registering the metrics routes',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+    next();
+  });
+}
 
 export default router;

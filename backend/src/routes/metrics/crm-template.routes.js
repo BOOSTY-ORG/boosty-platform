@@ -1,5 +1,6 @@
 import express from "express";
 import { requireAnalystRole } from "../../middleware/metrics/auth.middleware.js";
+import * as crmTemplateController from "../../controllers/metrics/crm-template.controller.js";
 
 const router = express.Router();
 
@@ -41,73 +42,7 @@ router.use(requireAnalystRole);
  *       200:
  *         description: Template metrics retrieved successfully
  */
-router.get('/', async (req, res) => {
-  try {
-    // Import model dynamically
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-    const { parseDateRange } = await import("../../utils/metrics/dateRange.util.js");
-
-    const { startDate, endDate } = parseDateRange(req.query);
-    
-    // Get basic template metrics
-    const [
-      totalTemplates,
-      approvedTemplates,
-      draftTemplates,
-      templatesByCategory,
-      templatesByChannel,
-      templatesByType,
-      templatesWithABTesting,
-      topPerformingTemplates
-    ] = await Promise.all([
-      CrmTemplate.countDocuments({ deleted: false }),
-      CrmTemplate.countDocuments({ status: 'approved', deleted: false }),
-      CrmTemplate.countDocuments({ status: 'draft', deleted: false }),
-      CrmTemplate.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$category", count: { $sum: 1 } } }
-      ]),
-      CrmTemplate.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$channel", count: { $sum: 1 } } }
-      ]),
-      CrmTemplate.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$type", count: { $sum: 1 } } }
-      ]),
-      CrmTemplate.countDocuments({ 'abTesting.enabled': true, deleted: false }),
-      CrmTemplate.getTopPerformingTemplates(5)
-    ]);
-
-    // Calculate performance metrics
-    const performanceMetrics = await getTemplatePerformanceMetrics(startDate, endDate);
-
-    const response = {
-      summary: {
-        totalTemplates,
-        approvedTemplates,
-        draftTemplates,
-        templatesWithABTesting,
-        averageOpenRate: performanceMetrics.averageOpenRate,
-        averageClickRate: performanceMetrics.averageClickRate,
-        totalUsage: performanceMetrics.totalUsage
-      },
-      breakdowns: {
-        category: formatBreakdown(templatesByCategory),
-        channel: formatBreakdown(templatesByChannel),
-        type: formatBreakdown(templatesByType)
-      },
-      performance: performanceMetrics,
-      topPerforming: topPerformingTemplates
-    };
-
-    return res.json(formatSuccessResponse(response, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/', crmTemplateController.getCrmTemplateMetrics);
 
 /**
  * @swagger
@@ -173,52 +108,7 @@ router.get('/', async (req, res) => {
  *       200:
  *         description: Templates retrieved successfully
  */
-router.get('/list', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-    const { buildPaginationMeta } = await import("../../utils/metrics/pagination.util.js");
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // Build filter
-    const filter = { deleted: false };
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.category) filter.category = req.query.category;
-    if (req.query.channel) filter.channel = req.query.channel;
-    if (req.query.type) filter.type = req.query.type;
-
-    // Build sort
-    const sort = {};
-    if (req.query.sortBy) {
-      sort[req.query.sortBy] = req.query.sortOrder === 'asc' ? 1 : -1;
-    } else {
-      sort.createdAt = -1;
-    }
-
-    const templates = await CrmTemplate.find(filter)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName email')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    const total = await CrmTemplate.countDocuments(filter);
-    const paginationMeta = buildPaginationMeta(page, limit, total);
-
-    const response = {
-      data: templates,
-      pagination: paginationMeta
-    };
-
-    return res.json(formatSuccessResponse(response, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/list', crmTemplateController.getCrmTemplateList);
 
 /**
  * @swagger
@@ -252,29 +142,7 @@ router.get('/list', async (req, res) => {
  *       200:
  *         description: Search results retrieved successfully
  */
-router.get('/search', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const searchTerm = req.query.q;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-
-    const templates = await CrmTemplate.searchTemplates(searchTerm, {
-      status: req.query.status,
-      category: req.query.category,
-      channel: req.query.channel
-    })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    return res.json(formatSuccessResponse({ data: templates }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/search', crmTemplateController.searchCrmTemplates);
 
 /**
  * @swagger
@@ -298,31 +166,7 @@ router.get('/search', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.get('/:templateId', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const template = await CrmTemplate.findById(req.params.templateId)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('updatedBy', 'firstName lastName email')
-      .populate('approvedBy', 'firstName lastName email')
-      .populate('rejectedBy', 'firstName lastName email')
-      .populate('parentTemplate', 'name version');
-
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    return res.json(formatSuccessResponse({ template }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/:templateId', crmTemplateController.getCrmTemplateDetails);
 
 /**
  * @swagger
@@ -383,28 +227,7 @@ router.get('/:templateId', async (req, res) => {
  *       400:
  *         description: Invalid input data
  */
-router.post('/', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const templateData = {
-      ...req.body,
-      createdBy: req.user?.id,
-      createdAt: new Date()
-    };
-
-    const template = new CrmTemplate(templateData);
-    await template.save();
-
-    await template.populate('createdBy', 'firstName lastName email');
-
-    return res.status(201).json(formatSuccessResponse({ template }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/', crmTemplateController.createCrmTemplate);
 
 /**
  * @swagger
@@ -451,37 +274,7 @@ router.post('/', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.put('/:templateId', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const updateData = {
-      ...req.body,
-      updatedBy: req.user?.id,
-      updatedAt: new Date()
-    };
-
-    const template = await CrmTemplate.findByIdAndUpdate(
-      req.params.templateId,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'firstName lastName email')
-     .populate('updatedBy', 'firstName lastName email');
-
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    return res.json(formatSuccessResponse({ template }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.put('/:templateId', crmTemplateController.updateCrmTemplate);
 
 /**
  * @swagger
@@ -505,31 +298,7 @@ router.put('/:templateId', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.delete('/:templateId', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const template = await CrmTemplate.findById(req.params.templateId);
-    
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    await template.softDelete(req.user?.id);
-
-    return res.json(formatSuccessResponse(
-      { message: 'CRM template deleted successfully' },
-      req
-    ));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.delete('/:templateId', crmTemplateController.deleteCrmTemplate);
 
 /**
  * @swagger
@@ -553,29 +322,7 @@ router.delete('/:templateId', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.post('/:templateId/approve', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const template = await CrmTemplate.findById(req.params.templateId);
-    
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    await template.approve(req.user?.id);
-    await template.populate('approvedBy', 'firstName lastName email');
-
-    return res.json(formatSuccessResponse({ template }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:templateId/approve', crmTemplateController.approveTemplate);
 
 /**
  * @swagger
@@ -610,31 +357,7 @@ router.post('/:templateId/approve', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.post('/:templateId/reject', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const { reason } = req.body;
-    
-    const template = await CrmTemplate.findById(req.params.templateId);
-    
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    await template.reject(req.user?.id, reason);
-    await template.populate('rejectedBy', 'firstName lastName email');
-
-    return res.json(formatSuccessResponse({ template }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:templateId/reject', crmTemplateController.rejectTemplate);
 
 /**
  * @swagger
@@ -669,31 +392,7 @@ router.post('/:templateId/reject', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.post('/:templateId/version', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const { version } = req.body;
-    
-    const template = await CrmTemplate.findById(req.params.templateId);
-    
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    const newVersion = await template.createVersion(version, req.user?.id);
-    await newVersion.populate('createdBy', 'firstName lastName email');
-
-    return res.json(formatSuccessResponse({ template: newVersion }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:templateId/version', crmTemplateController.createTemplateVersion);
 
 /**
  * @swagger
@@ -717,29 +416,7 @@ router.post('/:templateId/version', async (req, res) => {
  *       404:
  *         description: Template not found
  */
-router.get('/:templateId/preview', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const template = await CrmTemplate.findById(req.params.templateId);
-    
-    if (!template) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'TEMPLATE_NOT_FOUND',
-        message: 'CRM template not found'
-      }, req, 404));
-    }
-
-    // Generate preview with sample data
-    const preview = generateTemplatePreview(template);
-
-    return res.json(formatSuccessResponse({ preview }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/:templateId/preview', crmTemplateController.previewTemplate);
 
 /**
  * @swagger
@@ -766,22 +443,7 @@ router.get('/:templateId/preview', async (req, res) => {
  *       200:
  *         description: Templates retrieved successfully
  */
-router.get('/category/:category', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const { category } = req.params;
-    const { channel } = req.query;
-
-    const templates = await CrmTemplate.findByCategory(category, channel);
-
-    return res.json(formatSuccessResponse({ templates }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/category/:category', crmTemplateController.getTemplatesByCategory);
 
 /**
  * @swagger
@@ -810,22 +472,7 @@ router.get('/category/:category', async (req, res) => {
  *       200:
  *         description: Top performing templates retrieved successfully
  */
-router.get('/top-performing', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const limit = parseInt(req.query.limit) || 10;
-    const metric = req.query.metric || 'openRate';
-
-    const templates = await CrmTemplate.getTopPerformingTemplates(limit, metric);
-
-    return res.json(formatSuccessResponse({ templates }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/top-performing', crmTemplateController.getTopPerformingTemplates);
 
 /**
  * @swagger
@@ -840,19 +487,7 @@ router.get('/top-performing', async (req, res) => {
  *       200:
  *         description: Template statistics retrieved successfully
  */
-router.get('/stats', async (req, res) => {
-  try {
-    const { default: CrmTemplate } = await import("../../models/metrics/crm-template.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const stats = await CrmTemplate.getTemplateStats();
-
-    return res.json(formatSuccessResponse({ stats }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/stats', crmTemplateController.getTemplateStats);
 
 // Helper functions
 const getTemplatePerformanceMetrics = async (startDate, endDate) => {

@@ -25,6 +25,21 @@ export const crmAPI = {
     return api.get('/metrics/crm/health');
   },
 
+  /**
+   * Get comprehensive CRM metrics
+   * @param {Object} params - Query parameters for filtering
+   * @param {string} params.startDate - Start date for filtering
+   * @param {string} params.endDate - End date for filtering
+   * @param {string} params.dateRange - Preset date range (today, yesterday, last_7_days, etc.)
+   * @param {string} params.groupBy - Group results by field
+   * @param {string[]} params.include - Specific metrics to include
+   * @param {string[]} params.exclude - Specific metrics to exclude
+   * @returns {Promise<Object>} Comprehensive CRM metrics
+   */
+  getCRMMetrics: async (params = {}) => {
+    return api.get('/metrics/crm/metrics', { params });
+  },
+
   // === COMMUNICATIONS ===
 
   /**
@@ -1295,5 +1310,203 @@ export const crmAPI = {
       isTyping,
       timestamp: new Date().toISOString()
     });
+  },
+  // === TICKETS ===
+
+  /**
+   * Get ticket metrics and analytics
+   * @param {Object} params - Query parameters for filtering
+   * @param {string} params.startDate - Start date for filtering
+   * @param {string} params.endDate - End date for filtering
+   * @param {string} params.dateRange - Preset date range (today, yesterday, last_7_days, etc.)
+   * @returns {Promise<Object>} Ticket metrics
+   */
+  getTicketMetrics: async (params = {}) => {
+    return api.get('/metrics/crm/tickets/metrics', { params });
+  },
+
+  /**
+   * Get paginated list of tickets
+   * @param {Object} params - Query parameters
+   * @param {number} params.page - Page number (default: 1)
+   * @param {number} params.limit - Items per page (default: 20)
+   * @param {string} params.sortBy - Field to sort by
+   * @param {string} params.sortOrder - Sort order (asc/desc)
+   * @param {string} params.status - Filter by status
+   * @param {string} params.priority - Filter by priority
+   * @param {string} params.category - Filter by category
+   * @param {string} params.assignedTo - Filter by assigned agent
+   * @param {string[]} params.tags - Filter by tags
+   * @returns {Promise<Object>} Paginated tickets list
+   */
+  getTickets: async (params = {}) => {
+    return api.get('/metrics/crm/tickets', { params });
+  },
+
+  /**
+   * Create a new ticket
+   * @param {Object} ticketData - Ticket data
+   * @param {string} ticketData.title - Ticket title
+   * @param {string} ticketData.description - Ticket description
+   * @param {string} ticketData.priority - Ticket priority (low, medium, high, urgent)
+   * @param {string} ticketData.category - Ticket category
+   * @param {string} ticketData.assignedTo - Assigned agent ID
+   * @param {Object} ticketData.relatedEntity - Related entity information
+   * @param {string} ticketData.relatedEntity.type - Entity type
+   * @param {string} ticketData.relatedEntity.id - Entity ID
+   * @param {string[]} ticketData.tags - Ticket tags
+   * @param {Date} ticketData.dueDate - Ticket due date
+   * @param {number} ticketData.estimatedHours - Estimated hours to resolve
+   * @returns {Promise<Object>} Created ticket
+   */
+  createTicket: async (ticketData) => {
+    return api.post('/metrics/crm/tickets', ticketData);
+  },
+
+  /**
+   * Update a ticket
+   * @param {string} ticketId - Ticket ID
+   * @param {Object} updateData - Update data
+   * @returns {Promise<Object>} Updated ticket
+   */
+  updateTicket: async (ticketId, updateData) => {
+    return api.put(`/metrics/crm/tickets/${ticketId}`, updateData);
+  },
+
+  /**
+   * Delete a ticket
+   * @param {string} ticketId - Ticket ID
+   * @returns {Promise<Object>} Deletion confirmation
+   */
+  deleteTicket: async (ticketId) => {
+    return api.delete(`/metrics/crm/tickets/${ticketId}`);
+  },
+
+  /**
+   * Assign a ticket to an agent
+   * @param {string} ticketId - Ticket ID
+   * @param {string} assignedTo - Agent ID to assign to
+   * @returns {Promise<Object>} Updated ticket
+   */
+  assignTicket: async (ticketId, assignedTo) => {
+    return api.put(`/metrics/crm/tickets/${ticketId}/assign`, { assignedTo });
+  },
+
+  /**
+   * Update ticket status
+   * @param {string} ticketId - Ticket ID
+   * @param {string} status - New status (open, in-progress, resolved, closed)
+   * @param {string} resolution - Resolution details (for resolved/closed tickets)
+   * @returns {Promise<Object>} Updated ticket
+   */
+  updateTicketStatus: async (ticketId, status, resolution = null) => {
+    const updateData = { status };
+    if (resolution) {
+      updateData.resolution = resolution;
+    }
+    return api.put(`/metrics/crm/tickets/${ticketId}/status`, updateData);
+  },
+
+  /**
+   * Add an internal note to a ticket
+   * @param {string} ticketId - Ticket ID
+   * @param {string} note - Note content
+   * @param {boolean} isPrivate - Whether note is private (default: true)
+   * @returns {Promise<Object>} Added note
+   */
+  addTicketNote: async (ticketId, note, isPrivate = true) => {
+    return api.post(`/metrics/crm/tickets/${ticketId}/notes`, { note, isPrivate });
+  },
+
+  /**
+   * Upload an attachment to a ticket
+   * @param {string} ticketId - Ticket ID
+   * @param {FormData} fileData - File data as FormData
+   * @returns {Promise<Object>} Uploaded attachment
+   */
+  uploadTicketAttachment: async (ticketId, fileData) => {
+    return api.post(`/metrics/crm/tickets/${ticketId}/attachments`, fileData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+
+  /**
+   * Get ticket activity log
+   * @param {string} ticketId - Ticket ID
+   * @returns {Promise<Object>} Ticket activity log
+   */
+  getTicketActivity: async (ticketId) => {
+    return api.get(`/metrics/crm/tickets/${ticketId}/activity`);
+  },
+
+  /**
+   * Search tickets by text query
+   * @param {string} query - Search query
+   * @param {Object} params - Additional query parameters
+   * @returns {Promise<Object>} Search results
+   */
+  searchTickets: async (query, params = {}) => {
+    return api.get('/metrics/crm/tickets/search', {
+      params: { q: query, ...params },
+    });
+  },
+
+  /**
+   * Bulk update multiple tickets
+   * @param {string[]} ticketIds - Array of ticket IDs
+   * @param {Object} updateData - Update data to apply to all tickets
+   * @returns {Promise<Object>} Bulk update result
+   */
+  bulkUpdateTickets: async (ticketIds, updateData) => {
+    return api.post('/metrics/crm/tickets/bulk-update', {
+      ticketIds,
+      updateData
+    });
+  },
+
+  /**
+   * Bulk assign multiple tickets to an agent
+   * @param {string[]} ticketIds - Array of ticket IDs
+   * @param {string} assignedTo - Agent ID to assign to
+   * @returns {Promise<Object>} Bulk assignment result
+   */
+  bulkAssignTickets: async (ticketIds, assignedTo) => {
+    return api.post('/metrics/crm/tickets/bulk-assign', {
+      ticketIds,
+      assignedTo
+    });
+  },
+
+  /**
+   * Bulk update status for multiple tickets
+   * @param {string[]} ticketIds - Array of ticket IDs
+   * @param {string} status - New status
+   * @param {string} resolution - Resolution details (for resolved/closed tickets)
+   * @returns {Promise<Object>} Bulk status update result
+   */
+  bulkUpdateStatus: async (ticketIds, status, resolution = null) => {
+    const updateData = { ticketIds, status };
+    if (resolution) {
+      updateData.resolution = resolution;
+    }
+    return api.post('/metrics/crm/tickets/bulk-update-status', updateData);
+  },
+
+  /**
+   * Bulk delete multiple tickets
+   * @param {string[]} ticketIds - Array of ticket IDs
+   * @returns {Promise<Object>} Bulk deletion result
+   */
+  bulkDeleteTickets: async (ticketIds) => {
+    return api.post('/metrics/crm/tickets/bulk-delete', { ticketIds });
+  },
+
+  /**
+   * Get detailed ticket by ID
+   * @param {string} ticketId - Ticket ID
+   * @returns {Promise<Object>} Ticket details
+   */
+  getTicketById: async (ticketId) => {
+    return api.get(`/metrics/crm/tickets/${ticketId}`);
   },
 };

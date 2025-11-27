@@ -1,5 +1,6 @@
 import express from "express";
 import { requireAnalystRole } from "../../middleware/metrics/auth.middleware.js";
+import crmAutomationController from "../../controllers/metrics/crm-automation.controller.js";
 
 const router = express.Router();
 
@@ -41,76 +42,7 @@ router.use(requireAnalystRole);
  *       200:
  *         description: Automation metrics retrieved successfully
  */
-router.get('/', async (req, res) => {
-  try {
-    // Import model dynamically
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-    const { parseDateRange } = await import("../../utils/metrics/dateRange.util.js");
-
-    const { startDate, endDate } = parseDateRange(req.query);
-    
-    // Get basic automation metrics
-    const [
-      totalAutomations,
-      activeAutomations,
-      pausedAutomations,
-      automationsByCategory,
-      automationsByTriggerType,
-      automationsByStatus,
-      dueForExecution,
-      topPerformingAutomations
-    ] = await Promise.all([
-      CrmAutomation.countDocuments({ deleted: false }),
-      CrmAutomation.countDocuments({ enabled: true, status: 'active', deleted: false }),
-      CrmAutomation.countDocuments({ enabled: false, deleted: false }),
-      CrmAutomation.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$category", count: { $sum: 1 } } }
-      ]),
-      CrmAutomation.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$trigger.type", count: { $sum: 1 } } }
-      ]),
-      CrmAutomation.aggregate([
-        { $match: { deleted: false } },
-        { $group: { _id: "$status", count: { $sum: 1 } } }
-      ]),
-      CrmAutomation.findDueForExecution(),
-      CrmAutomation.getTopPerformingAutomations(5)
-    ]);
-
-    // Calculate performance metrics
-    const performanceMetrics = await getAutomationPerformanceMetrics(startDate, endDate);
-
-    const response = {
-      summary: {
-        totalAutomations,
-        activeAutomations,
-        pausedAutomations,
-        dueForExecution: dueForExecution.length,
-        averageSuccessRate: performanceMetrics.averageSuccessRate,
-        totalExecutions: performanceMetrics.totalExecutions,
-        totalContactsProcessed: performanceMetrics.totalContactsProcessed
-      },
-      breakdowns: {
-        category: formatBreakdown(automationsByCategory),
-        triggerType: formatBreakdown(automationsByTriggerType),
-        status: formatBreakdown(automationsByStatus)
-      },
-      performance: performanceMetrics,
-      topPerforming: topPerformingAutomations,
-      alerts: {
-        dueForExecution: dueForExecution.length
-      }
-    };
-
-    return res.json(formatSuccessResponse(response, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/', crmAutomationController.getCrmAutomationMetrics);
 
 /**
  * @swagger
@@ -169,51 +101,7 @@ router.get('/', async (req, res) => {
  *       200:
  *         description: Automations retrieved successfully
  */
-router.get('/list', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-    const { buildPaginationMeta } = await import("../../utils/metrics/pagination.util.js");
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    // Build filter
-    const filter = { deleted: false };
-    if (req.query.status) filter.status = req.query.status;
-    if (req.query.category) filter.category = req.query.category;
-    if (req.query.enabled !== undefined) filter.enabled = req.query.enabled === 'true';
-
-    // Build sort
-    const sort = {};
-    if (req.query.sortBy) {
-      sort[req.query.sortBy] = req.query.sortOrder === 'asc' ? 1 : -1;
-    } else {
-      sort.createdAt = -1;
-    }
-
-    const automations = await CrmAutomation.find(filter)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('updatedBy', 'firstName lastName email')
-      .sort(sort)
-      .skip(skip)
-      .limit(limit);
-
-    const total = await CrmAutomation.countDocuments(filter);
-    const paginationMeta = buildPaginationMeta(page, limit, total);
-
-    const response = {
-      data: automations,
-      pagination: paginationMeta
-    };
-
-    return res.json(formatSuccessResponse(response, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/list', crmAutomationController.getCrmAutomationList);
 
 /**
  * @swagger
@@ -247,29 +135,7 @@ router.get('/list', async (req, res) => {
  *       200:
  *         description: Search results retrieved successfully
  */
-router.get('/search', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const searchTerm = req.query.q;
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-
-    const automations = await CrmAutomation.searchAutomations(searchTerm, {
-      status: req.query.status,
-      category: req.query.category,
-      enabled: req.query.enabled
-    })
-      .skip((page - 1) * limit)
-      .limit(limit);
-
-    return res.json(formatSuccessResponse({ data: automations }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/search', crmAutomationController.searchCrmAutomations);
 
 /**
  * @swagger
@@ -293,28 +159,7 @@ router.get('/search', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.get('/:automationId', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId)
-      .populate('createdBy', 'firstName lastName email')
-      .populate('updatedBy', 'firstName lastName email');
-
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    return res.json(formatSuccessResponse({ automation }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/:automationId', crmAutomationController.getCrmAutomationDetails);
 
 /**
  * @swagger
@@ -365,28 +210,7 @@ router.get('/:automationId', async (req, res) => {
  *       400:
  *         description: Invalid input data
  */
-router.post('/', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automationData = {
-      ...req.body,
-      createdBy: req.user?.id,
-      createdAt: new Date()
-    };
-
-    const automation = new CrmAutomation(automationData);
-    await automation.save();
-
-    await automation.populate('createdBy', 'firstName lastName email');
-
-    return res.status(201).json(formatSuccessResponse({ automation }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/', crmAutomationController.createCrmAutomation);
 
 /**
  * @swagger
@@ -437,37 +261,7 @@ router.post('/', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.put('/:automationId', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const updateData = {
-      ...req.body,
-      updatedBy: req.user?.id,
-      updatedAt: new Date()
-    };
-
-    const automation = await CrmAutomation.findByIdAndUpdate(
-      req.params.automationId,
-      updateData,
-      { new: true, runValidators: true }
-    ).populate('createdBy', 'firstName lastName email')
-     .populate('updatedBy', 'firstName lastName email');
-
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    return res.json(formatSuccessResponse({ automation }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.put('/:automationId', crmAutomationController.updateCrmAutomation);
 
 /**
  * @swagger
@@ -491,31 +285,7 @@ router.put('/:automationId', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.delete('/:automationId', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    await automation.softDelete(req.user?.id);
-
-    return res.json(formatSuccessResponse(
-      { message: 'CRM automation deleted successfully' },
-      req
-    ));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.delete('/:automationId', crmAutomationController.deleteCrmAutomation);
 
 /**
  * @swagger
@@ -539,28 +309,7 @@ router.delete('/:automationId', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.post('/:automationId/enable', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    await automation.enable();
-
-    return res.json(formatSuccessResponse({ automation }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:automationId/enable', crmAutomationController.enableAutomation);
 
 /**
  * @swagger
@@ -584,28 +333,7 @@ router.post('/:automationId/enable', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.post('/:automationId/disable', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    await automation.disable();
-
-    return res.json(formatSuccessResponse({ automation }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:automationId/disable', crmAutomationController.disableAutomation);
 
 /**
  * @swagger
@@ -641,35 +369,7 @@ router.post('/:automationId/disable', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.post('/:automationId/test', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    // Simulate test execution - in a real implementation, this would actually run the automation
-    const testResult = {
-      success: true,
-      executionTime: Math.random() * 1000,
-      contactsProcessed: req.body.recipients?.length || 1,
-      actionsExecuted: automation.actions.length,
-      errors: []
-    };
-
-    return res.json(formatSuccessResponse({ testResult }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:automationId/test', crmAutomationController.testAutomation);
 
 /**
  * @swagger
@@ -701,39 +401,7 @@ router.post('/:automationId/test', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.post('/:automationId/execute', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    // Record manual execution
-    const executionData = {
-      status: 'success',
-      contactsProcessed: 1,
-      executionTime: Math.random() * 2000,
-      triggeredBy: 'manual'
-    };
-
-    await automation.recordExecution(executionData);
-
-    return res.json(formatSuccessResponse({ 
-      message: 'Automation executed successfully',
-      execution: executionData
-    }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.post('/:automationId/execute', crmAutomationController.executeAutomation);
 
 /**
  * @swagger
@@ -769,44 +437,7 @@ router.post('/:automationId/execute', async (req, res) => {
  *       404:
  *         description: Automation not found
  */
-router.get('/:automationId/history', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse, formatErrorResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automation = await CrmAutomation.findById(req.params.automationId);
-    
-    if (!automation) {
-      return res.status(404).json(formatErrorResponse({
-        code: 'AUTOMATION_NOT_FOUND',
-        message: 'CRM automation not found'
-      }, req, 404));
-    }
-
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 20;
-    const skip = (page - 1) * limit;
-
-    const history = automation.recentExecutions
-      .sort((a, b) => new Date(b.executedAt) - new Date(a.executedAt))
-      .slice(skip, skip + limit);
-
-    const response = {
-      data: history,
-      pagination: {
-        page,
-        limit,
-        total: automation.recentExecutions.length,
-        pages: Math.ceil(automation.recentExecutions.length / limit)
-      }
-    };
-
-    return res.json(formatSuccessResponse(response, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/:automationId/history', crmAutomationController.getAutomationExecutionHistory);
 
 /**
  * @swagger
@@ -828,21 +459,7 @@ router.get('/:automationId/history', async (req, res) => {
  *       200:
  *         description: Automations retrieved successfully
  */
-router.get('/category/:category', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const { category } = req.params;
-
-    const automations = await CrmAutomation.findByCategory(category);
-
-    return res.json(formatSuccessResponse({ automations }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/category/:category', crmAutomationController.getAutomationsByCategory);
 
 /**
  * @swagger
@@ -857,19 +474,7 @@ router.get('/category/:category', async (req, res) => {
  *       200:
  *         description: Due automations retrieved successfully
  */
-router.get('/due-for-execution', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const automations = await CrmAutomation.findDueForExecution();
-
-    return res.json(formatSuccessResponse({ automations }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/due-for-execution', crmAutomationController.getAutomationsDueForExecution);
 
 /**
  * @swagger
@@ -891,21 +496,7 @@ router.get('/due-for-execution', async (req, res) => {
  *       200:
  *         description: Top performing automations retrieved successfully
  */
-router.get('/top-performing', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const limit = parseInt(req.query.limit) || 10;
-
-    const automations = await CrmAutomation.getTopPerformingAutomations(limit);
-
-    return res.json(formatSuccessResponse({ automations }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/top-performing', crmAutomationController.getTopPerformingAutomations);
 
 /**
  * @swagger
@@ -920,19 +511,7 @@ router.get('/top-performing', async (req, res) => {
  *       200:
  *         description: Automation statistics retrieved successfully
  */
-router.get('/stats', async (req, res) => {
-  try {
-    const { default: CrmAutomation } = await import("../../models/metrics/crm-automation.model.js");
-    const { formatSuccessResponse } = await import("../../utils/metrics/responseFormatter.util.js");
-
-    const stats = await CrmAutomation.getAutomationStats();
-
-    return res.json(formatSuccessResponse({ stats }, req));
-  } catch (error) {
-    const { handleControllerError } = await import("../../utils/metrics/responseFormatter.util.js");
-    return handleControllerError(error, req, res);
-  }
-});
+router.get('/stats', crmAutomationController.getAutomationStats);
 
 /**
  * @swagger
