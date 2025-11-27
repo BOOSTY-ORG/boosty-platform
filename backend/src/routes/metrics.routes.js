@@ -12,6 +12,7 @@ import userRoutes from "./metrics/user.routes.js";
 import transactionRoutes from "./metrics/transaction.routes.js";
 import kycRoutes from "./metrics/kyc.routes.js";
 import reportingRoutes from "./metrics/reporting.routes.js";
+import ticketRoutes from "./metrics/ticket.routes.js";
 
 const router = express.Router();
 
@@ -46,7 +47,10 @@ router.get('/docs', (req, res) => {
       users: '/metrics/users',
       transactions: '/metrics/transactions',
       kyc: '/metrics/kyc',
-      reporting: '/metrics/reports'
+      reporting: '/metrics/reports',
+      crm: {
+        tickets: '/metrics/crm/tickets'
+      }
     },
     authentication: 'Bearer token required',
     rateLimit: '100 requests per minute per user',
@@ -61,5 +65,6 @@ router.use('/users', userRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/kyc', kycRoutes);
 router.use('/reports', reportingRoutes);
+router.use('/crm/tickets', ticketRoutes);
 
 export default router;
