@@ -902,24 +902,11 @@ const generateTemplatePreview = (template) => {
     date: new Date().toLocaleDateString()
   };
 
-  let preview = {
-    subject: template.subject,
-    body: template.body,
-    htmlBody: template.htmlBody
+  const preview = {
+    subject: template.subject ? template.subject.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match) : template.subject,
+    body: template.body ? template.body.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match) : template.body,
+    htmlBody: template.htmlBody ? template.htmlBody.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match) : template.htmlBody
   };
-
-  // Replace variables with sample data
-  if (preview.subject) {
-    preview.subject = preview.subject.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match);
-  }
-  
-  if (preview.body) {
-    preview.body = preview.body.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match);
-  }
-  
-  if (preview.htmlBody) {
-    preview.htmlBody = preview.htmlBody.replace(/\{\{(\w+)\}\}/g, (match, key) => sampleData[key] || match);
-  }
 
   return preview;
 };

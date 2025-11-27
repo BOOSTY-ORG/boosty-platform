@@ -6,16 +6,17 @@
  */
 
 import { crmAPI } from './crm.js';
-import { jest } from '@jest/globals';
 
 // Mock the main API module
+const mockApi = {
+  get: jest.fn(),
+  post: jest.fn(),
+  put: jest.fn(),
+  delete: jest.fn()
+};
+
 jest.mock('./index.js', () => ({
-  default: {
-    get: jest.fn(),
-    post: jest.fn(),
-    put: jest.fn(),
-    delete: jest.fn()
-  }
+  default: mockApi
 }));
 
 import api from './index.js';
@@ -48,11 +49,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
-
+      mockApi.get.mockResolvedValue(mockResponse);
+  
       const result = await crmAPI.getCRMOverview();
-
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm', { params: {} });
+  
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm', { params: {} });
       expect(result).toEqual(mockResponse);
     });
 
@@ -65,11 +66,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCRMOverview(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -82,11 +83,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCRMHealth();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/health');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/health');
       expect(result).toEqual(mockResponse);
     });
   });
@@ -105,11 +106,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCommunicationMetrics(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -131,11 +132,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCommunicationsList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications/list', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -151,11 +152,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.searchCommunications(query, params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications/search', {
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications/search', {
         params: { q: query, ...params }
       });
       expect(result).toEqual(mockResponse);
@@ -175,11 +176,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCommunicationById(communicationId);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -206,11 +207,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.createCommunication(communicationData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/communications', communicationData);
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/communications', communicationData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -233,11 +234,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.put.mockResolvedValue(mockResponse);
+      mockApi.put.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.updateCommunication(communicationId, updateData);
 
-      expect(api.put).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`, updateData);
+      expect(mockApi.put).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`, updateData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -250,11 +251,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.delete.mockResolvedValue(mockResponse);
+      mockApi.delete.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.deleteCommunication(communicationId);
 
-      expect(api.delete).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`);
+      expect(mockApi.delete).toHaveBeenCalledWith(`/metrics/crm/communications/${communicationId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -276,11 +277,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.markResponseReceived(communicationId, responseData);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/communications/${communicationId}/response-received`,
         responseData
       );
@@ -306,11 +307,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.addFollowUp(communicationId, followUpData);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/communications/${communicationId}/follow-up`,
         followUpData
       );
@@ -330,11 +331,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.completeFollowUp(communicationId);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/communications/${communicationId}/follow-up/complete`
       );
       expect(result).toEqual(mockResponse);
@@ -354,11 +355,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getCommunicationsByEntity(entityType, entityId, params);
 
-      expect(api.get).toHaveBeenCalledWith(
+      expect(mockApi.get).toHaveBeenCalledWith(
         `/metrics/crm/communications/entity/${entityType}/${entityId}`,
         { params }
       );
@@ -376,11 +377,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getOverdueResponses();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications/overdue/responses');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications/overdue/responses');
       expect(result).toEqual(mockResponse);
     });
 
@@ -395,11 +396,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getOverdueFollowUps();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications/overdue/follow-ups');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications/overdue/follow-ups');
       expect(result).toEqual(mockResponse);
     });
 
@@ -416,11 +417,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAgentWorkload(agentId, params);
 
-      expect(api.get).toHaveBeenCalledWith(
+      expect(mockApi.get).toHaveBeenCalledWith(
         `/metrics/crm/communications/agent/${agentId}/workload`,
         { params }
       );
@@ -440,11 +441,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkUpdateCommunications(communicationIds, updateData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/communications/bulk/update', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/communications/bulk/update', {
         communicationIds,
         updateData
       });
@@ -463,11 +464,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkDeleteCommunications(communicationIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/communications/bulk/delete', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/communications/bulk/delete', {
         communicationIds
       });
       expect(result).toEqual(mockResponse);
@@ -488,11 +489,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getContactMetrics(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -514,11 +515,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getContactsList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -534,11 +535,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.searchContacts(query, params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/search', {
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/search', {
         params: { q: query, ...params }
       });
       expect(result).toEqual(mockResponse);
@@ -565,11 +566,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.createContact(contactData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts', contactData);
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts', contactData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -592,11 +593,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.put.mockResolvedValue(mockResponse);
+      mockApi.put.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.updateContact(contactId, updateData);
 
-      expect(api.put).toHaveBeenCalledWith(`/metrics/crm/contacts/${contactId}`, updateData);
+      expect(mockApi.put).toHaveBeenCalledWith(`/metrics/crm/contacts/${contactId}`, updateData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -609,11 +610,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.delete.mockResolvedValue(mockResponse);
+      mockApi.delete.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.deleteContact(contactId);
 
-      expect(api.delete).toHaveBeenCalledWith(`/metrics/crm/contacts/${contactId}`);
+      expect(mockApi.delete).toHaveBeenCalledWith(`/metrics/crm/contacts/${contactId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -637,11 +638,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.put.mockResolvedValue(mockResponse);
+      mockApi.put.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.updateContactEngagement(contactId, engagementData);
 
-      expect(api.put).toHaveBeenCalledWith(
+      expect(mockApi.put).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/engagement`,
         engagementData
       );
@@ -661,11 +662,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.giveMarketingConsent(contactId, consentData);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/consent/marketing`,
         consentData
       );
@@ -684,11 +685,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.withdrawConsent(contactId);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/consent/withdraw`
       );
       expect(result).toEqual(mockResponse);
@@ -708,11 +709,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.assignContact(contactId, userId);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/assign`,
         { userId }
       );
@@ -732,11 +733,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.addContactTag(contactId, tag);
 
-      expect(api.post).toHaveBeenCalledWith(
+      expect(mockApi.post).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/tags`,
         { tag }
       );
@@ -756,11 +757,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.delete.mockResolvedValue(mockResponse);
+      mockApi.delete.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.removeContactTag(contactId, tag);
 
-      expect(api.delete).toHaveBeenCalledWith(
+      expect(mockApi.delete).toHaveBeenCalledWith(
         `/metrics/crm/contacts/${contactId}/tags`,
         { data: { tag } }
       );
@@ -781,11 +782,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.findContactByEmail(email);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/contacts/email/${email}`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/contacts/email/${email}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -801,11 +802,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getHighValueLeads(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/high-value-leads', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/high-value-leads', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -821,11 +822,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getUnassignedContacts(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/unassigned', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/unassigned', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -841,11 +842,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getContactsNeedingFollowUp(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/follow-up-needed', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/follow-up-needed', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -865,11 +866,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.importContacts(contacts);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts/import', { contacts });
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts/import', { contacts });
       expect(result).toEqual(mockResponse);
     });
 
@@ -885,11 +886,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.exportContacts(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/export', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/export', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -908,11 +909,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.findDuplicateContacts();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/duplicates');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/duplicates');
       expect(result).toEqual(mockResponse);
     });
 
@@ -929,11 +930,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.mergeDuplicateContacts(primaryContactId, duplicateContactIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts/merge', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts/merge', {
         primaryContactId,
         duplicateContactIds
       });
@@ -953,11 +954,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkUpdateContacts(contactIds, updateData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/update', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/update', {
         contactIds,
         updateData
       });
@@ -977,11 +978,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkAssignContacts(contactIds, userId);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/assign', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/assign', {
         contactIds,
         userId
       });
@@ -1000,11 +1001,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkDeleteContacts(contactIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/delete', {
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/contacts/bulk/delete', {
         contactIds
       });
       expect(result).toEqual(mockResponse);
@@ -1025,11 +1026,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplateMetrics(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/templates', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/templates', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1051,11 +1052,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplatesList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/templates/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/templates/list', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1071,11 +1072,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.searchTemplates(query, params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/templates/search', {
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/templates/search', {
         params: { q: query, ...params }
       });
       expect(result).toEqual(mockResponse);
@@ -1095,11 +1096,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplateById(templateId);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1127,11 +1128,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.createTemplate(templateData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/templates', templateData);
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/templates', templateData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1154,11 +1155,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.put.mockResolvedValue(mockResponse);
+      mockApi.put.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.updateTemplate(templateId, updateData);
 
-      expect(api.put).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`, updateData);
+      expect(mockApi.put).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`, updateData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1171,11 +1172,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.delete.mockResolvedValue(mockResponse);
+      mockApi.delete.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.deleteTemplate(templateId);
 
-      expect(api.delete).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`);
+      expect(mockApi.delete).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1192,11 +1193,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.approveTemplate(templateId);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/approve`);
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/approve`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1215,11 +1216,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.rejectTemplate(templateId, reason);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/reject`, { reason });
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/reject`, { reason });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1239,11 +1240,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.createTemplateVersion(templateId, version);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/version`, { version });
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/version`, { version });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1263,11 +1264,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplatePreview(templateId);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/preview`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/templates/${templateId}/preview`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1284,11 +1285,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplatesByCategory(category, params);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/templates/category/${category}`, { params });
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/templates/category/${category}`, { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1304,11 +1305,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTopPerformingTemplates(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/templates/top-performing', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/templates/top-performing', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1328,11 +1329,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTemplateStats();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/templates/stats');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/templates/stats');
       expect(result).toEqual(mockResponse);
     });
   });
@@ -1351,11 +1352,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationMetrics(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1377,11 +1378,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationsList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations/list', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1397,11 +1398,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.searchAutomations(query, params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations/search', {
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations/search', {
         params: { q: query, ...params }
       });
       expect(result).toEqual(mockResponse);
@@ -1423,11 +1424,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationById(automationId);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1464,11 +1465,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.createAutomation(automationData);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/automations', automationData);
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/automations', automationData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1491,11 +1492,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.put.mockResolvedValue(mockResponse);
+      mockApi.put.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.updateAutomation(automationId, updateData);
 
-      expect(api.put).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`, updateData);
+      expect(mockApi.put).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`, updateData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1508,11 +1509,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.delete.mockResolvedValue(mockResponse);
+      mockApi.delete.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.deleteAutomation(automationId);
 
-      expect(api.delete).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`);
+      expect(mockApi.delete).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1530,11 +1531,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.enableAutomation(automationId);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/enable`);
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/enable`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1552,11 +1553,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.disableAutomation(automationId);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/disable`);
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/disable`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1577,11 +1578,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.testAutomation(automationId, testData);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/test`, testData);
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/test`, testData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1602,11 +1603,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.executeAutomation(automationId, triggerData);
 
-      expect(api.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/execute`, triggerData);
+      expect(mockApi.post).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/execute`, triggerData);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1633,11 +1634,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationHistory(automationId, params);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/history`, { params });
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/automations/${automationId}/history`, { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1653,11 +1654,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationsByCategory(category);
 
-      expect(api.get).toHaveBeenCalledWith(`/metrics/crm/automations/category/${category}`);
+      expect(mockApi.get).toHaveBeenCalledWith(`/metrics/crm/automations/category/${category}`);
       expect(result).toEqual(mockResponse);
     });
 
@@ -1672,11 +1673,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationsDueForExecution();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations/due-for-execution');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations/due-for-execution');
       expect(result).toEqual(mockResponse);
     });
 
@@ -1692,11 +1693,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getTopPerformingAutomations(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations/top-performing', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations/top-performing', { params });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1717,11 +1718,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.getAutomationStats();
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/automations/stats');
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/automations/stats');
       expect(result).toEqual(mockResponse);
     });
 
@@ -1737,11 +1738,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkEnableAutomations(automationIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/enable', { automationIds });
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/enable', { automationIds });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1757,11 +1758,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkDisableAutomations(automationIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/disable', { automationIds });
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/disable', { automationIds });
       expect(result).toEqual(mockResponse);
     });
 
@@ -1777,11 +1778,11 @@ describe('CRM API Tests', () => {
         }
       };
 
-      api.post.mockResolvedValue(mockResponse);
+      mockApi.post.mockResolvedValue(mockResponse);
 
       const result = await crmAPI.bulkDeleteAutomations(automationIds);
 
-      expect(api.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/delete', { automationIds });
+      expect(mockApi.post).toHaveBeenCalledWith('/metrics/crm/automations/bulk/delete', { automationIds });
       expect(result).toEqual(mockResponse);
     });
   });
@@ -1798,7 +1799,7 @@ describe('CRM API Tests', () => {
     it('should handle 404 errors', async () => {
       const notFoundError = new Error('Not Found');
       notFoundError.response = { status: 404, data: { message: 'Resource not found' } };
-      api.get.mockRejectedValue(notFoundError);
+      mockApi.get.mockRejectedValue(notFoundError);
 
       await expect(crmAPI.getCommunicationById('invalid-id')).rejects.toThrow('Not Found');
     });
@@ -1806,7 +1807,7 @@ describe('CRM API Tests', () => {
     it('should handle 500 errors', async () => {
       const serverError = new Error('Server Error');
       serverError.response = { status: 500, data: { message: 'Internal server error' } };
-      api.get.mockRejectedValue(serverError);
+      mockApi.get.mockRejectedValue(serverError);
 
       await expect(crmAPI.getCommunicationsList()).rejects.toThrow('Server Error');
     });
@@ -1814,21 +1815,21 @@ describe('CRM API Tests', () => {
     it('should handle timeout errors', async () => {
       const timeoutError = new Error('Request timeout');
       timeoutError.code = 'ECONNABORTED';
-      api.get.mockRejectedValue(timeoutError);
+      mockApi.get.mockRejectedValue(timeoutError);
 
       await expect(crmAPI.getContactsList()).rejects.toThrow('Request timeout');
     });
 
     it('should handle validation errors', async () => {
       const validationError = new Error('Validation Error');
-      validationError.response = { 
-        status: 400, 
-        data: { 
+      validationError.response = {
+        status: 400,
+        data: {
           message: 'Invalid input data',
           errors: [{ field: 'email', message: 'Invalid email format' }]
-        } 
+        }
       };
-      api.post.mockRejectedValue(validationError);
+      mockApi.post.mockRejectedValue(validationError);
 
       await expect(crmAPI.createContact({ invalid: 'data' })).rejects.toThrow('Validation Error');
     });
@@ -1841,11 +1842,11 @@ describe('CRM API Tests', () => {
       const params = { startDate, endDate };
 
       const mockResponse = { data: { success: true, data: [] } };
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       await crmAPI.getCommunicationMetrics(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/communications', {
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/communications', {
         params: {
           startDate: startDate.toISOString(),
           endDate: endDate.toISOString()
@@ -1858,11 +1859,11 @@ describe('CRM API Tests', () => {
       const params = { tags };
 
       const mockResponse = { data: { success: true, data: [] } };
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       await crmAPI.getContactsList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
     });
 
     it('should handle nested object parameters correctly', async () => {
@@ -1874,11 +1875,11 @@ describe('CRM API Tests', () => {
       const params = { filters };
 
       const mockResponse = { data: { success: true, data: [] } };
-      api.get.mockResolvedValue(mockResponse);
+      mockApi.get.mockResolvedValue(mockResponse);
 
       await crmAPI.getContactsList(params);
 
-      expect(api.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
+      expect(mockApi.get).toHaveBeenCalledWith('/metrics/crm/contacts/list', { params });
     });
   });
 });
