@@ -55,7 +55,9 @@ router.get('/docs', (req, res) => {
         contacts: '/metrics/crm/contacts',
         templates: '/metrics/crm/templates',
         automations: '/metrics/crm/automations',
-        tickets: '/metrics/crm/tickets'
+        tickets: '/metrics/crm/tickets',
+        messages: '/metrics/crm/threads',
+        assignments: '/metrics/crm/assignments'
       }
     },
     authentication: 'Bearer token required',

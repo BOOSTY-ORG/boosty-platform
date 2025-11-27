@@ -10,6 +10,8 @@ import communicationRoutes from "./crm-communication.routes.js";
 import contactRoutes from "./crm-contact.routes.js";
 import templateRoutes from "./crm-template.routes.js";
 import automationRoutes from "./crm-automation.routes.js";
+import messageRoutes from "./crm-message.routes.js";
+import assignmentMetricsRoutes from "./crm-assignment-metrics.routes.js";
 
 const router = express.Router();
 
@@ -167,7 +169,9 @@ router.get('/health', (req, res) => {
       communications: 'active',
       contacts: 'active',
       templates: 'active',
-      automations: 'active'
+      automations: 'active',
+      messages: 'active',
+      assignments: 'active'
     }
   });
 });
@@ -177,5 +181,7 @@ router.use('/communications', communicationRoutes);
 router.use('/contacts', contactRoutes);
 router.use('/templates', templateRoutes);
 router.use('/automations', automationRoutes);
+router.use('/threads', messageRoutes);
+router.use('/assignments', assignmentMetricsRoutes);
 
 export default router;
