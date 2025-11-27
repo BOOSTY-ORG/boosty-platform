@@ -27,16 +27,50 @@ app.use('/uploads', express.static(path.join(currentDirname, '../uploads')));
 
 // ** Database Connection **
 console.log("[DEBUG] Attempting to connect to MongoDB with URL:", process.env.DATABASE_URL);
-mongoose
-  .connect(process.env.DATABASE_URL)
-  .then(() => {
-    console.log("[DEBUG] Mongodb connected Successfully!!!");
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.DATABASE_URL, {
+      serverSelectionTimeoutMS: 10000, // 10 seconds timeout
+      maxPoolSize: 10, // Maintain up to 10 socket connections
+      retryWrites: true,
+      w: 'majority'
+    });
+    
+    console.log("[DEBUG] MongoDB connected Successfully!!!");
     console.log("[DEBUG] Connection state:", mongoose.connection.readyState);
-  })
-  .catch((error) => {
-    console.error("[DEBUG] Mongodb connection error!!!:", error);
+    console.log("[DEBUG] Connected to database:", conn.connection.name);
+    
+    return true;
+  } catch (error) {
+    console.error("[DEBUG] MongoDB connection error!!!:", error.message);
     console.error("[DEBUG] Connection state after error:", mongoose.connection.readyState);
-  });
+    
+    // Retry connection after 5 seconds
+    console.log("[DEBUG] Retrying database connection in 5 seconds...");
+    setTimeout(() => {
+      connectDB();
+    }, 5000);
+    
+    return false;
+  }
+};
+
+// Handle connection events
+mongoose.connection.on('connected', () => {
+  console.log('[DEBUG] Mongoose connected to MongoDB');
+});
+
+mongoose.connection.on('error', (err) => {
+  console.error('[DEBUG] Mongoose connection error:', err);
+});
+
+mongoose.connection.on('disconnected', () => {
+  console.log('[DEBUG] Mongoose disconnected from MongoDB');
+});
+
+// Initial connection attempt
+connectDB();
 
 // ** Routes **
 app.use("/", userRoutes); // Mount user routes

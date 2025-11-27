@@ -2,6 +2,7 @@ import app from "./express.js";
 import dotenv from "dotenv";
 import cors from "cors";
 import express from "express";
+import mongoose from "mongoose";
 import exportScheduler from "./services/exportScheduler.service.js";
 
 dotenv.config();
@@ -16,13 +17,24 @@ app.use(express.json());
 const server = app.listen(port, () => {
   console.log(`Server is running on port: http://localhost:${port}`);
   
-  // Start export scheduler
-  exportScheduler.start();
+  // Wait for database connection before starting export scheduler
+  const startSchedulerWhenDBReady = () => {
+    if (mongoose.connection.readyState === 1) { // 1 means connected
+      console.log("[DEBUG] Database is ready, starting export scheduler...");
+      exportScheduler.start();
+      
+      // Schedule cleanup every 24 hours
+      setInterval(() => {
+        exportScheduler.cleanup();
+      }, 24 * 60 * 60 * 1000);
+    } else {
+      console.log("[DEBUG] Waiting for database connection... Current state:", mongoose.connection.readyState);
+      setTimeout(startSchedulerWhenDBReady, 2000); // Check every 2 seconds
+    }
+  };
   
-  // Schedule cleanup every 24 hours
-  setInterval(() => {
-    exportScheduler.cleanup();
-  }, 24 * 60 * 60 * 1000);
+  // Start the scheduler check after a short delay
+  setTimeout(startSchedulerWhenDBReady, 3000);
 });
 
 // Graceful shutdown

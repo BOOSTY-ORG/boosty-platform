@@ -13,6 +13,7 @@ export { default as CrmContacts } from './CrmContacts.jsx';
 export { default as CrmTemplates } from './CrmTemplates.jsx';
 export { default as CrmAutomation } from './CrmAutomation.jsx';
 export { default as CrmDashboard } from './CrmDashboard.jsx';
+export { default as EnhancedCrmDashboard } from './EnhancedCrmDashboard.jsx';
 
 // Component metadata for documentation and testing
 export const CRM_COMPONENTS = {
@@ -107,6 +108,28 @@ export const CRM_COMPONENTS = {
       className: 'String - Additional CSS classes',
       dateRange: 'String - Date range for metrics (today, last_7_days, last_30_days, etc.)',
       onNavigate: 'Function - Callback for navigation actions'
+    }
+  },
+  EnhancedCrmDashboard: {
+    name: 'EnhancedCrmDashboard',
+    description: 'Enhanced CRM dashboard with advanced features, search functionality, ticket details modal, and improved UI/UX',
+    features: [
+      'Advanced search and filtering capabilities',
+      'Ticket details modal with comprehensive information',
+      'Enhanced stats with trend indicators',
+      'Improved ticket cards with additional metadata',
+      'Customer type and category indicators',
+      'Thread count and unread indicators',
+      'Responsive design with better interactions',
+      'Quick actions for ticket management'
+    ],
+    props: {
+      className: 'String - Additional CSS classes',
+      onTicketSelect: 'Function - Callback for ticket selection',
+      onNewTicket: 'Function - Callback for creating new ticket',
+      showMetrics: 'Boolean - Show metrics cards (default: true)',
+      enableSearch: 'Boolean - Enable search functionality (default: true)',
+      initialFilter: 'String - Initial filter state (default: "All")'
     }
   }
 };
@@ -260,6 +283,7 @@ export default {
   CrmTemplates,
   CrmAutomation,
   CrmDashboard,
+  EnhancedCrmDashboard,
   CRM_COMPONENTS,
   CRM_UTILS,
   CRM_DEFAULTS
