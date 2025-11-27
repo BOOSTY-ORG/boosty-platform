@@ -25,6 +25,13 @@ import SupportDashboard from './pages/dashboard/SupportDashboard.jsx';
 import ManagementDashboard from './pages/dashboard/ManagementDashboard.jsx';
 import NotFound from './pages/NotFound.jsx';
 
+// CRM Components
+import CrmDashboard from './components/crm/CrmDashboard.jsx';
+import CrmCommunications from './components/crm/CrmCommunications.jsx';
+import CrmContacts from './components/crm/CrmContacts.jsx';
+import CrmTemplates from './components/crm/CrmTemplates.jsx';
+import CrmAutomation from './components/crm/CrmAutomation.jsx';
+
 import './styles/index.css';
 
 function App() {
@@ -67,6 +74,16 @@ function App() {
                 <Route path="finance" element={<FinanceDashboard />} />
                 <Route path="support" element={<SupportDashboard />} />
                 <Route path="management" element={<ManagementDashboard />} />
+              </Route>
+
+              {/* CRM Routes */}
+              <Route path="/crm" element={<DashboardLayout />}>
+                <Route index element={<CrmDashboard />} />
+                <Route path="dashboard" element={<CrmDashboard />} />
+                <Route path="communications" element={<CrmCommunications />} />
+                <Route path="contacts" element={<CrmContacts />} />
+                <Route path="templates" element={<CrmTemplates />} />
+                <Route path="automation" element={<CrmAutomation />} />
               </Route>
 
               {/* Dynamic Routes */}

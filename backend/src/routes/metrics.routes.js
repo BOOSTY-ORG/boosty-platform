@@ -13,6 +13,7 @@ import transactionRoutes from "./metrics/transaction.routes.js";
 import kycRoutes from "./metrics/kyc.routes.js";
 import reportingRoutes from "./metrics/reporting.routes.js";
 import ticketRoutes from "./metrics/ticket.routes.js";
+import crmRoutes from "./metrics/crm.routes.js";
 
 const router = express.Router();
 
@@ -49,6 +50,11 @@ router.get('/docs', (req, res) => {
       kyc: '/metrics/kyc',
       reporting: '/metrics/reports',
       crm: {
+        overview: '/metrics/crm',
+        communications: '/metrics/crm/communications',
+        contacts: '/metrics/crm/contacts',
+        templates: '/metrics/crm/templates',
+        automations: '/metrics/crm/automations',
         tickets: '/metrics/crm/tickets'
       }
     },
@@ -65,6 +71,7 @@ router.use('/users', userRoutes);
 router.use('/transactions', transactionRoutes);
 router.use('/kyc', kycRoutes);
 router.use('/reports', reportingRoutes);
+router.use('/crm', crmRoutes);
 router.use('/crm/tickets', ticketRoutes);
 
 export default router;

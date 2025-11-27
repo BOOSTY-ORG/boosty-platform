@@ -1,6 +1,7 @@
 // Test file to verify SignIn component implementation
 import React from 'react';
 import { render, screen } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { SignIn, AdminSignIn, UserSignIn } from './components/auth';
 
 describe('SignIn Component Tests', () => {
