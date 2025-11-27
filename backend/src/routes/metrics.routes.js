@@ -12,6 +12,8 @@ import userRoutes from "./metrics/user.routes.js";
 import transactionRoutes from "./metrics/transaction.routes.js";
 import kycRoutes from "./metrics/kyc.routes.js";
 import reportingRoutes from "./metrics/reporting.routes.js";
+import ticketRoutes from "./metrics/ticket.routes.js";
+import crmRoutes from "./metrics/crm.routes.js";
 
 const router = express.Router();
 
@@ -46,7 +48,17 @@ router.get('/docs', (req, res) => {
       users: '/metrics/users',
       transactions: '/metrics/transactions',
       kyc: '/metrics/kyc',
-      reporting: '/metrics/reports'
+      reporting: '/metrics/reports',
+      crm: {
+        overview: '/metrics/crm',
+        communications: '/metrics/crm/communications',
+        contacts: '/metrics/crm/contacts',
+        templates: '/metrics/crm/templates',
+        automations: '/metrics/crm/automations',
+        tickets: '/metrics/crm/tickets',
+        messages: '/metrics/crm/threads',
+        assignments: '/metrics/crm/assignments'
+      }
     },
     authentication: 'Bearer token required',
     rateLimit: '100 requests per minute per user',
@@ -54,12 +66,31 @@ router.get('/docs', (req, res) => {
   });
 });
 
-// Mount sub-routes
-router.use('/dashboard', dashboardRoutes);
-router.use('/investors', investorRoutes);
-router.use('/users', userRoutes);
-router.use('/transactions', transactionRoutes);
-router.use('/kyc', kycRoutes);
-router.use('/reports', reportingRoutes);
+// Mount sub-routes with error handling
+try {
+  router.use('/dashboard', dashboardRoutes);
+  router.use('/investors', investorRoutes);
+  router.use('/users', userRoutes);
+  router.use('/transactions', transactionRoutes);
+  router.use('/kyc', kycRoutes);
+  router.use('/reports', reportingRoutes);
+  router.use('/crm', crmRoutes);
+  // Note: Ticket routes are now handled within the CRM routes module
+  // to avoid conflicts and maintain proper route hierarchy
+} catch (error) {
+  console.error('Error mounting metrics routes:', error);
+  // Add error handling middleware for route registration failures
+  router.use((err, req, res, next) => {
+    if (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Route registration error',
+        message: 'There was an error registering the metrics routes',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    }
+    next();
+  });
+}
 
 export default router;

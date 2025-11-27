@@ -4,7 +4,7 @@ module.exports = {
       targets: {
         node: 'current'
       },
-      modules: false
+      modules: 'commonjs'
     }]
   ],
   env: {
@@ -12,8 +12,5 @@ module.exports = {
       plugins: ['@babel/plugin-transform-runtime']
     }
   },
-  // Transform ES modules to CommonJS for tests
-  plugins: [
-    '@babel/plugin-transform-modules-umd'
-  ]
+  plugins: []
 };

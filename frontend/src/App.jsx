@@ -17,12 +17,20 @@ import GetStarted from './pages/auth/GetStarted.jsx';
 import Roles from './pages/auth/Roles.jsx';
 import ForgotPassword from './pages/auth/ForgotPassword.jsx';
 import ResetPassword from './pages/auth/ResetPassword.jsx';
+import SignInTest from './pages/auth/SignInTest.jsx';
 import DashboardHome from './pages/dashboard/DashboardHome.jsx';
 import AdminDashboard from './pages/dashboard/AdminDashboard.jsx';
 import FinanceDashboard from './pages/dashboard/FinanceDashboard.jsx';
 import SupportDashboard from './pages/dashboard/SupportDashboard.jsx';
 import ManagementDashboard from './pages/dashboard/ManagementDashboard.jsx';
 import NotFound from './pages/NotFound.jsx';
+
+// CRM Components
+import CrmDashboard from './components/crm/CrmDashboard.jsx';
+import CrmCommunications from './components/crm/CrmCommunications.jsx';
+import CrmContacts from './components/crm/CrmContacts.jsx';
+import CrmTemplates from './components/crm/CrmTemplates.jsx';
+import CrmAutomation from './components/crm/CrmAutomation.jsx';
 
 import './styles/index.css';
 
@@ -56,6 +64,9 @@ function App() {
                 <Route path="reset-password" element={<ResetPassword />} />
               </Route>
 
+              {/* Test Route */}
+              <Route path="/test/signin" element={<SignInTest />} />
+
               {/* Dashboard Routes */}
               <Route path="/dashboard" element={<DashboardLayout />}>
                 <Route index element={<DashboardHome />} />
@@ -63,6 +74,16 @@ function App() {
                 <Route path="finance" element={<FinanceDashboard />} />
                 <Route path="support" element={<SupportDashboard />} />
                 <Route path="management" element={<ManagementDashboard />} />
+              </Route>
+
+              {/* CRM Routes */}
+              <Route path="/crm" element={<DashboardLayout />}>
+                <Route index element={<CrmDashboard />} />
+                <Route path="dashboard" element={<CrmDashboard />} />
+                <Route path="communications" element={<CrmCommunications />} />
+                <Route path="contacts" element={<CrmContacts />} />
+                <Route path="templates" element={<CrmTemplates />} />
+                <Route path="automation" element={<CrmAutomation />} />
               </Route>
 
               {/* Dynamic Routes */}

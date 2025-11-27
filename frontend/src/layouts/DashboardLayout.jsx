@@ -57,6 +57,28 @@ const DashboardLayout = () => {
       path: '/crm',
       icon: ChatBubbleLeftRightIcon,
       roles: ['admin', 'manager', 'support'],
+      subItems: [
+        {
+          name: 'Dashboard',
+          path: '/crm/dashboard',
+        },
+        {
+          name: 'Communications',
+          path: '/crm/communications',
+        },
+        {
+          name: 'Contacts',
+          path: '/crm/contacts',
+        },
+        {
+          name: 'Templates',
+          path: '/crm/templates',
+        },
+        {
+          name: 'Automation',
+          path: '/crm/automation',
+        },
+      ],
     },
     {
       name: 'Reports',
@@ -104,20 +126,44 @@ const DashboardLayout = () => {
             {filteredMenuItems.map((item) => {
               const Icon = item.icon;
               const isActive = isActiveRoute(item.path);
+              const hasSubItems = item.subItems && item.subItems.length > 0;
               
               return (
-                <Link
-                  key={item.name}
-                  to={item.path}
-                  className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
-                    isActive
-                      ? 'bg-primary-100 text-primary-700'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  }`}
-                >
-                  <Icon className="mr-3 h-5 w-5" />
-                  {item.name}
-                </Link>
+                <div key={item.name}>
+                  <Link
+                    to={item.path}
+                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                      isActive
+                        ? 'bg-primary-100 text-primary-700'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                    }`}
+                  >
+                    <Icon className="mr-3 h-5 w-5" />
+                    {item.name}
+                  </Link>
+                  
+                  {/* Sub-items for CRM */}
+                  {hasSubItems && isActive && (
+                    <div className="ml-8 mt-1 space-y-1">
+                      {item.subItems.map((subItem) => {
+                        const isSubActive = isActiveRoute(subItem.path);
+                        return (
+                          <Link
+                            key={subItem.name}
+                            to={subItem.path}
+                            className={`group flex items-center px-2 py-1 text-sm font-medium rounded-md transition-colors ${
+                              isSubActive
+                                ? 'bg-primary-100 text-primary-700'
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`}
+                          >
+                            {subItem.name}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               );
             })}
           </div>

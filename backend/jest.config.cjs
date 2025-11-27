@@ -20,10 +20,5 @@ module.exports = {
   preset: null,
   transform: {
     '^.+\\.js$': 'babel-jest'
-  },
-  globals: {
-    'babel-jest': {
-      useESM: true
-    }
   }
 };
