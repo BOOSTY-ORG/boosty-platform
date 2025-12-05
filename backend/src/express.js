@@ -1,14 +1,19 @@
-import express from "express";
-import cors from "cors";
-import mongoose from "mongoose";
-import userRoutes from "./routes/user.routes.js";
-import authRoutes from "./routes/auth.routes.js";
-import metricsRoutes from "./routes/metrics.routes.js";
-import exportRoutes from "./routes/export.routes.js";
-import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-import "dotenv/config";
+import express from 'express';
+import cors from 'cors';
+import mongoose from 'mongoose';
+import userRoutes from './routes/user.routes.js';
+import authRoutes from './routes/auth.routes.js';
+import metricsRoutes from './routes/metrics.routes.js';
+import exportRoutes from './routes/export.routes.js';
+import paymentRoutes from './routes/payment/payment.routes.js';
+import payoutRoutes from './routes/payment/payout.routes.js';
+import webhookRoutes from './routes/payment/webhook.routes.js';
+import roiAnalyticsRoutes from './routes/roiAnalytics.routes.js';
+import payoutAnalyticsRoutes from './routes/payoutAnalytics.routes.js';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import 'dotenv/config';
 
 // Since we're using ES modules, we need to define __dirname manually
 const __filename = fileURLToPath(import.meta.url);
@@ -26,7 +31,10 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(currentDirname, '../uploads')));
 
 // ** Database Connection **
-console.log("[DEBUG] Attempting to connect to MongoDB with URL:", process.env.DATABASE_URL);
+console.log(
+  '[DEBUG] Attempting to connect to MongoDB with URL:',
+  process.env.DATABASE_URL
+);
 
 const connectDB = async () => {
   try {
@@ -34,24 +42,27 @@ const connectDB = async () => {
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
       maxPoolSize: 10, // Maintain up to 10 socket connections
       retryWrites: true,
-      w: 'majority'
+      w: 'majority',
     });
-    
-    console.log("[DEBUG] MongoDB connected Successfully!!!");
-    console.log("[DEBUG] Connection state:", mongoose.connection.readyState);
-    console.log("[DEBUG] Connected to database:", conn.connection.name);
-    
+
+    console.log('[DEBUG] MongoDB connected Successfully!!!');
+    console.log('[DEBUG] Connection state:', mongoose.connection.readyState);
+    console.log('[DEBUG] Connected to database:', conn.connection.name);
+
     return true;
   } catch (error) {
-    console.error("[DEBUG] MongoDB connection error!!!:", error.message);
-    console.error("[DEBUG] Connection state after error:", mongoose.connection.readyState);
-    
+    console.error('[DEBUG] MongoDB connection error!!!:', error.message);
+    console.error(
+      '[DEBUG] Connection state after error:',
+      mongoose.connection.readyState
+    );
+
     // Retry connection after 5 seconds
-    console.log("[DEBUG] Retrying database connection in 5 seconds...");
+    console.log('[DEBUG] Retrying database connection in 5 seconds...');
     setTimeout(() => {
       connectDB();
     }, 5000);
-    
+
     return false;
   }
 };
@@ -73,10 +84,15 @@ mongoose.connection.on('disconnected', () => {
 connectDB();
 
 // ** Routes **
-app.use("/", userRoutes); // Mount user routes
-app.use("/", authRoutes); // Mount auth routes
-app.use("/metrics", metricsRoutes); // Mount metrics routes
-app.use("/", exportRoutes); // Mount export routes
+app.use('/api', userRoutes); // Mount user routes
+app.use('/api', authRoutes); // Mount auth routes
+app.use('/api/metrics', metricsRoutes); // Mount metrics routes
+app.use('/api', exportRoutes); // Mount export routes
+app.use('/api/payments', paymentRoutes); // Mount payment routes
+app.use('/api/payouts', payoutRoutes); // Mount payout routes
+app.use('/api/webhooks', webhookRoutes); // Mount webhook routes
+app.use('/api/roi-analytics', roiAnalyticsRoutes); // Mount ROI analytics routes
+app.use('/api/payout-analytics', payoutAnalyticsRoutes); // Mount payout analytics routes
 
 // ** export configured App **
 export default app;

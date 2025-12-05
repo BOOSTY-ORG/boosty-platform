@@ -5,6 +5,10 @@ module.exports = {
     '<rootDir>/tests/**/*.test.js',
     '<rootDir>/src/**/*.test.js'
   ],
+  testPathIgnorePatterns: [
+    '<rootDir>/node_modules/',
+    '<rootDir>/coverage/'
+  ],
   collectCoverageFrom: [
     'src/**/*.js',
     '!src/server.js'

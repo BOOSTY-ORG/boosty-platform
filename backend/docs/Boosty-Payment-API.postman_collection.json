@@ -1,0 +1,1426 @@
+{
+	"info": {
+		"_postman_id": "boosty-payment-api",
+		"name": "Boosty Payment API",
+		"description": "Complete collection for Boosty Payment API including payment processing, transaction history, ROI analytics, and payout management",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "boosty-platform"
+	},
+	"item": [
+		{
+			"name": "Payment Management",
+			"item": [
+				{
+					"name": "Initialize Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"TXN_{{timestamp}}_{{$randomUUID}}\",\n  \"amount\": 1000000,\n  \"email\": \"customer@example.com\",\n  \"paymentMethod\": \"card\",\n  \"currency\": \"NGN\",\n  \"transactionType\": \"investment\",\n  \"callbackUrl\": \"{{callback_url}}\",\n  \"metadata\": {\n    \"userId\": \"{{user_id}}\",\n    \"investmentId\": \"{{investment_id}}\"\n  },\n  \"split\": {\n    \"type\": \"percentage\",\n    \"bearer\": \"account\",\n    \"subaccounts\": [\n      {\n        \"subaccount\": \"ACCT_abc123\",\n        \"share\": 80\n      },\n      {\n        \"subaccount\": \"ACCT_def456\",\n        \"share\": 20\n      }\n    ]\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/initialize",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "initialize"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verify Payment",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/verify?reference={{payment_reference}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "verify"],
+							"query": [
+								{
+									"key": "reference",
+									"value": "{{payment_reference}}",
+									"description": "Transaction reference returned from initialize"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/{{transaction_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "{{transaction_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transactions",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments?page={{page}}&limit={{limit}}&status={{status}}&type={{type}}&paymentMethod={{payment_method}}&startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments"],
+							"query": [
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page (default: 20, max: 100)"
+								},
+								{
+									"key": "status",
+									"value": "{{status}}",
+									"description": "Filter by status (pending, completed, failed)"
+								},
+								{
+									"key": "type",
+									"value": "{{type}}",
+									"description": "Filter by transaction type"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{payment_method}}",
+									"description": "Filter by payment method"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Filter by start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "Filter by end date (ISO 8601)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Process Refund",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"{{transaction_id}}\",\n  \"amount\": {{refund_amount}},\n  \"reason\": \"{{refund_reason}}\",\n  \"customerNote\": \"{{refund_note}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/refund",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "refund"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/balance",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "balance"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Transfer Recipient",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"type\": \"nuban\",\n  \"name\": \"{{recipient_name}}\",\n  \"email\": \"{{recipient_email}}\",\n  \"accountNumber\": \"{{account_number}}\",\n  \"bankCode\": \"{{bank_code}}\",\n  \"currency\": \"NGN\",\n  \"metadata\": {\n    \"userId\": \"{{user_id}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payments/recipients",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "recipients"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Methods",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/payments/methods",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "methods"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Fees",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/payments/fees",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "fees"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Limits",
+					"request": {
+						"method": "GET",
+						"url": {
+							"raw": "{{base_url}}/api/payments/limits",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "limits"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payment Metrics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payments/metrics?startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payments", "metrics"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date for metrics (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date for metrics (ISO 8601)"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Payment processing and management endpoints"
+		},
+		{
+			"name": "Transaction History",
+			"item": [
+				{
+					"name": "Get Transaction History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/history?type={{transaction_type}}&status={{transaction_status}}&paymentMethod={{payment_method}}&startDate={{start_date}}&endDate={{end_date}}&minAmount={{min_amount}}&maxAmount={{max_amount}}&search={{search_term}}&userEntity={{user_entity}}&investorEntity={{investor_entity}}&kycVerified={{kyc_verified}}&amlScreeningPassed={{aml_screening}}&fraudFlag={{fraud_flag}}&page={{page}}&limit={{limit}}&cursor={{cursor}}&sortBy={{sort_by}}&sortOrder={{sort_order}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "history"],
+							"query": [
+								{
+									"key": "type",
+									"value": "{{transaction_type}}",
+									"description": "Transaction type filter"
+								},
+								{
+									"key": "status",
+									"value": "{{transaction_status}}",
+									"description": "Transaction status filter"
+								},
+								{
+									"key": "paymentMethod",
+									"value": "{{payment_method}}",
+									"description": "Payment method filter"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date (ISO 8601)"
+								},
+								{
+									"key": "minAmount",
+									"value": "{{min_amount}}",
+									"description": "Minimum amount filter"
+								},
+								{
+									"key": "maxAmount",
+									"value": "{{max_amount}}",
+									"description": "Maximum amount filter"
+								},
+								{
+									"key": "search",
+									"value": "{{search_term}}",
+									"description": "Search by transaction ID or reference"
+								},
+								{
+									"key": "userEntity",
+									"value": "{{user_entity}}",
+									"description": "Filter by user entity ID"
+								},
+								{
+									"key": "investorEntity",
+									"value": "{{investor_entity}}",
+									"description": "Filter by investor entity ID"
+								},
+								{
+									"key": "kycVerified",
+									"value": "{{kyc_verified}}",
+									"description": "Filter by KYC verification status"
+								},
+								{
+									"key": "amlScreeningPassed",
+									"value": "{{aml_screening}}",
+									"description": "Filter by AML screening status"
+								},
+								{
+									"key": "fraudFlag",
+									"value": "{{fraud_flag}}",
+									"description": "Filter by fraud flag status"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page (default: 20, max: 100)"
+								},
+								{
+									"key": "cursor",
+									"value": "{{cursor}}",
+									"description": "Cursor for cursor-based pagination"
+								},
+								{
+									"key": "sortBy",
+									"value": "{{sort_by}}",
+									"description": "Sort field (default: createdAt)"
+								},
+								{
+									"key": "sortOrder",
+									"value": "{{sort_order}}",
+									"description": "Sort order (asc, desc, default: desc)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Transaction History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/users/{{user_id}}?status={{transaction_status}}&startDate={{start_date}}&endDate={{end_date}}&page={{page}}&limit={{limit}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "users", "{{user_id}}"],
+							"query": [
+								{
+									"key": "status",
+									"value": "{{transaction_status}}",
+									"description": "Transaction status filter"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date (ISO 8601)"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Investor Transaction History",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/investors/{{investor_id}}?status={{transaction_status}}&startDate={{start_date}}&endDate={{end_date}}&page={{page}}&limit={{limit}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "investors", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "status",
+									"value": "{{transaction_status}}",
+									"description": "Transaction status filter"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date (ISO 8601)"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Transaction Timeline",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/transactions/timeline?granularity={{granularity}}&startDate={{start_date}}&endDate={{end_date}}&includeMetrics={{include_metrics}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "timeline"],
+							"query": [
+								{
+									"key": "granularity",
+									"value": "{{granularity}}",
+									"description": "Time granularity (hour, day, week, month)"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date (ISO 8601)"
+								},
+								{
+									"key": "includeMetrics",
+									"value": "{{include_metrics}}",
+									"description": "Include additional metrics (true/false)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Export Transaction History",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"format\": \"{{export_format}}\",\n  \"filters\": {\n    \"status\": \"{{transaction_status}}\",\n    \"startDate\": \"{{start_date}}\",\n    \"endDate\": \"{{end_date}}\",\n    \"minAmount\": {{min_amount}},\n    \"maxAmount\": {{max_amount}}\n  },\n  \"fields\": [\"{{export_fields}}\"],\n  \"limit\": {{export_limit}},\n  \"includeHeaders\": {{include_headers}}\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/transactions/export",
+							"host": ["{{base_url}}"],
+							"path": ["api", "transactions", "export"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Transaction history and analytics endpoints"
+		},
+		{
+			"name": "ROI Analytics",
+			"item": [
+				{
+					"name": "Calculate Investment ROI",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/investments/{{investment_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "investments", "{{investment_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calculate Portfolio ROI",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/portfolio/{{investor_id}}?startDate={{start_date}}&endDate={{end_date}}&investmentType={{investment_type}}&status={{investment_status}}&page={{page}}&limit={{limit}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "portfolio", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date for calculation"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date for calculation"
+								},
+								{
+									"key": "investmentType",
+									"value": "{{investment_type}}",
+									"description": "Filter by investment type"
+								},
+								{
+									"key": "status",
+									"value": "{{investment_status}}",
+									"description": "Filter by investment status"
+								},
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ROI Performance Tracking",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/performance/{{investor_id}}?startDate={{start_date}}&endDate={{end_date}}&period={{period}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "performance", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date for tracking"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date for tracking"
+								},
+								{
+									"key": "period",
+									"value": "{{period}}",
+									"description": "Time period (daily, weekly, monthly, quarterly)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Generate ROI Projections",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/projections/{{investor_id}}?forecastPeriod={{forecast_period}}&scenario={{scenario}}&confidenceLevel={{confidence_level}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "projections", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "forecastPeriod",
+									"value": "{{forecast_period}}",
+									"description": "Forecast period in months (default: 12)"
+								},
+								{
+									"key": "scenario",
+									"value": "{{scenario}}",
+									"description": "Forecast scenario (conservative, moderate, optimistic)"
+								},
+								{
+									"key": "confidenceLevel",
+									"value": "{{confidence_level}}",
+									"description": "Confidence level (0.8, 0.9, 0.95)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Calculate Risk-Adjusted ROI",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/risk-adjusted/{{investment_id}}?investorId={{investor_id}}&riskModel={{risk_model}}&benchmark={{benchmark}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "risk-adjusted", "{{investment_id}}"],
+							"query": [
+								{
+									"key": "investorId",
+									"value": "{{investor_id}}",
+									"description": "Investor ID (for portfolio calculation)"
+								},
+								{
+									"key": "riskModel",
+									"value": "{{risk_model}}",
+									"description": "Risk model (standard, conservative, aggressive)"
+								},
+								{
+									"key": "benchmark",
+									"value": "{{benchmark}}",
+									"description": "Benchmark index (market, sector, custom)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ROI Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/dashboard/{{investor_id}}?period={{period}}&includeProjections={{include_projections}}&includeComparisons={{include_comparisons}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "dashboard", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "period",
+									"value": "{{period}}",
+									"description": "Time period (monthly, quarterly, yearly)"
+								},
+								{
+									"key": "includeProjections",
+									"value": "{{include_projections}}",
+									"description": "Include projections (true/false)"
+								},
+								{
+									"key": "includeComparisons",
+									"value": "{{include_comparisons}}",
+									"description": "Include comparisons (true/false)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get ROI Insights",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/roi-analytics/insights/{{investor_id}}?insightType={{insight_type}}&timeframe={{timeframe}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "roi-analytics", "insights", "{{investor_id}}"],
+							"query": [
+								{
+									"key": "insightType",
+									"value": "{{insight_type}}",
+									"description": "Insight type (all, performance, risk, opportunity)"
+								},
+								{
+									"key": "timeframe",
+									"value": "{{timeframe}}",
+									"description": "Timeframe for insights (90d, 180d, 365d)"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "ROI calculation and analytics endpoints"
+		},
+		{
+			"name": "Payout Management",
+			"item": [
+				{
+					"name": "Process Payout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"transactionId\": \"{{transaction_id}}\",\n  \"recipientCode\": \"{{recipient_code}}\",\n  \"amount\": {{payout_amount}},\n  \"reason\": \"{{payout_reason}}\",\n  \"currency\": \"NGN\",\n  \"metadata\": {\n    \"investmentId\": \"{{investment_id}}\",\n    \"period\": \"{{payout_period}}\",\n    \"processedBy\": \"{{processed_by}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payouts/process",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payouts", "process"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Process Batch Payout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"payoutIds\": [\"{{payout_ids}}\"],\n  \"batchId\": \"{{batch_id}}\",\n  \"metadata\": {\n    \"period\": \"{{batch_period}}\",\n    \"totalAmount\": {{batch_total_amount}},\n    \"processedBy\": \"{{processed_by}}\"\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/payouts/batch",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payouts", "batch"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payout Details",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payouts/{{payout_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payouts", "{{payout_id}}"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payouts List",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payouts?page={{page}}&limit={{limit}}&status={{payout_status}}&type={{payout_type}}&recipientId={{recipient_id}}&startDate={{start_date}}&endDate={{end_date}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payouts"],
+							"query": [
+								{
+									"key": "page",
+									"value": "{{page}}",
+									"description": "Page number (default: 1)"
+								},
+								{
+									"key": "limit",
+									"value": "{{limit}}",
+									"description": "Items per page (default: 20)"
+								},
+								{
+									"key": "status",
+									"value": "{{payout_status}}",
+									"description": "Filter by status"
+								},
+								{
+									"key": "type",
+									"value": "{{payout_type}}",
+									"description": "Filter by payout type"
+								},
+								{
+									"key": "recipientId",
+									"value": "{{recipient_id}}",
+									"description": "Filter by recipient ID"
+								},
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Filter by start date (ISO 8601)"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "Filter by end date (ISO 8601)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payout Analytics",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payout-analytics/analytics?startDate={{start_date}}&endDate={{end_date}}&type={{payout_type}}&status={{payout_status}}&recipientId={{recipient_id}}&period={{period}}&includeProjections={{include_projections}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payout-analytics", "analytics"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date for analytics"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date for analytics"
+								},
+								{
+									"key": "type",
+									"value": "{{payout_type}}",
+									"description": "Filter by payout type"
+								},
+								{
+									"key": "status",
+									"value": "{{payout_status}}",
+									"description": "Filter by payout status"
+								},
+								{
+									"key": "recipientId",
+									"value": "{{recipient_id}}",
+									"description": "Filter by recipient ID"
+								},
+								{
+									"key": "period",
+									"value": "{{period}}",
+									"description": "Aggregation period (daily, weekly, monthly)"
+								},
+								{
+									"key": "includeProjections",
+									"value": "{{include_projections}}",
+									"description": "Include projections (true/false)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payout Efficiency Analysis",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payout-analytics/efficiency?startDate={{start_date}}&endDate={{end_date}}&benchmarkPeriod={{benchmark_period}}&includeRecommendations={{include_recommendations}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payout-analytics", "efficiency"],
+							"query": [
+								{
+									"key": "startDate",
+									"value": "{{start_date}}",
+									"description": "Start date for analysis"
+								},
+								{
+									"key": "endDate",
+									"value": "{{end_date}}",
+									"description": "End date for analysis"
+								},
+								{
+									"key": "benchmarkPeriod",
+									"value": "{{benchmark_period}}",
+									"description": "Benchmark period (default: 30d)"
+								},
+								{
+									"key": "includeRecommendations",
+									"value": "{{include_recommendations}}",
+									"description": "Include recommendations (true/false)"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Payout Forecasting",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{jwt_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/api/payout-analytics/forecasting?forecastPeriod={{forecast_period}}&historicalPeriod={{historical_period}}&confidenceLevel={{confidence_level}}&scenario={{scenario}}",
+							"host": ["{{base_url}}"],
+							"path": ["api", "payout-analytics", "forecasting"],
+							"query": [
+								{
+									"key": "forecastPeriod",
+									"value": "{{forecast_period}}",
+									"description": "Forecast period in days (default: 90)"
+								},
+								{
+									"key": "historicalPeriod",
+									"value": "{{historical_period}}",
+									"description": "Historical period in days (default: 365)"
+								},
+								{
+									"key": "confidenceLevel",
+									"value": "{{confidence_level}}",
+									"description": "Confidence level (default: 0.95)"
+								},
+								{
+									"key": "scenario",
+									"value": "{{scenario}}",
+									"description": "Forecast scenario (baseline, optimistic, pessimistic)"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Payout processing and analytics endpoints"
+		},
+		{
+			"name": "Webhooks",
+			"item": [
+				{
+					"name": "Payment Webhook",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							},
+							{
+								"key": "x-paystack-signature",
+								"value": "{{webhook_signature}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"event\": \"payment.completed\",\n  \"data\": {\n    \"id\": {{payment_id}},\n    \"reference\": \"{{payment_reference}}\",\n    \"amount\": {{payment_amount}},\n    \"status\": \"success\",\n    \"paidAt\": \"{{paid_at}}\",\n    \"customer\": {\n      \"email\": \"{{customer_email}}\",\n      \"customer_code\": \"{{customer_code}}\"\n    }\n  }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{webhook_url}}",
+							"host": ["{{webhook_url}}"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Webhook handling for payment notifications"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Auto-generate timestamp for unique transaction IDs",
+					"pm.environment.set(\"timestamp\", Date.now());",
+					"",
+					"// Generate random UUID for testing",
+					"pm.environment.set(\"randomUUID\", require('crypto').randomUUID());"
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Test script to validate response",
+					"if (pm.response.code >= 200 && pm.response.code < 300) {",
+					"    pm.test(\"Status code is \" + pm.response.code + \"\", true);",
+					"} else {",
+					"    pm.test(\"Status code is \" + pm.response.code + \"\", false);",
+					"}",
+					"",
+					"// Test for success field in response",
+					"if (pm.response.json().success === true) {",
+					"    pm.test(\"Response has success field\", true);",
+					"} else {",
+					"    pm.test(\"Response has success field\", false);",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "https://api.boosty.com",
+			"type": "string",
+			"description": "Base URL for the API"
+		},
+		{
+			"key": "jwt_token",
+			"value": "your_jwt_token_here",
+			"type": "string",
+			"description": "JWT authentication token"
+		},
+		{
+			"key": "callback_url",
+			"value": "https://yourapp.com/payment/callback",
+			"type": "string",
+			"description": "URL to redirect after payment"
+		},
+		{
+			"key": "user_id",
+			"value": "user_123",
+			"type": "string",
+			"description": "User ID for testing"
+		},
+		{
+			"key": "investment_id",
+			"value": "inv_456",
+			"type": "string",
+			"description": "Investment ID for testing"
+		},
+		{
+			"key": "payment_reference",
+			"value": "REF_1704396600_xyz789",
+			"type": "string",
+			"description": "Payment reference for verification"
+		},
+		{
+			"key": "transaction_id",
+			"value": "TXN_1704396600_abc123",
+			"type": "string",
+			"description": "Transaction ID for testing"
+		},
+		{
+			"key": "page",
+			"value": "1",
+			"type": "string",
+			"description": "Page number for pagination"
+		},
+		{
+			"key": "limit",
+			"value": "20",
+			"type": "string",
+			"description": "Items per page"
+		},
+		{
+			"key": "status",
+			"value": "completed",
+			"type": "string",
+			"description": "Transaction status filter"
+		},
+		{
+			"key": "type",
+			"value": "investment",
+			"type": "string",
+			"description": "Transaction type filter"
+		},
+		{
+			"key": "payment_method",
+			"value": "card",
+			"type": "string",
+			"description": "Payment method filter"
+		},
+		{
+			"key": "start_date",
+			"value": "2023-12-01T00:00:00.000Z",
+			"type": "string",
+			"description": "Start date for filtering (ISO 8601)"
+		},
+		{
+			"key": "end_date",
+			"value": "2023-12-31T23:59:59.999Z",
+			"type": "string",
+			"description": "End date for filtering (ISO 8601)"
+		},
+		{
+			"key": "investor_id",
+			"value": "investor_789",
+			"type": "string",
+			"description": "Investor ID for testing"
+		},
+		{
+			"key": "payout_id",
+			"value": "PAY_1704396600_xyz789",
+			"type": "string",
+			"description": "Payout ID for testing"
+		},
+		{
+			"key": "recipient_code",
+			"value": "RCP_abc123",
+			"type": "string",
+			"description": "Transfer recipient code"
+		},
+		{
+			"key": "payout_amount",
+			"value": "250000",
+			"type": "string",
+			"description": "Payout amount in kobo"
+		},
+		{
+			"key": "refund_amount",
+			"value": "500000",
+			"type": "string",
+			"description": "Refund amount in kobo"
+		},
+		{
+			"key": "refund_reason",
+			"value": "Customer requested partial refund",
+			"type": "string",
+			"description": "Reason for refund"
+		},
+		{
+			"key": "refund_note",
+			"value": "Refund processed as requested",
+			"type": "string",
+			"description": "Note to customer"
+		},
+		{
+			"key": "recipient_name",
+			"value": "John Doe",
+			"type": "string",
+			"description": "Recipient name"
+		},
+		{
+			"key": "recipient_email",
+			"value": "john.doe@example.com",
+			"type": "string",
+			"description": "Recipient email"
+		},
+		{
+			"key": "account_number",
+			"value": "1234567890",
+			"type": "string",
+			"description": "Bank account number"
+		},
+		{
+			"key": "bank_code",
+			"value": "058",
+			"type": "string",
+			"description": "Bank code (GTBank = 058)"
+		},
+		{
+			"key": "export_format",
+			"value": "csv",
+			"type": "string",
+			"description": "Export format (csv, excel, json)"
+		},
+		{
+			"key": "export_fields",
+			"value": "transactionId,type,status,amount,currency,paymentMethod,createdAt,completedAt",
+			"type": "string",
+			"description": "Fields to include in export"
+		},
+		{
+			"key": "export_limit",
+			"value": "5000",
+			"type": "string",
+			"description": "Maximum records to export"
+		},
+		{
+			"key": "include_headers",
+			"value": "true",
+			"type": "string",
+			"description": "Include headers in CSV/Excel export"
+		},
+		{
+			"key": "granularity",
+			"value": "day",
+			"type": "string",
+			"description": "Time granularity (hour, day, week, month)"
+		},
+		{
+			"key": "period",
+			"value": "monthly",
+			"type": "string",
+			"description": "Time period for analytics"
+		},
+		{
+			"key": "forecast_period",
+			"value": "12",
+			"type": "string",
+			"description": "Forecast period in months"
+		},
+		{
+			"key": "scenario",
+			"value": "moderate",
+			"type": "string",
+			"description": "Forecast scenario (conservative, moderate, optimistic)"
+		},
+		{
+			"key": "confidence_level",
+			"value": "0.9",
+			"type": "string",
+			"description": "Confidence level for projections"
+		},
+		{
+			"key": "risk_model",
+			"value": "standard",
+			"type": "string",
+			"description": "Risk model (standard, conservative, aggressive)"
+		},
+		{
+			"key": "benchmark",
+			"value": "market",
+			"type": "string",
+			"description": "Benchmark index (market, sector, custom)"
+		},
+		{
+			"key": "webhook_url",
+			"value": "https://yourapp.com/webhook/payment",
+			"type": "string",
+			"description": "Webhook endpoint URL"
+		},
+		{
+			"key": "webhook_signature",
+			"value": "webhook_signature_here",
+			"type": "string",
+			"description": "Webhook signature for verification"
+		}
+	]
+}

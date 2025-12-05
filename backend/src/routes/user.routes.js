@@ -1,15 +1,15 @@
-import express from "express";
-import * as userCtrl from "../controllers/user.controller.js";
-import * as authCtrl from "../controllers/auth.controller.js";
+import express from 'express';
+import * as userCtrl from '../controllers/user.controller.js';
+import * as authCtrl from '../controllers/auth.controller.js';
 
 const router = express.Router();
 
 // Route for listing all users and creating a new user
-router.route("/api/users").get(userCtrl.list).post(userCtrl.create);
+router.route('/users').get(userCtrl.list).post(userCtrl.create);
 
 // Routes for fetching, updating, and deleting a single user
 router
-  .route("/api/users/:userId")
+  .route('/users/:userId')
   .get(authCtrl.requireSignin, userCtrl.read) // read profile
   .put(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update) // update profile
   .patch(authCtrl.requireSignin, authCtrl.hasAuthorization, userCtrl.update) // update profile
@@ -17,10 +17,10 @@ router
 
 // Routes to reset user password
 router
-  .post("/forgot-password", authCtrl.forgotPassword)
-  .post("/reset-password/:token", authCtrl.resetPassword);
+  .post('/forgot-password', authCtrl.forgotPassword)
+  .post('/reset-password/:token', authCtrl.resetPassword);
 
 // Load user
-router.param("userId", userCtrl.userByID);
+router.param('userId', userCtrl.userByID);
 
 export default router;
