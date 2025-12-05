@@ -11,10 +11,7 @@ import PaymentsPage from '../pages/payments/PaymentsPage.jsx';
 import PaymentDetailsPage from '../pages/payments/PaymentDetailsPage.jsx';
 import TransactionLedgerPage from '../pages/payments/TransactionLedgerPage.jsx';
 import PayoutConfirmationPage from '../pages/payments/PayoutConfirmationPage.jsx';
-import CRMPage from '../pages/crm/CRMPage.jsx';
-import TicketListPage from '../pages/crm/TicketListPage.jsx';
-import TicketDetailsPage from '../pages/crm/TicketDetailsPage.jsx';
-import CommunicationHistoryPage from '../pages/crm/CommunicationHistoryPage.jsx';
+import FinancePage from '../pages/finance/FinancePage.jsx';
 import ReportsPage from '../pages/reports/ReportsPage.jsx';
 import ReportGeneratorPage from '../pages/reports/ReportGeneratorPage.jsx';
 import AnalyticsPage from '../pages/reports/AnalyticsPage.jsx';
@@ -60,21 +57,6 @@ const FinanceRoute = ({ children }) => {
   return children;
 };
 
-// Support route wrapper
-const SupportRoute = ({ children }) => {
-  const token = localStorage.getItem('authToken');
-  const user = JSON.parse(localStorage.getItem('user') || '{}');
-  
-  if (!token) {
-    return <Navigate to="/auth/login" replace />;
-  }
-  
-  if (!['admin', 'support'].includes(user.role)) {
-    return <Navigate to="/" replace />;
-  }
-  
-  return children;
-};
 
 // Management route wrapper
 const ManagementRoute = ({ children }) => {
@@ -196,37 +178,13 @@ export const routes = [
     ),
   },
 
-  // CRM routes
+  // Finance routes
   {
-    path: '/crm',
+    path: '/finance',
     element: (
-      <SupportRoute>
-        <CRMPage />
-      </SupportRoute>
-    ),
-  },
-  {
-    path: '/crm/tickets',
-    element: (
-      <SupportRoute>
-        <TicketListPage />
-      </SupportRoute>
-    ),
-  },
-  {
-    path: '/crm/tickets/:id',
-    element: (
-      <SupportRoute>
-        <TicketDetailsPage />
-      </SupportRoute>
-    ),
-  },
-  {
-    path: '/crm/communications',
-    element: (
-      <SupportRoute>
-        <CommunicationHistoryPage />
-      </SupportRoute>
+      <FinanceRoute>
+        <FinancePage />
+      </FinanceRoute>
     ),
   },
 

@@ -32,6 +32,9 @@ import CrmContacts from './components/crm/CrmContacts.jsx';
 import CrmTemplates from './components/crm/CrmTemplates.jsx';
 import CrmAutomation from './components/crm/CrmAutomation.jsx';
 
+// Route Wrappers
+import SupportRoute from './components/route-wrappers/SupportRoute.jsx';
+
 import './styles/index.css';
 
 function App() {
@@ -78,12 +81,12 @@ function App() {
 
               {/* CRM Routes */}
               <Route path="/crm" element={<DashboardLayout />}>
-                <Route index element={<CrmDashboard />} />
-                <Route path="dashboard" element={<CrmDashboard />} />
-                <Route path="communications" element={<CrmCommunications />} />
-                <Route path="contacts" element={<CrmContacts />} />
-                <Route path="templates" element={<CrmTemplates />} />
-                <Route path="automation" element={<CrmAutomation />} />
+                <Route index element={<SupportRoute><CrmDashboard /></SupportRoute>} />
+                <Route path="dashboard" element={<SupportRoute><CrmDashboard /></SupportRoute>} />
+                <Route path="communications" element={<SupportRoute><CrmCommunications /></SupportRoute>} />
+                <Route path="contacts" element={<SupportRoute><CrmContacts /></SupportRoute>} />
+                <Route path="templates" element={<SupportRoute><CrmTemplates /></SupportRoute>} />
+                <Route path="automation" element={<SupportRoute><CrmAutomation /></SupportRoute>} />
               </Route>
 
               {/* Dynamic Routes */}
