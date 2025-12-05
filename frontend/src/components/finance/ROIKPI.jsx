@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TrendingUp, Target, Percent, BarChart3 } from 'lucide-react';
 import Card from '../common/Card.jsx';
 
@@ -183,6 +183,6 @@ const ROIKPI = memo(({
       </div>
     </Card>
   );
-};
+});
 
 export default ROIKPI;

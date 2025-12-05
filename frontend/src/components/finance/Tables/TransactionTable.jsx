@@ -322,7 +322,7 @@ const TransactionTable = ({
         </span>
       )
     }
-  ];
+  ], []);
 
   // Error state
   if (error && retryCount === 0) {
@@ -400,7 +400,9 @@ const TransactionTable = ({
       />
     </div>
   );
-});
+};
+
+TransactionTable.displayName = 'TransactionTable';
 
 TransactionTable.propTypes = {
   className: PropTypes.string,

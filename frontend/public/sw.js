@@ -316,7 +316,7 @@ self.addEventListener('sync', (event) => {
 });
 
 // Push notification handler
-self.addEventListener('push', (event) => {
+self.addEventListener('push', async (event) => {
   console.log('Push message received:', event);
   
   const data = event.data.json();
