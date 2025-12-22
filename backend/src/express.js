@@ -10,6 +10,10 @@ import payoutRoutes from './routes/payment/payout.routes.js';
 import webhookRoutes from './routes/payment/webhook.routes.js';
 import roiAnalyticsRoutes from './routes/roiAnalytics.routes.js';
 import payoutAnalyticsRoutes from './routes/payoutAnalytics.routes.js';
+import notificationRoutes from './routes/notification.routes.js';
+import notificationWebhookRoutes from './routes/notificationWebhook.routes.js';
+import userNotificationPreferencesRoutes from './routes/userNotificationPreferences.routes.js';
+import notificationRealtimeRoutes from './routes/notificationRealtime.routes.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -90,7 +94,11 @@ app.use('/api/metrics', metricsRoutes); // Mount metrics routes
 app.use('/api', exportRoutes); // Mount export routes
 app.use('/api/payments', paymentRoutes); // Mount payment routes
 app.use('/api/payouts', payoutRoutes); // Mount payout routes
-app.use('/api/webhooks', webhookRoutes); // Mount webhook routes
+app.use('/api/webhooks', webhookRoutes); // Mount payment webhook routes
+app.use('/api/notifications', notificationRoutes); // Mount notification routes
+app.use('/api/webhooks', notificationWebhookRoutes); // Mount notification webhook routes
+app.use('/api/users', userNotificationPreferencesRoutes); // Mount user notification preferences routes
+app.use('/api/notifications/realtime', notificationRealtimeRoutes); // Mount real-time notification routes
 app.use('/api/roi-analytics', roiAnalyticsRoutes); // Mount ROI analytics routes
 app.use('/api/payout-analytics', payoutAnalyticsRoutes); // Mount payout analytics routes
 
