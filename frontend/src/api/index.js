@@ -260,3 +260,7 @@ const getMockCRMResponse = (url) => {
 };
 
 export default api;
+
+// Export notification API service
+export { notificationAPI, notificationService } from "./notification.js";
+export { NOTIFICATION_CONSTANTS } from "./notificationConstants.js";
