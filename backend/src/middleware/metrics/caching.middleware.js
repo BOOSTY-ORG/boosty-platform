@@ -1,176 +1,277 @@
-// Simple in-memory caching for development
-// In production, this should be replaced with Redis
+// Redis-based caching with intelligent invalidation and monitoring
+import {
+  initializeRedis,
+  generateCacheKey,
+  cacheTTL,
+  cacheVersion,
+} from '../../config/redis.config.js';
+import cacheService from '../../utils/metrics/cache.util.js';
+import logger from '../../helpers/logger.js';
 
-class CacheService {
-  constructor() {
-    this.cache = new Map();
-    this.ttlMap = new Map();
-  }
+// Initialize Redis connection
+let redisInitialized = false;
 
-  get(key) {
-    const now = Date.now();
-    const ttl = this.ttlMap.get(key);
-    
-    if (ttl && now > ttl) {
-      this.cache.delete(key);
-      this.ttlMap.delete(key);
-      return null;
+const ensureRedisInitialized = async () => {
+  if (!redisInitialized) {
+    try {
+      await initializeRedis();
+      redisInitialized = true;
+      logger.info('Redis caching middleware initialized');
+    } catch (error) {
+      logger.error('Failed to initialize Redis for caching middleware:', error);
+      // Continue without caching if Redis fails
     }
-    
-    return this.cache.get(key);
   }
+};
 
-  set(key, value, ttl = 300000) { // Default 5 minutes
-    this.cache.set(key, value);
-    this.ttlMap.set(key, Date.now() + ttl);
-  }
-
-  del(key) {
-    this.cache.delete(key);
-    this.ttlMap.delete(key);
-  }
-
-  clear() {
-    this.cache.clear();
-    this.ttlMap.clear();
-  }
-
-  size() {
-    return this.cache.size;
-  }
-}
-
-const cacheService = new CacheService();
-
-const cacheMiddleware = (ttl = 300000) => {
-  return (req, res, next) => {
+const cacheMiddleware = (ttl = cacheTTL.simpleQuery, options = {}) => {
+  return async (req, res, next) => {
     // Skip caching for non-GET requests
     if (req.method !== 'GET') {
       return next();
     }
 
-    // Generate cache key based on URL and query parameters
-    const cacheKey = generateCacheKey(req);
-    
-    // Try to get from cache
-    const cachedResponse = cacheService.get(cacheKey);
-    if (cachedResponse) {
-      return res.json(cachedResponse);
+    // Ensure Redis is initialized
+    await ensureRedisInitialized();
+    if (!redisInitialized) {
+      // Fallback to no caching if Redis is not available
+      return next();
     }
 
-    // Override res.json to cache the response
-    const originalJson = res.json;
-    res.json = function(data) {
-      // Only cache successful responses
-      if (data.success !== false && res.statusCode === 200) {
-        cacheService.set(cacheKey, data, ttl);
+    // Generate cache key based on URL and query parameters
+    const cacheKey = generateCacheKey(
+      'middleware',
+      req.originalUrl || req.url,
+      {
+        query: req.query,
+        user: req.auth ? req.auth._id : 'anonymous',
+        path: req.path,
       }
-      return originalJson.call(this, data);
-    };
+    );
+
+    try {
+      // Try to get from cache using cache-aside pattern
+      const cachedResponse = await cacheService.get(cacheKey, null, {
+        ttl,
+        tags: options.tags || ['middleware', 'response'],
+        version: options.version || cacheVersion.current,
+      });
+
+      if (cachedResponse) {
+        logger.debug(`Cache hit for middleware key: ${cacheKey}`);
+        return res.json(cachedResponse);
+      }
+
+      // Override res.json to cache response
+      const originalJson = res.json;
+      res.json = async function (data) {
+        // Only cache successful responses
+        if (data.success !== false && res.statusCode === 200) {
+          try {
+            await cacheService.set(cacheKey, data, {
+              ttl,
+              tags: options.tags || ['middleware', 'response'],
+              version: options.version || cacheVersion.current,
+            });
+            logger.debug(`Cache set for middleware key: ${cacheKey}`);
+          } catch (error) {
+            logger.error(
+              `Failed to cache response for key ${cacheKey}:`,
+              error
+            );
+          }
+        }
+        return originalJson.call(this, data);
+      };
+    } catch (error) {
+      logger.error(`Cache middleware error for key ${cacheKey}:`, error);
+      // Continue without caching if there's an error
+    }
 
     next();
   };
 };
 
-const generateCacheKey = (req) => {
+// Generate cache key for requests (kept for backward compatibility)
+const generateRequestCacheKey = (req) => {
   const url = req.originalUrl || req.url;
   const query = JSON.stringify(req.query);
   const user = req.auth ? req.auth._id : 'anonymous';
   return `metrics:${user}:${url}:${query}`;
 };
 
-const clearCache = (pattern = null) => {
-  if (pattern) {
-    // Clear cache entries matching pattern
-    for (const key of cacheService.cache.keys()) {
-      if (key.includes(pattern)) {
-        cacheService.del(key);
+// Clear cache by tags or pattern
+const clearCache = async (tags = null, pattern = null) => {
+  await ensureRedisInitialized();
+
+  if (!redisInitialized) {
+    logger.warn('Redis not initialized, cannot clear cache');
+    return 0;
+  }
+
+  try {
+    if (tags && Array.isArray(tags)) {
+      // Clear cache by tags
+      return await cacheService.invalidateByTags(tags);
+    } else if (pattern) {
+      // Clear cache by pattern (less efficient, should use tags when possible)
+      const redis = cacheService.redis;
+      const keys = await redis.keys(`*${pattern}*`);
+
+      if (keys.length > 0) {
+        const result = await redis.del(...keys);
+        logger.info(
+          `Cleared ${result} cache entries matching pattern: ${pattern}`
+        );
+        return result;
       }
+      return 0;
+    } else {
+      // Clear all cache (use with caution)
+      const redis = cacheService.redis;
+      const keys = await redis.keys('boosty:*');
+
+      if (keys.length > 0) {
+        const result = await redis.del(...keys);
+        logger.info(`Cleared all ${result} cache entries`);
+        return result;
+      }
+      return 0;
     }
-  } else {
-    // Clear all cache
-    cacheService.clear();
+  } catch (error) {
+    logger.error('Error clearing cache:', error);
+    return 0;
   }
 };
 
-const getCacheStats = () => {
-  return {
-    size: cacheService.size(),
-    keys: Array.from(cacheService.cache.keys())
-  };
+// Get comprehensive cache statistics
+const getCacheStats = async () => {
+  await ensureRedisInitialized();
+
+  if (!redisInitialized) {
+    return {
+      status: 'unavailable',
+      message: 'Redis not initialized',
+    };
+  }
+
+  try {
+    const serviceMetrics = cacheService.getMetrics();
+    const redis = cacheService.redis;
+
+    // Get Redis info
+    const info = await redis.info('memory');
+    const keyCount = await redis.dbsize();
+
+    return {
+      status: 'available',
+      service: serviceMetrics,
+      redis: {
+        keyCount,
+        memoryInfo: info,
+      },
+    };
+  } catch (error) {
+    logger.error('Error getting cache stats:', error);
+    return {
+      status: 'error',
+      message: error.message,
+    };
+  }
 };
 
-// Cache configuration for different endpoint types
+// Cache configuration for different endpoint types (using Redis TTL values)
 const cacheConfig = {
-  dashboard: 300000,        // 5 minutes
-  overview: 900000,         // 15 minutes
-  performance: 1800000,      // 30 minutes
-  reports: 86400000,        // 24 hours
-  realtime: 0,              // No caching
-  analytics: 3600000         // 1 hour
+  dashboard: cacheTTL.dashboardOverview,
+  overview: cacheTTL.performanceMetrics,
+  performance: cacheTTL.performanceMetrics,
+  reports: cacheTTL.referenceData,
+  realtime: 0, // No caching
+  analytics: cacheTTL.transactionAnalytics,
 };
 
-// Middleware for specific cache durations
-const dashboardCache = cacheMiddleware(cacheConfig.dashboard);
-const overviewCache = cacheMiddleware(cacheConfig.overview);
-const performanceCache = cacheMiddleware(cacheConfig.performance);
-const reportsCache = cacheMiddleware(cacheConfig.reports);
-const analyticsCache = cacheMiddleware(cacheConfig.analytics);
+// Middleware for specific cache durations with appropriate tags
+const dashboardCache = cacheMiddleware(cacheConfig.dashboard, {
+  tags: ['dashboard', 'overview'],
+});
+
+const overviewCache = cacheMiddleware(cacheConfig.overview, {
+  tags: ['dashboard', 'overview'],
+});
+
+const performanceCache = cacheMiddleware(cacheConfig.performance, {
+  tags: ['dashboard', 'performance'],
+});
+
+const reportsCache = cacheMiddleware(cacheConfig.reports, {
+  tags: ['reports', 'analytics'],
+});
+
+const analyticsCache = cacheMiddleware(cacheConfig.analytics, {
+  tags: ['analytics', 'transaction'],
+});
 
 // Conditional caching based on endpoint
 const smartCache = (req, res, next) => {
   const path = req.path;
-  
+
   if (path.includes('/realtime')) {
     return next(); // No caching for real-time endpoints
   }
-  
+
   if (path.includes('/dashboard')) {
     return dashboardCache(req, res, next);
   }
-  
+
   if (path.includes('/overview')) {
     return overviewCache(req, res, next);
   }
-  
+
   if (path.includes('/performance')) {
     return performanceCache(req, res, next);
   }
-  
+
   if (path.includes('/reports')) {
     return reportsCache(req, res, next);
   }
-  
+
   if (path.includes('/analytics')) {
     return analyticsCache(req, res, next);
   }
-  
+
   // Default 5-minute cache
   return cacheMiddleware()(req, res, next);
 };
 
 // Cache invalidation middleware for data updates
-const invalidateCache = (patterns = []) => {
-  return (req, res, next) => {
+const invalidateCache = (tags = []) => {
+  return async (req, res, next) => {
     const originalJson = res.json;
-    
-    res.json = function(data) {
+
+    res.json = async function (data) {
       // Invalidate cache after successful data updates
-      if (res.statusCode >= 200 && res.statusCode < 300 && req.method !== 'GET') {
-        patterns.forEach(pattern => {
-          clearCache(pattern);
-        });
+      if (
+        res.statusCode >= 200 &&
+        res.statusCode < 300 &&
+        req.method !== 'GET'
+      ) {
+        try {
+          await clearCache(tags);
+          logger.info(`Cache invalidated for tags: ${tags.join(', ')}`);
+        } catch (error) {
+          logger.error('Error invalidating cache:', error);
+        }
       }
       return originalJson.call(this, data);
     };
-    
+
     next();
   };
 };
 
 export {
   cacheMiddleware,
-  generateCacheKey,
+  generateRequestCacheKey,
   clearCache,
   getCacheStats,
   cacheConfig,
@@ -181,5 +282,5 @@ export {
   analyticsCache,
   smartCache,
   invalidateCache,
-  cacheService
+  ensureRedisInitialized,
 };

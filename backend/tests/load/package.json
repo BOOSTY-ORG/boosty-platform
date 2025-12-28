@@ -1,0 +1,56 @@
+{
+  "name": "boosty-platform-load-tests",
+  "version": "1.0.0",
+  "description": "Comprehensive load testing for Boosty Platform backend to validate performance improvements through query optimization and caching implementation",
+  "type": "module",
+  "main": "run-load-tests.js",
+  "scripts": {
+    "test": "node run-load-tests.js",
+    "test:baseline": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('baseline', (await import('./load-test.config.js')).baselineConfig); })\"",
+    "test:moderate": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('moderate', (await import('./load-test.config.js')).moderateConfig); })\"",
+    "test:high": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('high', (await import('./load-test.config.js')).highConfig); })\"",
+    "test:stress": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('stress', (await import('./load-test.config.js')).stressConfig); })\"",
+    "test:caching": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('withCaching', (await import('./load-test.config.js')).withCachingConfig); })\"",
+    "test:nocaching": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.runScenario('withoutCaching', (await import('./load-test.config.js')).withoutCachingConfig); })\"",
+    "test:dashboard": "node scenarios/dashboard-metrics.test.js",
+    "test:transactions": "node scenarios/transaction-analytics.test.js",
+    "test:users": "node scenarios/user-metrics.test.js",
+    "test:investors": "node scenarios/investor-metrics.test.js",
+    "test:notifications": "node scenarios/notifications.test.js",
+    "test:comparison": "node -e \"import('./scenarios/dashboard-metrics.test.js').then(m => { const test = new m.default(); test.runComparisonTests(); })\"",
+    "test:all": "node run-load-tests.js",
+    "report": "node -e \"import('./run-load-tests.js').then(m => { const runner = new m.default(); runner.generateReports(); })\"",
+    "clean": "node -e \"import('fs').then(fs => { if (fs.existsSync('./reports')) fs.rmSync('./reports', { recursive: true, force: true }); console.log('Reports directory cleaned'); })\"",
+    "help": "echo 'Available scripts:\\n  npm test - Run all load tests\\n  npm run test:baseline - Run baseline load test\\n  npm run test:moderate - Run moderate load test\\n  npm run test:high - Run high load test\\n  npm run test:stress - Run stress test\\n  npm run test:caching - Test with caching enabled\\n  npm run test:nocaching - Test with caching disabled\\n  npm run test:dashboard - Test dashboard metrics endpoint\\n  npm run test:transactions - Test transaction analytics endpoint\\n  npm run test:users - Test user metrics endpoint\\n  npm run test:investors - Test investor metrics endpoint\\n  npm run test:notifications - Test notifications endpoint\\n  npm run test:comparison - Run comparison tests\\n  npm run report - Generate reports only\\n  npm run clean - Clean reports directory\\n  npm run help - Show this help message'"
+  },
+  "keywords": [
+    "load-testing",
+    "performance-testing",
+    "api-testing",
+    "boosty-platform",
+    "caching",
+    "query-optimization",
+    "metrics",
+    "benchmarking"
+  ],
+  "author": "Boosty Platform Team",
+  "license": "MIT",
+  "dependencies": {
+    "chart.js": "^4.4.0",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/boosty-platform/backend"
+  },
+  "bugs": {
+    "url": "https://github.com/boosty-platform/backend/issues"
+  },
+  "homepage": "https://github.com/boosty-platform/backend#readme"
+}

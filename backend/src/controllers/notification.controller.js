@@ -126,15 +126,91 @@ export const sendBatchNotifications = async (req, res) => {
       );
     }
 
-    const result = await notificationService.sendBulkNotifications(
-      notifications,
-      options
+    // Optimized bulk processing with pre-filtering and validation
+    const batchSize = options.batchSize || 100;
+    const batches = [];
+
+    // Group notifications by type and channel for optimized processing
+    const groupedNotifications = notifications.reduce((acc, notification) => {
+      const key = `${notification.type}_${notification.channels?.join(',') || 'default'}`;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(notification);
+      return acc;
+    }, {});
+
+    // Process in batches with optimized database operations
+    for (const group of Object.values(groupedNotifications)) {
+      for (let i = 0; i < group.length; i += batchSize) {
+        batches.push(group.slice(i, i + batchSize));
+      }
+    }
+
+    const results = [];
+
+    // Process batches with optimized bulk database operations
+    for (const batch of batches) {
+      // Use MongoDB bulkWrite for efficient database operations
+      const bulkOps = batch.map((notification) => ({
+        updateOne: {
+          filter: { _id: notification.id || new mongoose.Types.ObjectId() },
+          update: { $set: { ...notification, processedAt: new Date() } },
+          upsert: true,
+        },
+      }));
+
+      const bulkResult = await Notification.bulkWrite(bulkOps, {
+        ordered: false,
+        writeConcern: { w: 'majority', j: true },
+      });
+
+      results.push({
+        batchId: results.length + 1,
+        processed: bulkResult.insertedCount + bulkResult.modifiedCount,
+        failed: bulkResult.result.writeErrors?.length || 0,
+        errors: bulkResult.result.writeErrors || [],
+      });
+    }
+
+    // Trigger real-time delivery processing for successful notifications
+    const successfulNotifications = notifications.filter(
+      (_, index) => !results[Math.floor(index / batchSize)]?.errors?.length
     );
 
+    if (successfulNotifications.length > 0) {
+      try {
+        await realtimeEventHandlerService.processBulkNotifications(
+          successfulNotifications.map((n) => n.id)
+        );
+      } catch (error) {
+        console.warn(
+          'Failed to process notifications for real-time delivery:',
+          error.message
+        );
+      }
+    }
+
+    const totalProcessed = results.reduce(
+      (sum, result) => sum + result.processed,
+      0
+    );
+    const totalFailed = results.reduce((sum, result) => sum + result.failed, 0);
+
     return res.status(201).json(
-      formatSuccessResponse(result, req, {
-        message: 'Batch notifications processed successfully',
-      })
+      formatSuccessResponse(
+        {
+          totalProcessed,
+          totalFailed,
+          successRate:
+            notifications.length > 0
+              ? (totalProcessed / notifications.length) * 100
+              : 0,
+          batches: results,
+        },
+        req,
+        {
+          message: 'Batch notifications processed successfully',
+        }
+      )
     );
   } catch (error) {
     return handleControllerError(error, req, res);
@@ -159,7 +235,7 @@ export const getUserNotifications = async (req, res) => {
 
     // Parse pagination parameters
     const pageNum = parseInt(page);
-    const limitNum = parseInt(limit);
+    const limitNum = Math.min(parseInt(limit), 100); // Cap at 100 for performance
 
     // Parse date range if provided
     let parsedDateRange;
@@ -176,22 +252,97 @@ export const getUserNotifications = async (req, res) => {
       }
     }
 
-    const options = {
-      page: pageNum,
-      limit: limitNum,
-      type,
-      status,
-      category,
-      priority,
-      dateRange: parsedDateRange,
+    // Optimized query with field selection and aggregation
+    const query = { userId };
+
+    if (type) {
+      query.type = Array.isArray(type) ? { $in: type } : type;
+    }
+    if (status) {
+      query.status = Array.isArray(status) ? { $in: status } : status;
+    }
+    if (category) {
+      query.category = Array.isArray(category) ? { $in: category } : category;
+    }
+    if (priority) {
+      query.priority = Array.isArray(priority) ? { $in: priority } : priority;
+    }
+
+    if (parsedDateRange?.start || parsedDateRange?.end) {
+      query.createdAt = {};
+      if (parsedDateRange.start) {
+        query.createdAt.$gte = new Date(parsedDateRange.start);
+      }
+      if (parsedDateRange.end) {
+        query.createdAt.$lte = new Date(parsedDateRange.end);
+      }
+    }
+
+    // Use aggregation for efficient data retrieval with field selection
+    const aggregationPipeline = [
+      { $match: query },
+      { $sort: { createdAt: -1, priority: -1 } },
+      {
+        $facet: {
+          notifications: [
+            { $skip: (pageNum - 1) * limitNum },
+            { $limit: limitNum + 1 }, // +1 to check if there are more results
+            {
+              $project: {
+                _id: 1,
+                type: 1,
+                status: 1,
+                category: 1,
+                priority: 1,
+                subject: 1,
+                content: 1,
+                htmlContent: 1,
+                recipient: 1,
+                createdAt: 1,
+                readAt: 1,
+                metadata: 1,
+              },
+            },
+          ],
+          totalCount: [{ $count: 'count' }],
+        },
+      },
+    ];
+
+    const [result] = await Notification.aggregate(aggregationPipeline);
+
+    const notifications = result?.notifications || [];
+    const totalCount = result?.totalCount[0]?.count || 0;
+    const hasMore = notifications.length > limitNum;
+
+    if (hasMore) {
+      notifications.pop(); // Remove the extra item used for pagination check
+    }
+
+    // Get user preferences in a single query to avoid redundant database calls
+    const [userPreferences] = await UserNotificationPreferences.find({ userId })
+      .select('email sms push inApp preferences')
+      .lean()
+      .exec();
+
+    const response = {
+      data: notifications,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: totalCount,
+        totalPages: Math.ceil(totalCount / limitNum),
+        hasNext: hasMore,
+        hasPrev: pageNum > 1,
+      },
+      userPreferences: userPreferences[0] || {},
+      meta: {
+        timestamp: new Date().toISOString(),
+        requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      },
     };
 
-    const result = await notificationService.getUserNotifications(
-      userId,
-      options
-    );
-
-    return res.json(formatSuccessResponse(result, req));
+    return res.json(formatSuccessResponse(response, req));
   } catch (error) {
     return handleControllerError(error, req, res);
   }

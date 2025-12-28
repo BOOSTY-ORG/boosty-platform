@@ -43,15 +43,33 @@ console.log(
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.DATABASE_URL, {
+      // Enhanced connection pooling configuration
       serverSelectionTimeoutMS: 10000, // 10 seconds timeout
-      maxPoolSize: 10, // Maintain up to 10 socket connections
+      maxPoolSize: 50, // Increased pool size for better concurrency
+      minPoolSize: 5, // Minimum connections to maintain
+      maxIdleTimeMS: 30000, // Keep connections alive for 30 seconds
+      waitQueueTimeoutMS: 5000, // Wait 5 seconds before timeout
       retryWrites: true,
       w: 'majority',
+      readPreference: 'secondaryPreferred', // Distribute read operations
+      writeConcern: {
+        w: 'majority',
+        j: true,
+        wtimeout: 10000, // 10 seconds write timeout
+      },
+      // Enable connection monitoring
+      monitorCommands: true,
+      socketTimeoutMS: 45000, // 45 seconds socket timeout
+      // Enable compression for better performance
+      compressors: ['zstd', 'snappy', 'zlib'],
     });
 
     console.log('[DEBUG] MongoDB connected Successfully!!!');
     console.log('[DEBUG] Connection state:', mongoose.connection.readyState);
     console.log('[DEBUG] Connected to database:', conn.connection.name);
+
+    // Set up connection monitoring
+    setupConnectionMonitoring();
 
     return true;
   } catch (error) {
@@ -61,14 +79,85 @@ const connectDB = async () => {
       mongoose.connection.readyState
     );
 
-    // Retry connection after 5 seconds
-    console.log('[DEBUG] Retrying database connection in 5 seconds...');
+    // Exponential backoff retry strategy
+    const retryDelay = Math.min(
+      5000 * Math.pow(2, connectionRetryCount),
+      30000
+    );
+    console.log(`[DEBUG] Retrying database connection in ${retryDelay}ms...`);
     setTimeout(() => {
+      connectionRetryCount++;
       connectDB();
-    }, 5000);
+    }, retryDelay);
 
     return false;
   }
+};
+
+// Connection retry counter for exponential backoff
+let connectionRetryCount = 0;
+
+// Enhanced connection monitoring
+const setupConnectionMonitoring = () => {
+  // Monitor connection pool events
+  mongoose.connection.on('connected', () => {
+    console.log('[DEBUG] MongoDB connection established');
+    connectionRetryCount = 0; // Reset retry counter on successful connection
+  });
+
+  mongoose.connection.on('error', (err) => {
+    console.error('[DEBUG] MongoDB connection error:', err);
+    // Implement circuit breaker pattern
+    if (connectionRetryCount >= 5) {
+      console.error(
+        '[DEBUG] Max connection retries reached, implementing circuit breaker'
+      );
+      setTimeout(() => {
+        connectionRetryCount = 0; // Reset after cooldown period
+        connectDB();
+      }, 60000); // Wait 1 minute before retrying
+    }
+  });
+
+  mongoose.connection.on('disconnected', () => {
+    console.warn('[DEBUG] MongoDB disconnected');
+    // Attempt reconnection with exponential backoff
+    const retryDelay = Math.min(
+      1000 * Math.pow(2, connectionRetryCount),
+      10000
+    );
+    setTimeout(() => {
+      connectionRetryCount++;
+      connectDB();
+    }, retryDelay);
+  });
+
+  // Monitor connection pool health
+  setInterval(() => {
+    const poolStats = mongoose.connection.pool;
+    if (poolStats) {
+      console.log('[DEBUG] Connection Pool Stats:', {
+        totalConnections: poolStats.totalConnectionCount,
+        availableConnections: poolStats.readyState,
+        waitingConnections: poolStats.waitingQueueLength,
+      });
+    }
+  }, 30000); // Check every 30 seconds
+
+  // Graceful shutdown handling
+  process.on('SIGINT', async () => {
+    console.log('[DEBUG] Received SIGINT, closing database connection...');
+    await mongoose.connection.close();
+    console.log('[DEBUG] Database connection closed');
+    process.exit(0);
+  });
+
+  process.on('SIGTERM', async () => {
+    console.log('[DEBUG] Received SIGTERM, closing database connection...');
+    await mongoose.connection.close();
+    console.log('[DEBUG] Database connection closed');
+    process.exit(0);
+  });
 };
 
 // Handle connection events
