@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, useNotification } from '../common/index.js';
+import { Modal, Button } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { investorsAPI } from '../../api/investors.js';
 
 const ExportProgress = ({ isOpen, onClose, exportId, onComplete }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotificationStore();
   const [exportStatus, setExportStatus] = useState(null);
   const [progress, setProgress] = useState(0);
   const [isPolling, setIsPolling] = useState(false);
@@ -35,25 +36,16 @@ const ExportProgress = ({ isOpen, onClose, exportId, onComplete }) => {
             if (onComplete) {
               onComplete(status);
             }
-            showNotification({
-              type: 'success',
-              message: 'Export completed successfully!'
-            });
+            showSuccess('Export completed successfully!');
           } else if (status.status === 'failed') {
             setIsPolling(false);
             clearInterval(interval);
             setError(status.error || 'Export failed');
-            showNotification({
-              type: 'error',
-              message: 'Export failed. Please try again.'
-            });
+            showError('Export failed. Please try again.');
           } else if (status.status === 'cancelled') {
             setIsPolling(false);
             clearInterval(interval);
-            showNotification({
-              type: 'info',
-              message: 'Export was cancelled'
-            });
+            showInfo('Export was cancelled');
           }
         } catch (error) {
           console.error('Failed to fetch export status:', error);
@@ -73,17 +65,11 @@ const ExportProgress = ({ isOpen, onClose, exportId, onComplete }) => {
     try {
       await investorsAPI.cancelExport(exportId);
       setIsPolling(false);
-      showNotification({
-        type: 'info',
-        message: 'Export cancelled successfully'
-      });
+      showInfo('Export cancelled successfully');
       onClose();
     } catch (error) {
       console.error('Failed to cancel export:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to cancel export'
-      });
+      showError('Failed to cancel export');
     }
   };
 
@@ -104,16 +90,10 @@ const ExportProgress = ({ isOpen, onClose, exportId, onComplete }) => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      showNotification({
-        type: 'success',
-        message: 'Download started'
-      });
+      showSuccess('Download started');
     } catch (error) {
       console.error('Failed to download export:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to download export file'
-      });
+      showError('Failed to download export file');
     }
   };
 

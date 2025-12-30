@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Table from '../../common/Table';
-import api from '../../api';
+import api from '../../../api';
 
 /**
  * ROIAnalyticsTable component for displaying ROI analytics with performance metrics

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, useNotification } from '../common/index.js';
+import { Modal, Button, Table } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { investorsAPI } from '../../api/investors.js';
 import { formatDate, formatFileSize } from '../../utils/formatters.js';
 
 const ExportHistory = ({ isOpen, onClose }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotificationStore();
   const [exports, setExports] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [pagination, setPagination] = useState({
@@ -51,10 +52,7 @@ const ExportHistory = ({ isOpen, onClose }) => {
       }));
     } catch (error) {
       console.error('Failed to load export history:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to load export history'
-      });
+      showError('Failed to load export history');
     } finally {
       setIsLoading(false);
     }
@@ -77,16 +75,10 @@ const ExportHistory = ({ isOpen, onClose }) => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      showNotification({
-        type: 'success',
-        message: 'Download started'
-      });
+      showSuccess('Download started');
     } catch (error) {
       console.error('Failed to download export:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to download export file'
-      });
+      showError('Failed to download export file');
     }
   };
 
@@ -94,18 +86,12 @@ const ExportHistory = ({ isOpen, onClose }) => {
     try {
       // Note: This endpoint might need to be implemented in the backend
       // For now, we'll just show a notification
-      showNotification({
-        type: 'info',
-        message: 'Export deletion feature will be available soon'
-      });
+      showInfo('Export deletion feature will be available soon');
       setShowDeleteConfirm(false);
       setSelectedExports([]);
     } catch (error) {
       console.error('Failed to delete export:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete export'
-      });
+      showError('Failed to delete export');
     }
   };
 
@@ -113,18 +99,12 @@ const ExportHistory = ({ isOpen, onClose }) => {
     try {
       // Note: This endpoint might need to be implemented in the backend
       // For now, we'll just show a notification
-      showNotification({
-        type: 'info',
-        message: 'Bulk export deletion feature will be available soon'
-      });
+      showInfo('Bulk export deletion feature will be available soon');
       setShowDeleteConfirm(false);
       setSelectedExports([]);
     } catch (error) {
       console.error('Failed to delete exports:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete exports'
-      });
+      showError('Failed to delete exports');
     }
   };
 

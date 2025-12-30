@@ -6,6 +6,8 @@ import mongoose from 'mongoose';
 import exportScheduler from './services/exportScheduler.service.js';
 import socketIOService from './services/notification/socketio.service.js';
 import realtimeEventHandlerService from './services/notification/realtimeEventHandler.service.js';
+import encryptionService from './services/encryption.service.js';
+import auditLogService from './services/auditLog.service.js';
 
 dotenv.config();
 
@@ -18,6 +20,22 @@ app.use(express.json());
 // ** start Server **
 const server = app.listen(port, async () => {
   console.log(`Server is running on port: http://localhost:${port}`);
+
+  // Initialize encryption service
+  try {
+    await encryptionService.initialize();
+    console.log('[DEBUG] Encryption service initialized successfully');
+  } catch (error) {
+    console.error('[ERROR] Failed to initialize encryption service:', error);
+  }
+
+  // Initialize audit log service
+  try {
+    await auditLogService.initialize();
+    console.log('[DEBUG] Audit log service initialized successfully');
+  } catch (error) {
+    console.error('[ERROR] Failed to initialize audit log service:', error);
+  }
 
   // Initialize Socket.IO for real-time notifications
   try {
@@ -65,7 +83,18 @@ const server = app.listen(port, async () => {
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   console.log('SIGTERM received, shutting down gracefully');
+
+  // Shutdown services in proper order
   exportScheduler.stop();
+
+  // Flush audit logs before shutdown
+  try {
+    await auditLogService.flushLogs();
+    console.log('[DEBUG] Audit logs flushed successfully');
+  } catch (error) {
+    console.error('[ERROR] Failed to flush audit logs:', error);
+  }
+
   await socketIOService.shutdown();
   server.close(() => {
     console.log('Process terminated');
@@ -74,7 +103,18 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   console.log('SIGINT received, shutting down gracefully');
+
+  // Shutdown services in proper order
   exportScheduler.stop();
+
+  // Flush audit logs before shutdown
+  try {
+    await auditLogService.flushLogs();
+    console.log('[DEBUG] Audit logs flushed successfully');
+  } catch (error) {
+    console.error('[ERROR] Failed to flush audit logs:', error);
+  }
+
   await socketIOService.shutdown();
   server.close(() => {
     console.log('Process terminated');

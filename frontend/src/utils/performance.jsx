@@ -1,3 +1,5 @@
+import React from "react";
+
 /**
  * Performance monitoring utilities for the financial dashboard
  * Provides tools for tracking component render times, API response times,

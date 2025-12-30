@@ -11,7 +11,7 @@ import Pagination from "./Pagination";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 import Footer from "./Footer";
-import Notification, { useNotification } from "./Notification";
+import Notification from "./Notification";
 import NotificationContainer from "./NotificationContainer";
 import AdvancedFilterPanel from "./AdvancedFilterPanel";
 import FilterPreset from "./FilterPreset";
@@ -34,7 +34,6 @@ export {
   Footer,
   Notification,
   NotificationContainer,
-  useNotification,
   AdvancedFilterPanel,
   FilterPreset,
   DateRangePicker,
@@ -42,7 +41,6 @@ export {
   MessageNotificationExample,
   ConnectionStatus,
   RealtimeNotificationExample,
-  NotificationExample,
 };
 
 // Default export with all components
@@ -59,7 +57,6 @@ export default {
   Footer,
   Notification,
   NotificationContainer,
-  useNotification,
   AdvancedFilterPanel,
   FilterPreset,
   DateRangePicker,
@@ -67,5 +64,4 @@ export default {
   MessageNotificationExample,
   ConnectionStatus,
   RealtimeNotificationExample,
-  NotificationExample,
 };

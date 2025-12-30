@@ -14,10 +14,17 @@ import notificationRoutes from './routes/notification.routes.js';
 import notificationWebhookRoutes from './routes/notificationWebhook.routes.js';
 import userNotificationPreferencesRoutes from './routes/userNotificationPreferences.routes.js';
 import notificationRealtimeRoutes from './routes/notificationRealtime.routes.js';
+import roleManagementRoutes from './routes/roleManagement.routes.js';
+import auditLogRoutes from './routes/auditLog.routes.js';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import 'dotenv/config';
+
+// Import middleware for integration
+import { authenticate } from './middleware/auth.middleware.js';
+import { auditLogMiddleware } from './middleware/auditLog.middleware.js';
+import { encryptionMiddleware } from './middleware/encryption.middleware.js';
 
 // Since we're using ES modules, we need to define __dirname manually
 const __filename = fileURLToPath(import.meta.url);
@@ -30,6 +37,12 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.json());
+
+// Initialize audit logging middleware (will be applied selectively)
+app.use(auditLogMiddleware.initialize());
+
+// Initialize encryption middleware (will be applied selectively)
+app.use(encryptionMiddleware.initialize());
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(currentDirname, '../uploads')));
@@ -190,6 +203,8 @@ app.use('/api/users', userNotificationPreferencesRoutes); // Mount user notifica
 app.use('/api/notifications/realtime', notificationRealtimeRoutes); // Mount real-time notification routes
 app.use('/api/roi-analytics', roiAnalyticsRoutes); // Mount ROI analytics routes
 app.use('/api/payout-analytics', payoutAnalyticsRoutes); // Mount payout analytics routes
+app.use('/api/roles', roleManagementRoutes); // Mount role management routes
+app.use('/api/audit', auditLogRoutes); // Mount audit log routes
 
 // ** export configured App **
 export default app;

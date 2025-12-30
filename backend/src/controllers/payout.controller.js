@@ -8,6 +8,9 @@ import {
 } from '../utils/metrics/responseFormatter.util.js';
 import { requireMetricsAuth } from '../middleware/metrics/auth.middleware.js';
 import logger from '../utils/payment/paymentLogger.util.js';
+import encryptionService from '../services/encryption.service.js';
+import auditLogService from '../services/auditLog.service.js';
+import { authorize } from '../middleware/roleManagement.middleware.js';
 
 /**
  * Payout Controller
@@ -27,23 +30,11 @@ class PayoutController {
    */
   async processPayout(req, res) {
     const startTime = Date.now();
+    const clientIP = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
 
     try {
-      // Check if user has payout permissions
-      if (!['admin', 'manager', 'superadmin'].includes(req.user?.role)) {
-        return res.status(403).json(
-          formatErrorResponse(
-            {
-              code: 'INSUFFICIENT_PERMISSIONS',
-              message: 'You do not have permission to process payouts',
-            },
-            req,
-            403
-          )
-        );
-      }
-
-      // Process disbursement
+      // Process disbursement with encrypted sensitive data
       const result = await this.paymentProcessor.processDisbursement({
         transactionId: req.validatedBody.transactionId,
         recipientCode: req.validatedBody.recipientCode,
@@ -79,7 +70,40 @@ class PayoutController {
         responseTime: processingTime,
       });
 
-      return res.status(201).json(formatSuccessResponse(result.data, req));
+      // Log payout processing to audit
+      await auditLogService.logEvent({
+        action: 'PAYOUT_PROCESSED',
+        category: 'DATA_OPERATIONS',
+        severity: 'INFO',
+        outcome: 'SUCCESS',
+        userId: req.auth._id,
+        details: {
+          transactionId: req.validatedBody.transactionId,
+          transferId: result.data.transferId,
+          amount: req.validatedBody.amount,
+          currency: req.validatedBody.currency || 'NGN',
+          recipientCode: req.validatedBody.recipientCode,
+          reason: req.validatedBody.reason,
+          clientIP,
+          userAgent,
+          processingTime,
+        },
+      });
+
+      // Encrypt sensitive data in response
+      const encryptedResponse = {
+        ...result.data,
+        recipientCode: result.data.recipientCode
+          ? encryptionService.encryptField(result.data.recipientCode)
+          : undefined,
+        recipientAccount: result.data.recipientAccount
+          ? encryptionService.encryptField(result.data.recipientAccount)
+          : undefined,
+      };
+
+      return res
+        .status(201)
+        .json(formatSuccessResponse(encryptedResponse, req));
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
@@ -94,6 +118,24 @@ class PayoutController {
         statusCode: error.statusCode || 500,
         url: req.url,
         responseTime: processingTime,
+      });
+
+      // Log payout processing failure to audit
+      await auditLogService.logEvent({
+        action: 'PAYOUT_PROCESSING_FAILED',
+        category: 'DATA_OPERATIONS',
+        severity: 'ERROR',
+        outcome: 'FAILURE',
+        userId: req.auth._id,
+        details: {
+          error: error.message,
+          transactionId: req.validatedBody?.transactionId,
+          amount: req.validatedBody?.amount,
+          currency: req.validatedBody?.currency || 'NGN',
+          clientIP,
+          userAgent,
+          processingTime,
+        },
       });
 
       return res.status(error.statusCode || 500).json(
@@ -616,32 +658,38 @@ const payoutController = new PayoutController();
 
 export const processPayout = [
   requireMetricsAuth,
+  authorize('payout:create'),
   validateDisbursementRequest,
   payoutController.processPayout.bind(payoutController),
 ];
 
 export const getPayout = [
   requireMetricsAuth,
+  authorize('payout:read'),
   payoutController.getPayout.bind(payoutController),
 ];
 
 export const getPayouts = [
   requireMetricsAuth,
+  authorize('payout:read'),
   payoutController.getPayouts.bind(payoutController),
 ];
 
 export const calculateROI = [
   requireMetricsAuth,
+  authorize('payout:read'),
   payoutController.calculateROI.bind(payoutController),
 ];
 
 export const processBatchPayout = [
   requireMetricsAuth,
+  authorize('payout:create'),
   payoutController.processBatchPayout.bind(payoutController),
 ];
 
 export const getPayoutStats = [
   requireMetricsAuth,
+  authorize('payout:read'),
   payoutController.getPayoutStats.bind(payoutController),
 ];
 

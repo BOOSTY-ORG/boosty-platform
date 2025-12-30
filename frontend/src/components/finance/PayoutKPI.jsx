@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TrendingUp, CreditCard, Clock, CheckCircle } from 'lucide-react';
 import Card from '../common/Card.jsx';
 
@@ -45,14 +45,14 @@ const PayoutKPI = memo(({
   if (loading) {
     return (
       <Card className={`payout-kpi-card animate-pulse ${className}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div className="h-8 w-8 bg-gray-200 rounded-full"></div>
-          <div className="h-4 w-16 bg-gray-200 rounded"></div>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="h-6 w-6 sm:h-8 sm:w-8 bg-gray-200 rounded-full"></div>
+          <div className="h-3 w-12 sm:h-4 sm:w-16 bg-gray-200 rounded"></div>
         </div>
-        <div className="space-y-3">
-          <div className="h-6 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        <div className="space-y-2 sm:space-y-3">
+          <div className="h-5 sm:h-6 bg-gray-200 rounded w-3/4"></div>
+          <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/2"></div>
+          <div className="h-3 sm:h-4 bg-gray-200 rounded w-1/3"></div>
         </div>
       </Card>
     );
@@ -67,28 +67,28 @@ const PayoutKPI = memo(({
       aria-live="polite"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center justify-center w-10 h-10 bg-purple-100 rounded-full">
-          <CreditCard className="w-5 h-5 text-purple-600" />
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-full">
+          <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 text-purple-600" />
         </div>
-        <span className="text-xs font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+        <span className="text-xs sm:text-sm font-medium text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
           Payouts
         </span>
       </div>
 
       {/* Total Payout Volume */}
-      <div className="mb-3">
-        <div className="text-2xl font-bold text-gray-900">
+      <div className="mb-2 sm:mb-3">
+        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
           {formatCurrency ? formatCurrency(totalVolume) : `₦${totalVolume.toLocaleString()}`}
         </div>
         <div className="text-xs text-gray-500 mt-1">Total Volume</div>
       </div>
 
       {/* Pending Payouts */}
-      <div className="mb-3">
+      <div className="mb-2 sm:mb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Clock className="w-3 h-3 text-yellow-500" />
+            <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-500" />
             <span className="text-sm font-medium text-gray-700">
               {pendingCount} pending
             </span>
@@ -103,10 +103,10 @@ const PayoutKPI = memo(({
       </div>
 
       {/* Processed Payouts */}
-      <div className="mb-3">
+      <div className="mb-2 sm:mb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <CheckCircle className="w-3 h-3 text-green-500" />
+            <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
             <span className="text-sm font-medium text-gray-700">
               {processedCount} processed
             </span>
@@ -121,20 +121,20 @@ const PayoutKPI = memo(({
       </div>
 
       {/* Processing Rate Indicator */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
         <div className="flex items-center gap-1">
           {getTrendIcon ? getTrendIcon(payoutTrend) : (
             payoutTrend === 'up' ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
             ) : payoutTrend === 'down' ? (
-              <TrendingUp className="w-4 h-4 text-red-500 rotate-180" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 rotate-180" />
             ) : (
-              <div className="w-4 h-4 bg-gray-300 rounded-full" />
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-300 rounded-full" />
             )
           )}
-          <span className={`text-sm font-medium ${
-            processingRate >= 80 ? 'text-green-600' : 
-            processingRate >= 50 ? 'text-yellow-600' : 
+          <span className={`text-xs sm:text-sm font-medium ${
+            processingRate >= 80 ? 'text-green-600' :
+            processingRate >= 50 ? 'text-yellow-600' :
             'text-red-600'
           }`}>
             {processingRate.toFixed(1)}%
@@ -144,13 +144,13 @@ const PayoutKPI = memo(({
       </div>
 
       {/* Hover Details */}
-      <div className="mt-3 pt-3 border-t border-gray-100 opacity-0 hover:opacity-100 transition-opacity">
+      <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100 opacity-0 hover:opacity-100 transition-opacity">
         <div className="text-xs text-gray-600 space-y-1">
           <div className="flex justify-between">
             <span>Processing Status:</span>
             <span className={`font-medium ${
-              processingRate >= 80 ? 'text-green-600' : 
-              processingRate >= 50 ? 'text-yellow-600' : 
+              processingRate >= 80 ? 'text-green-600' :
+              processingRate >= 50 ? 'text-yellow-600' :
               'text-red-600'
             }`}>
               {processingRate >= 80 ? 'Excellent' : processingRate >= 50 ? 'Good' : 'Needs Attention'}

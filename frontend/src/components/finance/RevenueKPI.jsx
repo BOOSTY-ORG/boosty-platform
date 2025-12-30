@@ -59,27 +59,27 @@ const RevenueKPI = memo(({
       aria-live="polite"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center justify-center w-10 h-10 bg-green-100 rounded-full">
-          <DollarSign className="w-5 h-5 text-green-600" />
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <div className="flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-full">
+          <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
         </div>
-        <span className="text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
+        <span className="text-xs sm:text-sm font-medium text-green-600 bg-green-50 px-2 py-1 rounded-full">
           Revenue
         </span>
       </div>
 
       {/* Total Revenue */}
-      <div className="mb-3">
-        <div className="text-2xl font-bold text-gray-900">
+      <div className="mb-2 sm:mb-3">
+        <div className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900">
           {formatCurrency ? formatCurrency(revenueData.total) : `₦${revenueData.total.toLocaleString()}`}
         </div>
         <div className="text-xs text-gray-500 mt-1">Total Revenue</div>
       </div>
 
       {/* Monthly Recurring Revenue */}
-      <div className="mb-3">
+      <div className="mb-2 sm:mb-3">
         <div className="flex items-center gap-2">
-          <Calendar className="w-3 h-3 text-gray-400" />
+          <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400" />
           <span className="text-sm font-medium text-gray-700">
             {formatCurrency ? formatCurrency(revenueData.monthlyRecurring) : `₦${revenueData.monthlyRecurring.toLocaleString()}`}
           </span>
@@ -88,20 +88,20 @@ const RevenueKPI = memo(({
       </div>
 
       {/* Growth Indicator */}
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 sm:pt-3 border-t border-gray-100">
         <div className="flex items-center gap-1">
           {getTrendIcon ? getTrendIcon(growthTrend) : (
             growthTrend === 'up' ? (
-              <TrendingUp className="w-4 h-4 text-green-500" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
             ) : growthTrend === 'down' ? (
-              <TrendingUp className="w-4 h-4 text-red-500 rotate-180" />
+              <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4 text-red-500 rotate-180" />
             ) : (
-              <div className="w-4 h-4 bg-gray-300 rounded-full" />
+              <div className="w-3 h-3 sm:w-4 sm:h-4 bg-gray-300 rounded-full" />
             )
           )}
-          <span className={`text-sm font-medium ${
-            isPositiveGrowth ? 'text-green-600' : 
-            isNegativeGrowth ? 'text-red-600' : 
+          <span className={`text-xs sm:text-sm font-medium ${
+            isPositiveGrowth ? 'text-green-600' :
+            isNegativeGrowth ? 'text-red-600' :
             'text-gray-600'
           }`}>
             {growthPercentage > 0 ? '+' : ''}{growthPercentage.toFixed(1)}%
@@ -111,13 +111,13 @@ const RevenueKPI = memo(({
       </div>
 
       {/* Hover Details */}
-      <div className="mt-3 pt-3 border-t border-gray-100 opacity-0 hover:opacity-100 transition-opacity">
+      <div className="mt-2 sm:mt-3 pt-2 sm:pt-3 border-t border-gray-100 opacity-0 hover:opacity-100 transition-opacity">
         <div className="text-xs text-gray-600 space-y-1">
           <div className="flex justify-between">
             <span>Growth Trend:</span>
             <span className={`font-medium ${
-              isPositiveGrowth ? 'text-green-600' : 
-              isNegativeGrowth ? 'text-red-600' : 
+              isPositiveGrowth ? 'text-green-600' :
+              isNegativeGrowth ? 'text-red-600' :
               'text-gray-600'
             }`}>
               {growthTrend.charAt(0).toUpperCase() + growthTrend.slice(1)}

@@ -101,6 +101,14 @@ const DashboardLayout = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile sidebar overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-gray-600 bg-opacity-75 lg:hidden"
+          onClick={toggleSidebar}
+        ></div>
+      )}
+
       {/* Sidebar */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -109,13 +117,14 @@ const DashboardLayout = () => {
           <div className="flex items-center">
             <img
               className="h-8 w-auto"
-              src="/assets/images/logo.svg"
+              src="/boosty_logo.png"
               alt="Boosty Platform"
             />
           </div>
           <button
             onClick={toggleSidebar}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+            className="lg:hidden p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Close sidebar"
           >
             <XMarkIcon className="h-6 w-6" />
           </button>
@@ -132,14 +141,14 @@ const DashboardLayout = () => {
                 <div key={item.name}>
                   <Link
                     to={item.path}
-                    className={`group flex items-center px-2 py-2 text-sm font-medium rounded-md transition-colors ${
+                    className={`group flex items-center px-3 py-3 text-sm font-medium rounded-md transition-colors min-h-[44px] ${
                       isActive
                         ? 'bg-primary-100 text-primary-700'
                         : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
+                    <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
+                    <span className="truncate">{item.name}</span>
                   </Link>
                   
                   {/* Sub-items for CRM */}
@@ -151,13 +160,13 @@ const DashboardLayout = () => {
                           <Link
                             key={subItem.name}
                             to={subItem.path}
-                            className={`group flex items-center px-2 py-1 text-sm font-medium rounded-md transition-colors ${
+                            className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors min-h-[44px] ${
                               isSubActive
                                 ? 'bg-primary-100 text-primary-700'
                                 : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                           >
-                            {subItem.name}
+                            <span className="truncate">{subItem.name}</span>
                           </Link>
                         );
                       })}
@@ -178,17 +187,19 @@ const DashboardLayout = () => {
             <div className="flex items-center">
               <button
                 onClick={toggleSidebar}
-                className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+                className="lg:hidden p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Open sidebar"
               >
                 <Bars3Icon className="h-6 w-6" />
               </button>
             </div>
             
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Theme toggle */}
               <button
                 onClick={toggleTheme}
-                className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+                className="p-3 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500 min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Toggle theme"
               >
                 {theme === 'dark' ? (
                   <SunIcon className="h-5 w-5" />
@@ -200,7 +211,7 @@ const DashboardLayout = () => {
               {/* User menu */}
               <div className="relative">
                 <button
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 min-h-[44px] min-w-[44px] p-1"
                   id="user-menu-button"
                   aria-expanded="false"
                   aria-haspopup="true"
@@ -212,13 +223,13 @@ const DashboardLayout = () => {
                 </button>
               </div>
               
-              {/* Logout button */}
+              {/* Logout button - Hidden on mobile, visible on larger screens */}
               <button
                 onClick={handleLogout}
-                className="flex items-center text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100"
+                className="hidden sm:flex items-center text-sm text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md hover:bg-gray-100 min-h-[44px]"
               >
                 <ArrowRightOnRectangleIcon className="h-5 w-5 mr-2" />
-                Logout
+                <span className="hidden md:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -226,7 +237,7 @@ const DashboardLayout = () => {
 
         {/* Page content */}
         <main className="flex-1 overflow-auto">
-          <div className="py-6">
+          <div className="py-4 sm:py-6">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <Outlet />
             </div>

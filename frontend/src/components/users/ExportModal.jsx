@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, useNotification } from '../common/index.js';
+import { Modal, Button } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { usersAPI } from '../../api/users.js';
 
 const ExportModal = ({ isOpen, onClose, userIds = [], currentFilters = {} }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotificationStore();
   
   // Export configuration states
   const [exportFormat, setExportFormat] = useState('xlsx');
@@ -127,10 +128,7 @@ const ExportModal = ({ isOpen, onClose, userIds = [], currentFilters = {} }) => 
 
   const handleExport = async () => {
     if (selectedColumns.length === 0) {
-      showNotification({
-        type: 'error',
-        message: 'Please select at least one column to export'
-      });
+      showError('Please select at least one column to export');
       return;
     }
 
@@ -164,12 +162,9 @@ const ExportModal = ({ isOpen, onClose, userIds = [], currentFilters = {} }) => 
 
       const response = await usersAPI.exportUsersAdvanced(exportOptions);
       
-      // For large exports, the response might contain an export ID instead of file data
+      // For large exports, response might contain an export ID instead of file data
       if (response.data?.exportId) {
-        showNotification({
-          type: 'info',
-          message: 'Export started. You can track progress in the export history.'
-        });
+        showInfo('Export started. You can track progress in export history.');
         onClose();
       } else {
         // Direct download for small exports
@@ -185,19 +180,13 @@ const ExportModal = ({ isOpen, onClose, userIds = [], currentFilters = {} }) => 
         link.remove();
         window.URL.revokeObjectURL(url);
 
-        showNotification({
-          type: 'success',
-          message: `Successfully exported users in ${exportFormat.toUpperCase()} format`
-        });
+        showSuccess(`Successfully exported users in ${exportFormat.toUpperCase()} format`);
 
         onClose();
       }
     } catch (error) {
       console.error('Export failed:', error);
-      showNotification({
-        type: 'error',
-        message: 'Export failed. Please try again.'
-      });
+      showError('Export failed. Please try again.');
     } finally {
       setIsExporting(false);
     }

@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import encryptionService from '../../services/encryption.service.js';
+import {
+  encryptDatabaseFields,
+  decryptDatabaseFields,
+} from '../../middleware/encryption.middleware.js';
 
 /**
  * Payment Transaction Schema
@@ -75,11 +80,23 @@ const paymentTransactionSchema = new mongoose.Schema(
     paystackReference: { type: String, required: true },
     paystackTransactionId: { type: String },
     authorizationCode: { type: String },
-    last4: { type: String }, // Last 4 digits of card
+    last4: {
+      type: mongoose.Schema.Types.Mixed,
+      set: function (value) {
+        this._originalLast4 = value;
+        return value;
+      },
+    }, // Last 4 digits of card
     expiryMonth: { type: String },
     expiryYear: { type: String },
     cardType: { type: String },
-    bank: { type: String },
+    bank: {
+      type: mongoose.Schema.Types.Mixed,
+      set: function (value) {
+        this._originalBank = value;
+        return value;
+      },
+    },
     customerCode: { type: String },
     channel: { type: String }, // Payment channel used
 
@@ -243,6 +260,12 @@ paymentTransactionSchema.virtual('totalSplitAmount').get(function () {
   return this.splitPayments.reduce((total, split) => total + split.amount, 0);
 });
 
+// Pre-save middleware for encryption
+paymentTransactionSchema.pre(
+  'save',
+  encryptDatabaseFields('paymentTransaction')
+);
+
 // Pre-save middleware
 paymentTransactionSchema.pre('save', async function (next) {
   // Generate transaction ID if not provided
@@ -276,6 +299,20 @@ paymentTransactionSchema.pre('save', async function (next) {
 
   next();
 });
+
+// Post-find middleware for decryption
+paymentTransactionSchema.post(
+  'find',
+  decryptDatabaseFields('paymentTransaction')
+);
+paymentTransactionSchema.post(
+  'findOne',
+  decryptDatabaseFields('paymentTransaction')
+);
+paymentTransactionSchema.post(
+  'findOneAndUpdate',
+  decryptDatabaseFields('paymentTransaction')
+);
 
 // Post-save middleware for event emission
 paymentTransactionSchema.post('save', async function (doc) {
@@ -951,6 +988,100 @@ paymentTransactionSchema.statics.getTransactionSuccessRateByTime = function (
     { $sort: { '_id.dayOfWeek': 1, '_id.hour': 1 } },
   ]);
 };
+
+// Static methods for encryption-aware queries
+paymentTransactionSchema.statics.findByBankName = async function (bankName) {
+  try {
+    const encryptedBankName = await encryptionService.encryptField(
+      bankName,
+      'paymentTransaction',
+      'bank'
+    );
+    return this.find({ bank: encryptedBankName });
+  } catch (error) {
+    console.error('Error finding transactions by encrypted bank name:', error);
+    throw error;
+  }
+};
+
+paymentTransactionSchema.statics.findByCardLastFour = async function (
+  lastFour
+) {
+  try {
+    const encryptedLastFour = await encryptionService.encryptField(
+      lastFour,
+      'paymentTransaction',
+      'last4'
+    );
+    return this.find({ last4: encryptedLastFour });
+  } catch (error) {
+    console.error(
+      'Error finding transactions by encrypted last 4 digits:',
+      error
+    );
+    throw error;
+  }
+};
+
+// Instance methods for working with encrypted data
+paymentTransactionSchema.methods.getDecryptedBank = async function () {
+  try {
+    if (this.bank?.encrypted) {
+      return await encryptionService.decryptField(
+        this.bank,
+        'paymentTransaction',
+        'bank'
+      );
+    }
+    return this.bank;
+  } catch (error) {
+    console.error('Error decrypting bank name:', error);
+    return null;
+  }
+};
+
+paymentTransactionSchema.methods.getDecryptedLastFour = async function () {
+  try {
+    if (this.last4?.encrypted) {
+      return await encryptionService.decryptField(
+        this.last4,
+        'paymentTransaction',
+        'last4'
+      );
+    }
+    return this.last4;
+  } catch (error) {
+    console.error('Error decrypting last 4 digits:', error);
+    return null;
+  }
+};
+
+// Validation for encrypted fields
+paymentTransactionSchema.pre('validate', async function (next) {
+  try {
+    // Validate last4 using original value if provided
+    if (this._originalLast4 && this._originalLast4.trim()) {
+      const last4Regex = /^\d{4}$/;
+      if (!last4Regex.test(this._originalLast4.trim())) {
+        this.invalidate('last4', 'Last 4 digits must be exactly 4 digits.');
+      }
+    }
+
+    // Validate bank name using original value if provided
+    if (this._originalBank && this._originalBank.trim()) {
+      if (this._originalBank.trim().length < 2) {
+        this.invalidate(
+          'bank',
+          'Bank name must be at least 2 characters long.'
+        );
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const PaymentTransaction = mongoose.model(
   'PaymentTransaction',

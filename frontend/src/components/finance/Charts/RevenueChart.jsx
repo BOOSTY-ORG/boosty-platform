@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Download, TrendingUp, Calendar, Filter } from 'lucide-react';
 import { dashboardAPI } from '../../../api/dashboard.js';
-import { withPerformanceTracking } from '../../../utils/performance.js';
+import { withPerformanceTracking } from '../../../utils/performance.jsx';
 import { withErrorHandling, retryWithBackoff } from '../../../utils/errorHandling.js';
 import { ariaLabels, screenReader } from '../../../utils/accessibility.js';
 import { reducedMotion } from '../../../utils/accessibility.js';

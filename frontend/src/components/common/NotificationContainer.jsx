@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNotificationStore } from '../../stores/notificationStore.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import Notification from './Notification.jsx';
 
 /**

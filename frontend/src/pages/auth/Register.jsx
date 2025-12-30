@@ -88,10 +88,10 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-white flex flex-col">
       {/* Header with Back Button */}
-      <div className="relative p-6">
+      <div className="relative p-4 sm:p-6">
         <button
           onClick={() => navigate('/auth/get-started')}
-          className="absolute left-6 top-6 p-2 rounded-full hover:bg-gray-100 transition-colors"
+          className="absolute left-4 sm:left-6 top-4 sm:top-6 p-3 rounded-full hover:bg-gray-100 transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center"
           aria-label="Go back"
         >
           <ArrowLeft className="h-5 w-5 text-gray-700" />
@@ -102,22 +102,22 @@ const Register = () => {
           <img
             src="/boosty_logo.png"
             alt="Boosty"
-            className="h-12 w-auto"
+            className="h-10 sm:h-12 w-auto"
           />
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 px-6 pb-6 flex flex-col justify-center max-w-md mx-auto w-full">
+      <div className="flex-1 px-4 sm:px-6 pb-4 sm:pb-6 flex flex-col justify-center max-w-md mx-auto w-full">
         {/* Title */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">User Portal</h1>
-          <p className="text-gray-600">Create your account to get started</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">User Portal</h1>
+          <p className="text-gray-600 text-sm sm:text-base">Create your account to get started</p>
         </div>
 
         {/* Error Message */}
         {errors.general && (
-          <div className="mb-6 rounded-md bg-red-50 p-4">
+          <div className="mb-4 sm:mb-6 rounded-md bg-red-50 p-3 sm:p-4">
             <div className="flex">
               <div className="flex-shrink-0">
                 <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -132,7 +132,7 @@ const Register = () => {
         )}
 
         {/* Form */}
-        <form className="space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
           {/* First Name and Last Name - Hidden fields for backend compatibility */}
           <div className="grid grid-cols-2 gap-4 sr-only">
             <div>
@@ -178,7 +178,7 @@ const Register = () => {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className={`block w-full pl-10 pr-3 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors ${
+                className={`block w-full pl-10 pr-3 py-3 sm:py-4 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors text-sm sm:text-base ${
                   errors.email ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Enter your email"
@@ -206,15 +206,16 @@ const Register = () => {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className={`block w-full pl-10 pr-10 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors ${
+                className={`block w-full pl-10 pr-12 py-3 sm:py-4 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors text-sm sm:text-base ${
                   errors.password ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Create a password"
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center min-h-[44px] min-w-[44px]"
                 onClick={() => setShowPassword(!showPassword)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
               >
                 {showPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
@@ -245,15 +246,16 @@ const Register = () => {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className={`block w-full pl-10 pr-10 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors ${
+                className={`block w-full pl-10 pr-12 py-3 sm:py-4 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500 transition-colors text-sm sm:text-base ${
                   errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
                 }`}
                 placeholder="Confirm your password"
               />
               <button
                 type="button"
-                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center min-h-[44px] min-w-[44px]"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                aria-label={showConfirmPassword ? "Hide password" : "Show password"}
               >
                 {showConfirmPassword ? (
                   <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-500" />
@@ -268,11 +270,11 @@ const Register = () => {
           </div>
 
           {/* Submit Button */}
-          <div className="pt-2">
+          <div className="pt-2 sm:pt-4">
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full flex justify-center items-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 transition-colors"
+              className="w-full flex justify-center items-center py-3 sm:py-4 px-4 border border-transparent text-sm sm:text-base font-medium rounded-md text-white bg-yellow-500 hover:bg-yellow-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 transition-colors min-h-[44px]"
             >
               {isLoading ? (
                 <>
@@ -290,7 +292,7 @@ const Register = () => {
         </form>
 
         {/* Sign In Link */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 sm:mt-8 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
             <Link

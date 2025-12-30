@@ -6,7 +6,7 @@ import InvestmentKPI from './InvestmentKPI.jsx';
 import PayoutKPI from './PayoutKPI.jsx';
 import ROIKPI from './ROIKPI.jsx';
 import { dashboardAPI } from '../../api/dashboard.js';
-import { withPerformanceTracking } from '../../utils/performance.js';
+import { withPerformanceTracking } from '../../utils/performance.jsx';
 import { withErrorHandling, retryWithBackoff } from '../../utils/errorHandling.js';
 import { ariaLabels } from '../../utils/accessibility.js';
 

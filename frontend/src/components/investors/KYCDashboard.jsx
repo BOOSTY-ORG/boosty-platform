@@ -485,159 +485,165 @@ const KYCDashboard = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Connection Status and Real-time Updates */}
-      <div className="bg-white shadow rounded-lg p-4 mb-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <div className={`h-2 w-2 rounded-full mr-2 ${
-              connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-400'
-            }`}></div>
-            <span className="text-sm text-gray-600">
-              {connectionStatus === 'connected' ? 'Real-time updates active' : 'Real-time updates disconnected'}
-            </span>
-          </div>
-          <div className="flex items-center">
-            <span className="text-sm text-gray-500 mr-2">Last update:</span>
-            <span className="text-sm font-medium text-gray-900">
-              {lastUpdate ? formatDate(lastUpdate) : 'Never'}
-            </span>
-          </div>
-        </div>
-        
-        {/* Real-time Updates */}
-        {realtimeUpdates.length > 0 && (
-          <div className="mt-4 border-t pt-4">
-            <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Real-time Updates</h4>
-            <div className="space-y-2 max-h-32 overflow-y-auto">
-              {realtimeUpdates.map((update) => (
-                <div key={update.id} className="flex items-center p-2 bg-blue-50 rounded">
-                  <div className="flex-shrink-0">
-                    <div className={`w-2 h-2 rounded-full ${
-                      update.type === 'kyc_update' ? 'bg-blue-500' :
-                      update.type === 'document_uploaded' ? 'bg-green-500' :
-                      update.type === 'document_verified' ? 'bg-green-600' :
-                      update.type === 'document_rejected' ? 'bg-red-500' :
-                      'bg-gray-500'
-                    }`}></div>
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-gray-800">{update.message}</p>
-                    <p className="text-xs text-gray-500">{formatDate(update.timestamp)}</p>
-                  </div>
-                </div>
-              ))}
+      <div className="px-4 sm:px-0">
+        <div className="bg-white shadow rounded-lg p-3 sm:p-4 mb-4 sm:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center">
+              <div className={`h-2 w-2 rounded-full mr-2 ${
+                connectionStatus === 'connected' ? 'bg-green-500' : 'bg-gray-400'
+              }`}></div>
+              <span className="text-sm text-gray-600">
+                {connectionStatus === 'connected' ? 'Real-time updates active' : 'Real-time updates disconnected'}
+              </span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-500 mr-2">Last update:</span>
+              <span className="text-sm font-medium text-gray-900">
+                {lastUpdate ? formatDate(lastUpdate) : 'Never'}
+              </span>
             </div>
           </div>
-        )}
+          
+          {/* Real-time Updates */}
+          {realtimeUpdates.length > 0 && (
+            <div className="mt-4 border-t pt-4">
+              <h4 className="text-sm font-medium text-gray-900 mb-2">Recent Real-time Updates</h4>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {realtimeUpdates.map((update) => (
+                  <div key={update.id} className="flex items-center p-2 bg-blue-50 rounded">
+                    <div className="flex-shrink-0">
+                      <div className={`w-2 h-2 rounded-full ${
+                        update.type === 'kyc_update' ? 'bg-blue-500' :
+                        update.type === 'document_uploaded' ? 'bg-green-500' :
+                        update.type === 'document_verified' ? 'bg-green-600' :
+                        update.type === 'document_rejected' ? 'bg-red-500' :
+                        'bg-gray-500'
+                      }`}></div>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm text-gray-800">{update.message}</p>
+                      <p className="text-xs text-gray-500">{formatDate(update.timestamp)}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Header */}
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl">
-            KYC Dashboard
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Monitor KYC verification status and performance metrics.
-          </p>
-        </div>
-        <div className="mt-4 flex md:mt-0 md:ml-4 space-x-3">
-          {/* Status Filter */}
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-          >
-            <option value="all">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="verified">Verified</option>
-            <option value="rejected">Rejected</option>
-          </select>
+      <div className="px-4 sm:px-0">
+        <div className="md:flex md:items-center md:justify-between">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-bold leading-7 text-gray-900 sm:text-2xl lg:text-3xl truncate">
+              KYC Dashboard
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Monitor KYC verification status and performance metrics.
+            </p>
+          </div>
+          <div className="mt-4 flex flex-col sm:flex-row sm:mt-0 sm:ml-4 gap-3">
+            {/* Status Filter */}
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm min-h-[44px] px-3 py-2"
+            >
+              <option value="all">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="verified">Verified</option>
+              <option value="rejected">Rejected</option>
+            </select>
 
-          {/* Document Type Filter */}
-          <select
-            value={documentTypeFilter}
-            onChange={(e) => setDocumentTypeFilter(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-          >
-            <option value="all">All Document Types</option>
-            <option value="government_id">Government ID</option>
-            <option value="utility_bill">Utility Bill</option>
-            <option value="bank_statement">Bank Statement</option>
-            <option value="proof_of_income">Proof of Income</option>
-            <option value="property_document">Property Document</option>
-            <option value="passport">Passport</option>
-            <option value="drivers_license">Driver's License</option>
-            <option value="national_id">National ID</option>
-          </select>
+            {/* Document Type Filter */}
+            <select
+              value={documentTypeFilter}
+              onChange={(e) => setDocumentTypeFilter(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm min-h-[44px] px-3 py-2"
+            >
+              <option value="all">All Document Types</option>
+              <option value="government_id">Government ID</option>
+              <option value="utility_bill">Utility Bill</option>
+              <option value="bank_statement">Bank Statement</option>
+              <option value="proof_of_income">Proof of Income</option>
+              <option value="property_document">Property Document</option>
+              <option value="passport">Passport</option>
+              <option value="drivers_license">Driver's License</option>
+              <option value="national_id">National ID</option>
+            </select>
 
-          {/* Time Range Selector */}
-          <select
-            value={selectedTimeRange}
-            onChange={(e) => handleTimeRangeChange(e.target.value)}
-            className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
-          >
-            <option value="7d">Last 7 days</option>
-            <option value="30d">Last 30 days</option>
-            <option value="90d">Last 90 days</option>
-            <option value="1y">Last year</option>
-          </select>
-          
-          <button
-            type="button"
-            onClick={onRefresh}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-          >
-            <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
-          </button>
+            {/* Time Range Selector */}
+            <select
+              value={selectedTimeRange}
+              onChange={(e) => handleTimeRangeChange(e.target.value)}
+              className="rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm min-h-[44px] px-3 py-2"
+            >
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+              <option value="90d">Last 90 days</option>
+              <option value="1y">Last year</option>
+            </select>
+            
+            <button
+              type="button"
+              onClick={onRefresh}
+              className="inline-flex items-center justify-center px-4 py-3 min-h-[44px] border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
+            >
+              <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Refresh
+            </button>
+          </div>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="border-b border-gray-200">
-          <nav className="flex -mb-px">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`py-2 px-4 text-sm font-medium ${
-                activeTab === 'overview'
-                  ? 'border-primary-500 text-primary-600 border-b-2'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('expiry')}
-              className={`py-2 px-4 text-sm font-medium ${
-                activeTab === 'expiry'
-                  ? 'border-primary-500 text-primary-600 border-b-2'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
-              }`}
-            >
-              Expiry Tracking
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              className={`py-2 px-4 text-sm font-medium ${
-                activeTab === 'analytics'
-                  ? 'border-primary-500 text-primary-600 border-b-2'
-                  : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
-              }`}
-            >
-              AI Analytics
-            </button>
-          </nav>
-        </div>
+      <div className="px-4 sm:px-0">
+        <div className="bg-white shadow rounded-lg">
+          <div className="border-b border-gray-200">
+            <nav className="flex flex-nowrap overflow-x-auto -mb-px">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-3 px-4 text-sm font-medium min-h-[44px] whitespace-nowrap ${
+                  activeTab === 'overview'
+                    ? 'border-primary-500 text-primary-600 border-b-2'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('expiry')}
+                className={`py-3 px-4 text-sm font-medium min-h-[44px] whitespace-nowrap ${
+                  activeTab === 'expiry'
+                    ? 'border-primary-500 text-primary-600 border-b-2'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+                }`}
+              >
+                Expiry Tracking
+              </button>
+              <button
+                onClick={() => setActiveTab('analytics')}
+                className={`py-3 px-4 text-sm font-medium min-h-[44px] whitespace-nowrap ${
+                  activeTab === 'analytics'
+                    ? 'border-primary-500 text-primary-600 border-b-2'
+                    : 'text-gray-500 hover:text-gray-700 hover:border-gray-300 border-b-2 border-transparent'
+                }`}
+              >
+                AI Analytics
+              </button>
+            </nav>
+          </div>
 
-        <div className="p-6">
-          {activeTab === 'overview' && renderOverviewTab()}
-          {activeTab === 'expiry' && renderExpiryTab()}
-          {activeTab === 'analytics' && renderAnalyticsTab()}
+          <div className="p-4 sm:p-6">
+            {activeTab === 'overview' && renderOverviewTab()}
+            {activeTab === 'expiry' && renderExpiryTab()}
+            {activeTab === 'analytics' && renderAnalyticsTab()}
+          </div>
         </div>
       </div>
     </div>

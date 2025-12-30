@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNotificationStore } from "../stores/notificationStore.js";
+import useNotificationStore from "../stores/notificationStore.js";
 import { realtimeNotificationService } from "../services/realtimeNotificationService.js";
 import {
   REALTIME_EVENT_TYPES,

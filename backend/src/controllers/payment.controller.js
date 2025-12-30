@@ -9,6 +9,9 @@ import {
 } from '../utils/metrics/responseFormatter.util.js';
 import { requireMetricsAuth } from '../middleware/metrics/auth.middleware.js';
 import logger from '../utils/payment/paymentLogger.util.js';
+import encryptionService from '../services/encryption.service.js';
+import auditLogService from '../services/auditLog.service.js';
+import { authorize } from '../middleware/roleManagement.middleware.js';
 
 /**
  * Payment Controller
@@ -26,10 +29,30 @@ class PaymentController {
    */
   async initializePayment(req, res) {
     const startTime = Date.now();
+    const clientIP = req.ip || req.connection.remoteAddress;
+    const userAgent = req.headers['user-agent'];
 
     try {
       // Generate unique reference
       const reference = `TXN_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+      // Encrypt sensitive payment data
+      const encryptedPaymentData = {
+        ...req.validatedBody,
+        email: encryptionService.encryptField(req.validatedBody.email),
+        cardNumber: req.validatedBody.cardNumber
+          ? encryptionService.encryptField(req.validatedBody.cardNumber)
+          : undefined,
+        cvv: req.validatedBody.cvv
+          ? encryptionService.encryptField(req.validatedBody.cvv)
+          : undefined,
+        expiryMonth: req.validatedBody.expiryMonth
+          ? encryptionService.encryptField(req.validatedBody.expiryMonth)
+          : undefined,
+        expiryYear: req.validatedBody.expiryYear
+          ? encryptionService.encryptField(req.validatedBody.expiryYear)
+          : undefined,
+      };
 
       // Process payment
       const result = await this.paymentProcessor.processPayment({
@@ -53,8 +76,8 @@ class PaymentController {
         metadata: {
           ...req.validatedBody.metadata,
           userId: req.auth._id,
-          userAgent: req.headers['user-agent'],
-          ipAddress: req.ip,
+          userAgent,
+          ipAddress: clientIP,
         },
         splitConfig: req.validatedBody.split,
       });
@@ -80,7 +103,36 @@ class PaymentController {
         responseTime: processingTime,
       });
 
-      return res.status(201).json(formatSuccessResponse(result.data, req));
+      // Log payment initialization to audit
+      await auditLogService.logEvent({
+        action: 'PAYMENT_INITIALIZED',
+        category: 'DATA_OPERATIONS',
+        severity: 'INFO',
+        outcome: 'SUCCESS',
+        userId: req.auth._id,
+        details: {
+          transactionId: result.data.transactionId,
+          reference,
+          amount: req.validatedBody.amount,
+          currency: req.validatedBody.currency || 'NGN',
+          paymentMethod: req.validatedBody.paymentMethod,
+          clientIP,
+          userAgent,
+          processingTime,
+        },
+      });
+
+      // Encrypt sensitive data in response
+      const encryptedResponse = {
+        ...result.data,
+        payerEmail: result.data.payerEmail
+          ? encryptionService.encryptField(result.data.payerEmail)
+          : undefined,
+      };
+
+      return res
+        .status(201)
+        .json(formatSuccessResponse(encryptedResponse, req));
     } catch (error) {
       const processingTime = Date.now() - startTime;
 
@@ -95,6 +147,24 @@ class PaymentController {
         statusCode: error.statusCode || 500,
         url: req.url,
         responseTime: processingTime,
+      });
+
+      // Log payment initialization failure to audit
+      await auditLogService.logEvent({
+        action: 'PAYMENT_INITIALIZATION_FAILED',
+        category: 'DATA_OPERATIONS',
+        severity: 'ERROR',
+        outcome: 'FAILURE',
+        userId: req.auth._id,
+        details: {
+          error: error.message,
+          amount: req.validatedBody.amount,
+          currency: req.validatedBody.currency || 'NGN',
+          paymentMethod: req.validatedBody.paymentMethod,
+          clientIP,
+          userAgent,
+          processingTime,
+        },
       });
 
       return res.status(error.statusCode || 500).json(
@@ -628,38 +698,45 @@ const paymentController = new PaymentController();
 
 export const initializePayment = [
   requireMetricsAuth,
+  authorize('payment:create'),
   validatePaymentInitialization,
   paymentController.initializePayment.bind(paymentController),
 ];
 
 export const verifyPayment = [
   requireMetricsAuth,
+  authorize('payment:read'),
   validatePaymentVerification,
   paymentController.verifyPayment.bind(paymentController),
 ];
 
 export const getTransaction = [
   requireMetricsAuth,
+  authorize('payment:read'),
   paymentController.getTransaction.bind(paymentController),
 ];
 
 export const getTransactions = [
   requireMetricsAuth,
+  authorize('payment:read'),
   paymentController.getTransactions.bind(paymentController),
 ];
 
 export const processRefund = [
   requireMetricsAuth,
+  authorize('payment:refund'),
   paymentController.processRefund.bind(paymentController),
 ];
 
 export const getBalance = [
   requireMetricsAuth,
+  authorize('payment:read'),
   paymentController.getBalance.bind(paymentController),
 ];
 
 export const createTransferRecipient = [
   requireMetricsAuth,
+  authorize('payment:create'),
   paymentController.createTransferRecipient.bind(paymentController),
 ];
 

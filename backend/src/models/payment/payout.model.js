@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import encryptionService from '../../services/encryption.service.js';
+import {
+  encryptDatabaseFields,
+  decryptDatabaseFields,
+} from '../../middleware/encryption.middleware.js';
 
 /**
  * Payout Schema
@@ -40,10 +45,34 @@ const payoutSchema = new mongoose.Schema(
     },
     recipientEmail: { type: String, required: true },
     recipientAccount: {
-      accountNumber: { type: String },
-      bankCode: { type: String },
-      bankName: { type: String },
-      accountName: { type: String },
+      accountNumber: {
+        type: mongoose.Schema.Types.Mixed,
+        set: function (value) {
+          this._originalAccountNumber = value;
+          return value;
+        },
+      },
+      bankCode: {
+        type: mongoose.Schema.Types.Mixed,
+        set: function (value) {
+          this._originalBankCode = value;
+          return value;
+        },
+      },
+      bankName: {
+        type: mongoose.Schema.Types.Mixed,
+        set: function (value) {
+          this._originalBankName = value;
+          return value;
+        },
+      },
+      accountName: {
+        type: mongoose.Schema.Types.Mixed,
+        set: function (value) {
+          this._originalAccountName = value;
+          return value;
+        },
+      },
     },
 
     // Related entities
@@ -206,6 +235,9 @@ payoutSchema.virtual('daysSinceScheduled').get(function () {
   return Math.floor((new Date() - this.scheduledFor) / (1000 * 60 * 60 * 24));
 });
 
+// Pre-save middleware for encryption
+payoutSchema.pre('save', encryptDatabaseFields('payout'));
+
 // Pre-save middleware
 payoutSchema.pre('save', async function (next) {
   // Generate payout ID if not provided
@@ -239,6 +271,11 @@ payoutSchema.pre('save', async function (next) {
 
   next();
 });
+
+// Post-find middleware for decryption
+payoutSchema.post('find', decryptDatabaseFields('payout'));
+payoutSchema.post('findOne', decryptDatabaseFields('payout'));
+payoutSchema.post('findOneAndUpdate', decryptDatabaseFields('payout'));
 
 // Post-save middleware for notifications and batch processing
 payoutSchema.post('save', async function (doc) {
@@ -392,6 +429,152 @@ payoutSchema.statics.completeBatch = function (batchId) {
     }
   );
 };
+
+// Static methods for encryption-aware queries
+payoutSchema.statics.findByAccountNumber = async function (accountNumber) {
+  try {
+    const encryptedAccountNumber = await encryptionService.encryptField(
+      accountNumber,
+      'payout',
+      'recipientAccount.accountNumber'
+    );
+    return this.find({
+      'recipientAccount.accountNumber': encryptedAccountNumber,
+    });
+  } catch (error) {
+    console.error('Error finding payouts by encrypted account number:', error);
+    throw error;
+  }
+};
+
+payoutSchema.statics.findByBankName = async function (bankName) {
+  try {
+    const encryptedBankName = await encryptionService.encryptField(
+      bankName,
+      'payout',
+      'recipientAccount.bankName'
+    );
+    return this.find({ 'recipientAccount.bankName': encryptedBankName });
+  } catch (error) {
+    console.error('Error finding payouts by encrypted bank name:', error);
+    throw error;
+  }
+};
+
+// Instance methods for working with encrypted data
+payoutSchema.methods.getDecryptedAccountNumber = async function () {
+  try {
+    if (this.recipientAccount?.accountNumber?.encrypted) {
+      return await encryptionService.decryptField(
+        this.recipientAccount.accountNumber,
+        'payout',
+        'recipientAccount.accountNumber'
+      );
+    }
+    return this.recipientAccount?.accountNumber;
+  } catch (error) {
+    console.error('Error decrypting account number:', error);
+    return null;
+  }
+};
+
+payoutSchema.methods.getDecryptedBankCode = async function () {
+  try {
+    if (this.recipientAccount?.bankCode?.encrypted) {
+      return await encryptionService.decryptField(
+        this.recipientAccount.bankCode,
+        'payout',
+        'recipientAccount.bankCode'
+      );
+    }
+    return this.recipientAccount?.bankCode;
+  } catch (error) {
+    console.error('Error decrypting bank code:', error);
+    return null;
+  }
+};
+
+payoutSchema.methods.getDecryptedBankName = async function () {
+  try {
+    if (this.recipientAccount?.bankName?.encrypted) {
+      return await encryptionService.decryptField(
+        this.recipientAccount.bankName,
+        'payout',
+        'recipientAccount.bankName'
+      );
+    }
+    return this.recipientAccount?.bankName;
+  } catch (error) {
+    console.error('Error decrypting bank name:', error);
+    return null;
+  }
+};
+
+payoutSchema.methods.getDecryptedAccountName = async function () {
+  try {
+    if (this.recipientAccount?.accountName?.encrypted) {
+      return await encryptionService.decryptField(
+        this.recipientAccount.accountName,
+        'payout',
+        'recipientAccount.accountName'
+      );
+    }
+    return this.recipientAccount?.accountName;
+  } catch (error) {
+    console.error('Error decrypting account name:', error);
+    return null;
+  }
+};
+
+// Validation for encrypted fields
+payoutSchema.pre('validate', async function (next) {
+  try {
+    // Validate account number using original value if provided
+    if (this._originalAccountNumber && this._originalAccountNumber.trim()) {
+      const accountNumberRegex = /^\d{10,}$/;
+      if (!accountNumberRegex.test(this._originalAccountNumber.trim())) {
+        this.invalidate(
+          'recipientAccount.accountNumber',
+          'Account number must be at least 10 digits.'
+        );
+      }
+    }
+
+    // Validate bank code using original value if provided
+    if (this._originalBankCode && this._originalBankCode.trim()) {
+      if (this._originalBankCode.trim().length < 3) {
+        this.invalidate(
+          'recipientAccount.bankCode',
+          'Bank code must be at least 3 characters long.'
+        );
+      }
+    }
+
+    // Validate bank name using original value if provided
+    if (this._originalBankName && this._originalBankName.trim()) {
+      if (this._originalBankName.trim().length < 2) {
+        this.invalidate(
+          'recipientAccount.bankName',
+          'Bank name must be at least 2 characters long.'
+        );
+      }
+    }
+
+    // Validate account name using original value if provided
+    if (this._originalAccountName && this._originalAccountName.trim()) {
+      if (this._originalAccountName.trim().length < 3) {
+        this.invalidate(
+          'recipientAccount.accountName',
+          'Account name must be at least 3 characters long.'
+        );
+      }
+    }
+
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
 
 const Payout = mongoose.model('Payout', payoutSchema);
 

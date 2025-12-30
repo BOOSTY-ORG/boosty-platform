@@ -13,13 +13,7 @@ export { default as PayoutDistributionChart } from "./PayoutDistributionChart.js
 export { default as PortfolioPerformanceChart } from "./PortfolioPerformanceChart.jsx";
 
 // Combined export for all charts
-export {
-  RevenueChart,
-  TransactionTimeline,
-  ROIAnalyticsChart,
-  PayoutDistributionChart,
-  PortfolioPerformanceChart,
-};
+export {};
 
 // Default export containing all charts
 export default {

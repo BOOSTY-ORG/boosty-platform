@@ -9,9 +9,9 @@ import {
   AdvancedFilterPanel,
   FilterPreset,
   DateRangePicker,
-  Notification,
-  useNotification
+  Notification
 } from '../../components/common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import {
   BulkActions,
   BulkEditModal,
@@ -49,7 +49,7 @@ const InvestorsPage = () => {
     getKYCStats
   } = useInvestor();
   const { setPagination, setFilters, pagination, filters } = useApp();
-  const { showNotification } = useNotification();
+  const { showSuccess, showError, showInfo } = useNotificationStore();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -455,18 +455,12 @@ const InvestorsPage = () => {
         link.remove();
         window.URL.revokeObjectURL(url);
         
-        showNotification({
-          type: 'success',
-          message: `Export completed successfully`
-        });
+        showSuccess(`Export completed successfully`);
         setShowExportModal(false);
       }
     } catch (error) {
       console.error('Export failed:', error);
-      showNotification({
-        type: 'error',
-        message: 'Export failed. Please try again.'
-      });
+      showError('Export failed. Please try again.');
     }
   };
 
@@ -476,10 +470,7 @@ const InvestorsPage = () => {
     setCurrentExportId(null);
     
     if (exportStatus.status === 'completed') {
-      showNotification({
-        type: 'success',
-        message: 'Export completed successfully'
-      });
+      showSuccess('Export completed successfully');
     }
   };
 
@@ -558,16 +549,10 @@ const InvestorsPage = () => {
       link.remove();
       window.URL.revokeObjectURL(url);
       
-      showNotification({
-        type: 'success',
-        message: `Successfully exported ${investorIds.length} investor(s)`
-      });
+      showSuccess(`Successfully exported ${investorIds.length} investor(s)`);
     } catch (error) {
       console.error('Export failed:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to export investors'
-      });
+      showError('Failed to export investors');
     }
   };
 
@@ -575,10 +560,7 @@ const InvestorsPage = () => {
     try {
       await investorsAPI.bulkUpdateInvestors(investorIds, { status });
       
-      showNotification({
-        type: 'success',
-        message: `Successfully updated status to ${status} for ${investorIds.length} investor(s)`
-      });
+      showSuccess(`Successfully updated status to ${status} for ${investorIds.length} investor(s)`);
       
       // Refresh the investors list
       getInvestors({
@@ -595,30 +577,21 @@ const InvestorsPage = () => {
       setSelectedInvestors([]);
     } catch (error) {
       console.error('Failed to update status:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to update investor status'
-      });
+      showError('Failed to update investor status');
     }
   };
 
   const handleBulkAssign = (investorIds) => {
     // This would open a modal for assigning to team members
     // For now, we'll just show a notification
-    showNotification({
-      type: 'info',
-      message: 'Bulk assignment feature coming soon'
-    });
+    showInfo('Bulk assignment feature coming soon');
   };
 
   const handleBulkDelete = async (investorIds) => {
     try {
       await investorsAPI.bulkDeleteInvestors(investorIds);
       
-      showNotification({
-        type: 'success',
-        message: `Successfully deleted ${investorIds.length} investor(s)`
-      });
+      showSuccess(`Successfully deleted ${investorIds.length} investor(s)`);
       
       // Refresh the investors list
       getInvestors({
@@ -635,10 +608,7 @@ const InvestorsPage = () => {
       setSelectedInvestors([]);
     } catch (error) {
       console.error('Failed to delete investors:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete investors'
-      });
+      showError('Failed to delete investors');
     }
   };
 
@@ -648,10 +618,7 @@ const InvestorsPage = () => {
 
   // Bulk operation success handlers
   const handleBulkEditSuccess = (result) => {
-    showNotification({
-      type: 'success',
-      message: result.message
-    });
+    showSuccess(result.message);
     
     // Refresh the investors list
     getInvestors({
@@ -670,17 +637,11 @@ const InvestorsPage = () => {
   };
 
   const handleBulkEditError = (error) => {
-    showNotification({
-      type: 'error',
-      message: error
-    });
+    showError(error);
   };
 
   const handleBulkKYCSuccess = (result) => {
-    showNotification({
-      type: 'success',
-      message: result.message
-    });
+    showSuccess(result.message);
     
     // Refresh the investors list
     getInvestors({
@@ -699,26 +660,17 @@ const InvestorsPage = () => {
   };
 
   const handleBulkKYCError = (error) => {
-    showNotification({
-      type: 'error',
-      message: error
-    });
+    showError(error);
   };
 
   const handleBulkCommunicationSuccess = (result) => {
-    showNotification({
-      type: 'success',
-      message: result.message
-    });
+    showSuccess(result.message);
     
     setShowBulkCommunicationModal(false);
   };
 
   const handleBulkCommunicationError = (error) => {
-    showNotification({
-      type: 'error',
-      message: error
-    });
+    showError(error);
   };
 
   // Get status badge styling

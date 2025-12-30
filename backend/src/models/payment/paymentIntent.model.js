@@ -1,4 +1,9 @@
 import mongoose from 'mongoose';
+import encryptionService from '../../services/encryption.service.js';
+import {
+  encryptDatabaseFields,
+  decryptDatabaseFields,
+} from '../../middleware/encryption.middleware.js';
 
 /**
  * Payment Intent Schema
@@ -187,6 +192,9 @@ paymentIntentSchema.virtual('timeToExpiry').get(function () {
   return this.expiresAt - new Date();
 });
 
+// Pre-save middleware for encryption
+paymentIntentSchema.pre('save', encryptDatabaseFields('paymentIntent'));
+
 // Pre-save middleware
 paymentIntentSchema.pre('save', async function (next) {
   // Generate intent ID if not provided
@@ -230,6 +238,14 @@ paymentIntentSchema.pre('save', async function (next) {
 
   next();
 });
+
+// Post-find middleware for decryption
+paymentIntentSchema.post('find', decryptDatabaseFields('paymentIntent'));
+paymentIntentSchema.post('findOne', decryptDatabaseFields('paymentIntent'));
+paymentIntentSchema.post(
+  'findOneAndUpdate',
+  decryptDatabaseFields('paymentIntent')
+);
 
 // Post-save middleware for cleanup and notifications
 paymentIntentSchema.post('save', async function (doc) {
@@ -368,6 +384,46 @@ paymentIntentSchema.statics.cleanupExpiredIntents = function () {
       status: 'expired',
     }
   );
+};
+
+// Static methods for encryption-aware queries
+paymentIntentSchema.statics.findByGatewayReference = async function (
+  gatewayReference
+) {
+  try {
+    return this.findOne({ gatewayReference });
+  } catch (error) {
+    console.error('Error finding intent by gateway reference:', error);
+    throw error;
+  }
+};
+
+// Instance methods for working with encrypted data
+paymentIntentSchema.methods.getDecryptedData = async function () {
+  try {
+    const decryptedData = {};
+
+    // Decrypt any encrypted fields if they exist
+    const fieldConfig = {
+      // Add any encrypted fields for payment intent here
+      // Currently no sensitive fields are encrypted in payment intent
+    };
+
+    for (const [fieldName, config] of Object.entries(fieldConfig)) {
+      if (config.encrypted && this[fieldName]?.encrypted) {
+        decryptedData[fieldName] = await encryptionService.decryptField(
+          this[fieldName],
+          'paymentIntent',
+          fieldName
+        );
+      }
+    }
+
+    return decryptedData;
+  } catch (error) {
+    console.error('Error decrypting payment intent data:', error);
+    return {};
+  }
 };
 
 const PaymentIntent = mongoose.model('PaymentIntent', paymentIntentSchema);

@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { useFinance } from '../../context/FinanceContext.jsx';
 import { useApp } from '../../context/AppContext.jsx';
 import { FinanceErrorBoundary } from '../../components/common/ErrorBoundary.jsx';
-import { withPerformanceTracking } from '../../utils/performance.js';
+import { withPerformanceTracking } from '../../utils/performance.jsx';
 import { useDebouncedFilters } from '../../utils/debounce.js';
 import { ariaLabels } from '../../utils/accessibility.js';
 import { sanitizeInput } from '../../utils/security.js';

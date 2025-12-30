@@ -1,0 +1,29 @@
+
+> boosty-platform-frontend@1.0.0 build
+> vite build
+
+[36mvite v4.5.14 [32mbuilding for production...[36m[39m
+transforming...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[32m✓[39m 2973 modules transformed.
+rendering chunks...
+[1m[33m[plugin:vite:reporter][39m[22m [33m
+(!) C:/Users/DELL/Projects/Boosty-Platform/frontend/src/api/investors.js is dynamically imported by C:/Users/DELL/Projects/Boosty-Platform/frontend/src/utils/realtimeKYC.js but also statically imported by C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/BulkCommunicationModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/BulkEditModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/BulkKYCModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/BulkOperationManager.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/CreateInvestorModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/EditInvestorModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/ExportHistory.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/ExportModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/ExportProgress.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/ExportTemplate.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/investors/InvestorWizard.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/context/InvestorContext.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/pages/investors/InvestorDetailsPage.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/pages/investors/InvestorKYCPage.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/pages/investors/InvestorsPage.jsx, dynamic import will not move module into another chunk.
+[39m
+[1m[33m[plugin:vite:reporter][39m[22m [33m
+(!) C:/Users/DELL/Projects/Boosty-Platform/frontend/src/api/users.js is dynamically imported by C:/Users/DELL/Projects/Boosty-Platform/frontend/src/utils/realtimeUserKYC.js but also statically imported by C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/BulkCommunicationModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/BulkEditModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/BulkKYCModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/BulkOperationManager.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/ExportHistory.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/ExportModal.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/ExportScheduler.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/components/users/ExportTemplate.jsx, C:/Users/DELL/Projects/Boosty-Platform/frontend/src/context/UserContext.jsx, dynamic import will not move module into another chunk.
+[39m
+computing gzip size...
+[2mdist/[22m[32mindex.html                 [39m[1m[2m    1.09 kB[22m[1m[22m[2m │ gzip:   0.50 kB[22m
+[2mdist/[22m[35massets/index-ff9b5ae4.css  [39m[1m[2m   80.83 kB[22m[1m[22m[2m │ gzip:  13.34 kB[22m
+[2mdist/[22m[36massets/charts-f01be9bb.js  [39m[1m[2m    0.83 kB[22m[1m[22m[2m │ gzip:   0.55 kB[22m[2m │ map:     3.95 kB[22m
+[2mdist/[22m[36massets/vendor-81911f94.js  [39m[1m[2m   12.08 kB[22m[1m[22m[2m │ gzip:   4.32 kB[22m[2m │ map:    42.26 kB[22m
+[2mdist/[22m[36massets/ui-e8507a4b.js      [39m[1m[2m   13.68 kB[22m[1m[22m[2m │ gzip:   3.23 kB[22m[2m │ map:    35.30 kB[22m
+[2mdist/[22m[36massets/router-b9c3c658.js  [39m[1m[2m   22.12 kB[22m[1m[22m[2m │ gzip:   8.21 kB[22m[2m │ map:   361.37 kB[22m
+[2mdist/[22m[36massets/index-afd5f780.js   [39m[1m[33m1,453.66 kB[39m[22m[2m │ gzip: 294.14 kB[22m[2m │ map: 4,656.35 kB[22m
+[33m
+(!) Some chunks are larger than 500 kBs after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.[39m
+[32m✓ built in 40.94s[39m

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { useRealtimeNotifications } from '../../hooks/useRealtimeNotifications.js';
-import { ConnectionStatus } from './ConnectionStatus.jsx';
-import { Notification } from './Notification.jsx';
+import useRealtimeNotifications from '../../hooks/useRealtimeNotifications.js';
+import ConnectionStatus from './ConnectionStatus.jsx';
+import Notification from './Notification.jsx';
 import { REALTIME_CONNECTION_TYPES, NOTIFICATION_TYPES } from '../../api/notificationConstants.js';
 
 /**
