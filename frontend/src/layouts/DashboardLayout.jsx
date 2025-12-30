@@ -2,6 +2,8 @@ import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useApp } from '../context/AppContext.jsx';
+import { useAccess } from '../context/AccessContext.jsx';
+import { NavigationAccessIndicator } from '../components/access-indicators';
 import {
   HomeIcon,
   UserGroupIcon,
@@ -19,6 +21,7 @@ import {
 const DashboardLayout = () => {
   const { user, logout } = useAuth();
   const { sidebarOpen, toggleSidebar, theme, toggleTheme } = useApp();
+  const { userLevel, hasAccess } = useAccess();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -32,31 +35,31 @@ const DashboardLayout = () => {
       name: 'Dashboard',
       path: '/',
       icon: HomeIcon,
-      roles: ['admin', 'manager', 'finance', 'support', 'user'],
+      requiredLevel: 'standard',
     },
     {
       name: 'Investors',
       path: '/investors',
       icon: UserGroupIcon,
-      roles: ['admin', 'manager', 'finance', 'support'],
+      requiredLevel: 'silver',
     },
     {
       name: 'Users',
       path: '/users',
       icon: UserIcon,
-      roles: ['admin', 'manager', 'support'],
+      requiredLevel: 'gold',
     },
     {
       name: 'Payments',
       path: '/payments',
       icon: CurrencyDollarIcon,
-      roles: ['admin', 'manager', 'finance'],
+      requiredLevel: 'gold',
     },
     {
       name: 'CRM',
       path: '/crm',
       icon: ChatBubbleLeftRightIcon,
-      roles: ['admin', 'manager', 'support'],
+      requiredLevel: 'silver',
       subItems: [
         {
           name: 'Dashboard',
@@ -84,13 +87,21 @@ const DashboardLayout = () => {
       name: 'Reports',
       path: '/reports',
       icon: ChartBarIcon,
-      roles: ['admin', 'manager'],
+      requiredLevel: 'silver',
     },
   ];
 
-  const filteredMenuItems = menuItems.filter(item =>
-    item.roles.includes(user?.role)
-  );
+  const filteredMenuItems = menuItems.filter(item => {
+    // For items with requiredLevel, check access
+    if (item.requiredLevel) {
+      return hasAccess(item.requiredLevel);
+    }
+    // For backward compatibility, check roles if requiredLevel is not set
+    if (item.roles) {
+      return item.roles.includes(user?.role);
+    }
+    return true;
+  });
 
   const isActiveRoute = (path) => {
     if (path === '/') {
@@ -148,9 +159,17 @@ const DashboardLayout = () => {
                     }`}
                   >
                     <Icon className="mr-3 h-5 w-5 flex-shrink-0" />
-                    <span className="truncate">{item.name}</span>
+                    <span className="truncate flex-1">{item.name}</span>
+                    {item.requiredLevel && (
+                      <NavigationAccessIndicator
+                        requiredLevel={item.requiredLevel}
+                        userLevel={userLevel}
+                        size="sm"
+                        showLabel={false}
+                      />
+                    )}
                   </Link>
-                  
+                   
                   {/* Sub-items for CRM */}
                   {hasSubItems && isActive && (
                     <div className="ml-8 mt-1 space-y-1">
@@ -193,7 +212,7 @@ const DashboardLayout = () => {
                 <Bars3Icon className="h-6 w-6" />
               </button>
             </div>
-            
+             
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Theme toggle */}
               <button
@@ -210,17 +229,31 @@ const DashboardLayout = () => {
               
               {/* User menu */}
               <div className="relative">
-                <button
-                  className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 min-h-[44px] min-w-[44px] p-1"
-                  id="user-menu-button"
-                  aria-expanded="false"
-                  aria-haspopup="true"
-                >
-                  <span className="sr-only">Open user menu</span>
-                  <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium">
-                    {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                <div className="flex items-center space-x-2">
+                  <div className="relative">
+                    <button
+                      className="flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 min-h-[44px] min-w-[44px] p-1"
+                      id="user-menu-button"
+                      aria-expanded="false"
+                      aria-haspopup="true"
+                    >
+                      <span className="sr-only">Open user menu</span>
+                      <div className="h-8 w-8 rounded-full bg-primary-500 flex items-center justify-center text-white font-medium">
+                        {user?.firstName?.charAt(0) || user?.email?.charAt(0) || 'U'}
+                      </div>
+                    </button>
+                     
+                    {/* User access level indicator */}
+                    <div className="absolute -bottom-1 -right-1">
+                      <NavigationAccessIndicator
+                        requiredLevel={userLevel}
+                        userLevel={userLevel}
+                        size="sm"
+                        showLabel={false}
+                      />
+                    </div>
                   </div>
-                </button>
+                </div>
               </div>
               
               {/* Logout button - Hidden on mobile, visible on larger screens */}

@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authAPI } from '../api/auth.js';
 import toast from 'react-hot-toast';
+import { AccessProvider } from './AccessContext.jsx';
 
 // Initial state
 const initialState = {
@@ -251,7 +252,11 @@ export const AuthProvider = ({ children }) => {
     clearError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AccessProvider user={state.user}>
+      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    </AccessProvider>
+  );
 };
 
 // Custom hook to use auth context

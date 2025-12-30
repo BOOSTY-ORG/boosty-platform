@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { TableAccessIndicator } from '../access-indicators';
 
 /**
  * Reusable Table component with multi-column sorting, filtering, and pagination support
@@ -39,6 +40,8 @@ const Table = ({
   onLoadColumnConfiguration,
   exportable = false,
   onExport,
+  rowPermissions = {},
+  RowActionsComponent,
   ...props
 }) => {
   const [sortFields, setSortFields] = useState(
@@ -775,7 +778,12 @@ const Table = ({
                       {column.render ? column.render(row[column.key], row) : row[column.key]}
                     </td>
                   ))}
-                </tr>
+                 {RowActionsComponent && (
+                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                     <RowActionsComponent row={row} />
+                   </td>
+                 )}
+              </tr>
               ))
             )}
           </tbody>
@@ -936,6 +944,8 @@ Table.propTypes = {
   onLoadColumnConfiguration: PropTypes.func,
   exportable: PropTypes.bool,
   onExport: PropTypes.func,
+  rowPermissions: PropTypes.object,
+  RowActionsComponent: PropTypes.func,
 };
 
 export default Table;
