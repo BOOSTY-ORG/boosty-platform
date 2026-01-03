@@ -271,7 +271,8 @@ notificationTemplateSchema.methods.renderContent = function (
 
   // Validate required variables
   const missingRequired = this.requiredVariables.filter(
-    (variable) => !variableValues.hasOwnProperty(variable.name)
+    (variable) =>
+      !Object.prototype.hasOwnProperty.call(variableValues, variable.name)
   );
 
   if (missingRequired.length > 0) {
@@ -302,10 +303,11 @@ notificationTemplateSchema.methods.renderContent = function (
         case 'number':
           value = Number(value).toLocaleString();
           break;
-        case 'select':
+        case 'select': {
           const option = variable.options.find((opt) => opt.value === value);
           value = option ? option.label : String(value);
           break;
+        }
         case 'object':
           value = JSON.stringify(value);
           break;
@@ -344,7 +346,10 @@ notificationTemplateSchema.methods.validateVariables = function (
   const warnings = [];
 
   this.variables.forEach((variable) => {
-    const hasValue = variableValues.hasOwnProperty(variable.name);
+    const hasValue = Object.prototype.hasOwnProperty.call(
+      variableValues,
+      variable.name
+    );
     const value = variableValues[variable.name];
 
     // Check required variables
@@ -377,7 +382,7 @@ notificationTemplateSchema.methods.validateVariables = function (
           );
         }
         break;
-      case 'select':
+      case 'select': {
         const validOptions = variable.options.map((opt) => opt.value);
         if (!validOptions.includes(value)) {
           errors.push(
@@ -385,6 +390,7 @@ notificationTemplateSchema.methods.validateVariables = function (
           );
         }
         break;
+      }
     }
   });
 

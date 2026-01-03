@@ -2,7 +2,10 @@ import Investment from '../../models/metrics/investment.model.js';
 import Payout from '../payout.model.js';
 import PaymentIntent from '../paymentIntent.model.js';
 import logger from '../../utils/payment/paymentLogger.util.js';
-import { PaymentError, PaymentErrorType } from '../../utils/payment/paymentErrors.util.js';
+import {
+  PaymentError,
+  PaymentErrorType,
+} from '../../utils/payment/paymentErrors.util.js';
 import _ from 'lodash';
 
 /**
@@ -42,27 +45,36 @@ class ROIAnalyticsService {
       // Get all related payouts for this investment
       const payouts = await this.payoutModel.find({
         relatedInvestment: investment._id,
-        status: 'completed'
+        status: 'completed',
       });
 
       // Calculate total returns from payouts
-      const totalReturns = payouts.reduce((sum, payout) => sum + payout.netAmount, 0);
+      const totalReturns = payouts.reduce(
+        (sum, payout) => sum + payout.netAmount,
+        0
+      );
 
       // Calculate investment period in years
       const startDate = new Date(investment.startDate);
-      const endDate = investment.status === 'completed' 
-        ? new Date(investment.endDate) 
-        : new Date();
-      const investmentPeriodYears = (endDate - startDate) / (365.25 * 24 * 60 * 60 * 1000);
+      const endDate =
+        investment.status === 'completed'
+          ? new Date(investment.endDate)
+          : new Date();
+      const investmentPeriodYears =
+        (endDate - startDate) / (365.25 * 24 * 60 * 60 * 1000);
 
       // Calculate ROI metrics
       const principalAmount = investment.amount;
       const netProfit = totalReturns - principalAmount;
-      const roiPercentage = principalAmount > 0 ? (netProfit / principalAmount) * 100 : 0;
-      const annualizedROI = investmentPeriodYears > 0 ? roiPercentage / investmentPeriodYears : 0;
+      const roiPercentage =
+        principalAmount > 0 ? (netProfit / principalAmount) * 100 : 0;
+      const annualizedROI =
+        investmentPeriodYears > 0 ? roiPercentage / investmentPeriodYears : 0;
 
       // Calculate risk-adjusted ROI based on risk assessment
-      const riskMultiplier = this.getRiskMultiplier(investment.riskAssessment?.riskLevel);
+      const riskMultiplier = this.getRiskMultiplier(
+        investment.riskAssessment?.riskLevel
+      );
       const riskAdjustedROI = roiPercentage * riskMultiplier;
 
       // Calculate projected returns if investment is still active
@@ -70,11 +82,17 @@ class ROIAnalyticsService {
       let projectedROI = null;
       if (investment.status === 'active') {
         projectedReturns = investment.expectedReturn;
-        projectedROI = principalAmount > 0 ? ((projectedReturns - principalAmount) / principalAmount) * 100 : 0;
+        projectedROI =
+          principalAmount > 0
+            ? ((projectedReturns - principalAmount) / principalAmount) * 100
+            : 0;
       }
 
       // Calculate performance metrics
-      const performanceMetrics = this.calculatePerformanceMetrics(investment, payouts);
+      const performanceMetrics = this.calculatePerformanceMetrics(
+        investment,
+        payouts
+      );
 
       const result = {
         investmentId,
@@ -90,9 +108,10 @@ class ROIAnalyticsService {
         projectedROI: projectedROI ? parseFloat(projectedROI.toFixed(2)) : null,
         investmentPeriod: {
           startDate: investment.startDate,
-          endDate: investment.status === 'completed' ? investment.endDate : null,
+          endDate:
+            investment.status === 'completed' ? investment.endDate : null,
           years: parseFloat(investmentPeriodYears.toFixed(2)),
-          days: Math.floor((endDate - startDate) / (24 * 60 * 60 * 1000))
+          days: Math.floor((endDate - startDate) / (24 * 60 * 60 * 1000)),
         },
         riskAssessment: investment.riskAssessment,
         performanceMetrics,
@@ -100,22 +119,25 @@ class ROIAnalyticsService {
           totalPayouts: payouts.length,
           totalAmount: totalReturns,
           averageAmount: payouts.length > 0 ? totalReturns / payouts.length : 0,
-          lastPayoutDate: payouts.length > 0 ? Math.max(...payouts.map(p => new Date(p.completedAt))) : null
+          lastPayoutDate:
+            payouts.length > 0
+              ? Math.max(...payouts.map((p) => new Date(p.completedAt)))
+              : null,
         },
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('Investment ROI calculated successfully', {
         investmentId,
         roiPercentage: result.roiPercentage,
-        annualizedROI: result.annualizedROI
+        annualizedROI: result.annualizedROI,
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to calculate investment ROI', {
         investmentId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -157,25 +179,34 @@ class ROIAnalyticsService {
           portfolioROI: 0,
           annualizedPortfolioROI: 0,
           investments: [],
-          calculatedAt: new Date()
+          calculatedAt: new Date(),
         };
       }
 
       // Calculate ROI for each investment
       const investmentROIResults = await Promise.all(
-        investments.map(investment => this.calculateInvestmentROI(investment.investmentId))
+        investments.map((investment) =>
+          this.calculateInvestmentROI(investment.investmentId)
+        )
       );
 
       // Aggregate portfolio metrics
-      const totalPrincipal = investments.reduce((sum, inv) => sum + inv.amount, 0);
-      const totalReturns = investmentROIResults.reduce((sum, roi) => sum + roi.totalReturns, 0);
+      const totalPrincipal = investments.reduce(
+        (sum, inv) => sum + inv.amount,
+        0
+      );
+      const totalReturns = investmentROIResults.reduce(
+        (sum, roi) => sum + roi.totalReturns,
+        0
+      );
       const totalNetProfit = totalReturns - totalPrincipal;
-      const portfolioROI = totalPrincipal > 0 ? (totalNetProfit / totalPrincipal) * 100 : 0;
+      const portfolioROI =
+        totalPrincipal > 0 ? (totalNetProfit / totalPrincipal) * 100 : 0;
 
       // Calculate weighted annualized ROI
       let weightedAnnualizedROI = 0;
       let totalWeight = 0;
-      investmentROIResults.forEach(roi => {
+      investmentROIResults.forEach((roi) => {
         const weight = roi.principalAmount / totalPrincipal;
         weightedAnnualizedROI += roi.annualizedROI * weight;
         totalWeight += weight;
@@ -183,11 +214,20 @@ class ROIAnalyticsService {
 
       // Group by investment type
       const roiByType = _.groupBy(investmentROIResults, 'investmentType');
-      const typeBreakdown = Object.keys(roiByType).map(type => {
+      const typeBreakdown = Object.keys(roiByType).map((type) => {
         const typeInvestments = roiByType[type];
-        const typePrincipal = typeInvestments.reduce((sum, inv) => sum + inv.principalAmount, 0);
-        const typeReturns = typeInvestments.reduce((sum, inv) => sum + inv.totalReturns, 0);
-        const typeROI = typePrincipal > 0 ? ((typeReturns - typePrincipal) / typePrincipal) * 100 : 0;
+        const typePrincipal = typeInvestments.reduce(
+          (sum, inv) => sum + inv.principalAmount,
+          0
+        );
+        const typeReturns = typeInvestments.reduce(
+          (sum, inv) => sum + inv.totalReturns,
+          0
+        );
+        const typeROI =
+          typePrincipal > 0
+            ? ((typeReturns - typePrincipal) / typePrincipal) * 100
+            : 0;
 
         return {
           investmentType: type,
@@ -195,12 +235,18 @@ class ROIAnalyticsService {
           principalAmount: typePrincipal,
           totalReturns: typeReturns,
           roiPercentage: parseFloat(typeROI.toFixed(2)),
-          averageROI: parseFloat((typeInvestments.reduce((sum, inv) => sum + inv.roiPercentage, 0) / typeInvestments.length).toFixed(2))
+          averageROI: parseFloat(
+            (
+              typeInvestments.reduce((sum, inv) => sum + inv.roiPercentage, 0) /
+              typeInvestments.length
+            ).toFixed(2)
+          ),
         };
       });
 
       // Calculate performance trends
-      const performanceTrends = this.calculatePerformanceTrends(investmentROIResults);
+      const performanceTrends =
+        this.calculatePerformanceTrends(investmentROIResults);
 
       const result = {
         investorId,
@@ -212,24 +258,24 @@ class ROIAnalyticsService {
         annualizedPortfolioROI: parseFloat(weightedAnnualizedROI.toFixed(2)),
         investmentBreakdown: {
           byType: typeBreakdown,
-          byStatus: this.getInvestmentStatusBreakdown(investments)
+          byStatus: this.getInvestmentStatusBreakdown(investments),
         },
         performanceTrends,
         investments: investmentROIResults,
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('Portfolio ROI calculated successfully', {
         investorId,
         totalInvestments: result.totalInvestments,
-        portfolioROI: result.portfolioROI
+        portfolioROI: result.portfolioROI,
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to calculate portfolio ROI', {
         investorId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -247,7 +293,7 @@ class ROIAnalyticsService {
 
       const { startDate, endDate, period = 'monthly' } = options;
       const filter = {};
-      
+
       if (investorId) {
         filter.investorId = investorId;
       }
@@ -264,33 +310,65 @@ class ROIAnalyticsService {
         .populate('applicationId');
 
       // Group investments by time period
-      const groupedInvestments = this.groupInvestmentsByPeriod(investments, period);
+      const groupedInvestments = this.groupInvestmentsByPeriod(
+        investments,
+        period
+      );
 
       // Calculate ROI metrics for each period
       const performanceData = await Promise.all(
-        Object.entries(groupedInvestments).map(async ([periodKey, periodInvestments]) => {
-          const roiResults = await Promise.all(
-            periodInvestments.map(inv => this.calculateInvestmentROI(inv.investmentId))
-          );
+        Object.entries(groupedInvestments).map(
+          async ([periodKey, periodInvestments]) => {
+            const roiResults = await Promise.all(
+              periodInvestments.map((inv) =>
+                this.calculateInvestmentROI(inv.investmentId)
+              )
+            );
 
-          const totalPrincipal = periodInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-          const totalReturns = roiResults.reduce((sum, roi) => sum + roi.totalReturns, 0);
-          const periodROI = totalPrincipal > 0 ? ((totalReturns - totalPrincipal) / totalPrincipal) * 100 : 0;
+            const totalPrincipal = periodInvestments.reduce(
+              (sum, inv) => sum + inv.amount,
+              0
+            );
+            const totalReturns = roiResults.reduce(
+              (sum, roi) => sum + roi.totalReturns,
+              0
+            );
+            const periodROI =
+              totalPrincipal > 0
+                ? ((totalReturns - totalPrincipal) / totalPrincipal) * 100
+                : 0;
 
-          return {
-            period: periodKey,
-            investmentCount: periodInvestments.length,
-            totalPrincipal,
-            totalReturns,
-            roiPercentage: parseFloat(periodROI.toFixed(2)),
-            averageROI: roiResults.length > 0 
-              ? parseFloat((roiResults.reduce((sum, roi) => sum + roi.roiPercentage, 0) / roiResults.length).toFixed(2))
-              : 0,
-            riskAdjustedROI: roiResults.length > 0
-              ? parseFloat((roiResults.reduce((sum, roi) => sum + roi.riskAdjustedROI, 0) / roiResults.length).toFixed(2))
-              : 0
-          };
-        })
+            return {
+              period: periodKey,
+              investmentCount: periodInvestments.length,
+              totalPrincipal,
+              totalReturns,
+              roiPercentage: parseFloat(periodROI.toFixed(2)),
+              averageROI:
+                roiResults.length > 0
+                  ? parseFloat(
+                      (
+                        roiResults.reduce(
+                          (sum, roi) => sum + roi.roiPercentage,
+                          0
+                        ) / roiResults.length
+                      ).toFixed(2)
+                    )
+                  : 0,
+              riskAdjustedROI:
+                roiResults.length > 0
+                  ? parseFloat(
+                      (
+                        roiResults.reduce(
+                          (sum, roi) => sum + roi.riskAdjustedROI,
+                          0
+                        ) / roiResults.length
+                      ).toFixed(2)
+                    )
+                  : 0,
+            };
+          }
+        )
       );
 
       // Sort by period
@@ -302,24 +380,32 @@ class ROIAnalyticsService {
       const result = {
         investorId,
         period,
-        startDate: startDate || (investments.length > 0 ? Math.min(...investments.map(inv => inv.startDate)) : null),
-        endDate: endDate || (investments.length > 0 ? Math.max(...investments.map(inv => inv.startDate)) : null),
+        startDate:
+          startDate ||
+          (investments.length > 0
+            ? Math.min(...investments.map((inv) => inv.startDate))
+            : null),
+        endDate:
+          endDate ||
+          (investments.length > 0
+            ? Math.max(...investments.map((inv) => inv.startDate))
+            : null),
         performanceData,
         trends,
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('ROI performance tracking retrieved successfully', {
         investorId,
         period,
-        dataPoints: performanceData.length
+        dataPoints: performanceData.length,
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to get ROI performance tracking', {
         investorId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -336,12 +422,12 @@ class ROIAnalyticsService {
       logger.info('Generating ROI projections', { investorId });
 
       const { forecastPeriod = 12, scenario = 'moderate' } = options;
-      
+
       // Get historical performance data
       const historicalData = await this.getROIPerformanceTracking(investorId, {
         period: 'monthly',
         startDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000), // Last 12 months
-        endDate: new Date()
+        endDate: new Date(),
       });
 
       // Get active investments
@@ -358,15 +444,20 @@ class ROIAnalyticsService {
       // Calculate projections for active investments
       const activeInvestmentProjections = await Promise.all(
         activeInvestments.map(async (investment) => {
-          const currentROI = await this.calculateInvestmentROI(investment.investmentId);
+          const currentROI = await this.calculateInvestmentROI(
+            investment.investmentId
+          );
           const remainingPeriod = this.calculateRemainingPeriod(investment);
-          
+
           // Apply scenario-based adjustments
           const scenarioMultiplier = this.getScenarioMultiplier(scenario);
-          const projectedAnnualROI = currentROI.annualizedROI * scenarioMultiplier;
-          
-          const projectedReturns = investment.expectedReturn || 
-            (investment.amount * (1 + (projectedAnnualROI / 100) * (remainingPeriod.years || 1)));
+          const projectedAnnualROI =
+            currentROI.annualizedROI * scenarioMultiplier;
+
+          const projectedReturns =
+            investment.expectedReturn ||
+            investment.amount *
+              (1 + (projectedAnnualROI / 100) * (remainingPeriod.years || 1));
 
           return {
             investmentId: investment.investmentId,
@@ -374,19 +465,35 @@ class ROIAnalyticsService {
             projectedAnnualROI: parseFloat(projectedAnnualROI.toFixed(2)),
             remainingPeriod,
             projectedReturns: parseFloat(projectedReturns.toFixed(2)),
-            projectedProfit: parseFloat((projectedReturns - investment.amount).toFixed(2))
+            projectedProfit: parseFloat(
+              (projectedReturns - investment.amount).toFixed(2)
+            ),
           };
         })
       );
 
       // Calculate portfolio-level projections
-      const totalCurrentPrincipal = activeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-      const totalProjectedReturns = activeInvestmentProjections.reduce((sum, proj) => sum + proj.projectedReturns, 0);
-      const totalProjectedProfit = totalProjectedReturns - totalCurrentPrincipal;
-      const projectedPortfolioROI = totalCurrentPrincipal > 0 ? (totalProjectedProfit / totalCurrentPrincipal) * 100 : 0;
+      const totalCurrentPrincipal = activeInvestments.reduce(
+        (sum, inv) => sum + inv.amount,
+        0
+      );
+      const totalProjectedReturns = activeInvestmentProjections.reduce(
+        (sum, proj) => sum + proj.projectedReturns,
+        0
+      );
+      const totalProjectedProfit =
+        totalProjectedReturns - totalCurrentPrincipal;
+      const projectedPortfolioROI =
+        totalCurrentPrincipal > 0
+          ? (totalProjectedProfit / totalCurrentPrincipal) * 100
+          : 0;
 
       // Generate forecast based on historical trends
-      const forecast = this.generateForecast(historicalData.performanceData, forecastPeriod, scenario);
+      const forecast = this.generateForecast(
+        historicalData.performanceData,
+        forecastPeriod,
+        scenario
+      );
 
       const result = {
         investorId,
@@ -402,22 +509,22 @@ class ROIAnalyticsService {
         assumptions: {
           scenarioMultiplier: this.getScenarioMultiplier(scenario),
           historicalDataPoints: historicalData.performanceData.length,
-          calculationMethod: 'linear_regression_with_scenario_adjustment'
+          calculationMethod: 'linear_regression_with_scenario_adjustment',
         },
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('ROI projections generated successfully', {
         investorId,
         scenario,
-        projectedPortfolioROI: result.projectedPortfolioROI
+        projectedPortfolioROI: result.projectedPortfolioROI,
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to generate ROI projections', {
         investorId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -448,77 +555,149 @@ class ROIAnalyticsService {
         .populate('investorId');
 
       // Group by investment type
-      const investmentsByType = _.groupBy(investments, inv => inv.applicationId?.projectType || 'unknown');
+      const investmentsByType = _.groupBy(
+        investments,
+        (inv) => inv.applicationId?.projectType || 'unknown'
+      );
 
       // Calculate ROI metrics for each type
       const typeAnalysis = await Promise.all(
-        Object.entries(investmentsByType).map(async ([type, typeInvestments]) => {
-          // Skip types with insufficient data
-          if (typeInvestments.length < minInvestmentCount) {
-            return null;
-          }
-
-          const roiResults = await Promise.all(
-            typeInvestments.map(inv => this.calculateInvestmentROI(inv.investmentId))
-          );
-
-          const totalPrincipal = typeInvestments.reduce((sum, inv) => sum + inv.amount, 0);
-          const totalReturns = roiResults.reduce((sum, roi) => sum + roi.totalReturns, 0);
-          const typeROI = totalPrincipal > 0 ? ((totalReturns - totalPrincipal) / totalPrincipal) * 100 : 0;
-
-          // Calculate risk metrics
-          const riskLevels = typeInvestments.map(inv => inv.riskAssessment?.riskLevel || 'medium');
-          const riskDistribution = _.countBy(riskLevels);
-
-          // Calculate performance percentiles
-          const roiValues = roiResults.map(roi => roi.roiPercentage).sort((a, b) => a - b);
-          const percentiles = this.calculatePercentiles(roiValues);
-
-          return {
-            investmentType: type,
-            investmentCount: typeInvestments.length,
-            totalPrincipal,
-            totalReturns,
-            roiPercentage: parseFloat(typeROI.toFixed(2)),
-            averageROI: parseFloat((roiResults.reduce((sum, roi) => sum + roi.roiPercentage, 0) / roiResults.length).toFixed(2)),
-            medianROI: percentiles.p50,
-            roiPercentiles: percentiles,
-            riskDistribution,
-            riskAdjustedROI: parseFloat((roiResults.reduce((sum, roi) => sum + roi.riskAdjustedROI, 0) / roiResults.length).toFixed(2)),
-            annualizedROI: parseFloat((roiResults.reduce((sum, roi) => sum + roi.annualizedROI, 0) / roiResults.length).toFixed(2)),
-            performanceMetrics: {
-              bestPerforming: roiResults.reduce((best, current) => current.roiPercentage > best.roiPercentage ? current : best),
-              worstPerforming: roiResults.reduce((worst, current) => current.roiPercentage < worst.roiPercentage ? current : worst),
-              consistency: this.calculateROIConsistency(roiValues)
+        Object.entries(investmentsByType).map(
+          async ([type, typeInvestments]) => {
+            // Skip types with insufficient data
+            if (typeInvestments.length < minInvestmentCount) {
+              return null;
             }
-          };
-        })
+
+            const roiResults = await Promise.all(
+              typeInvestments.map((inv) =>
+                this.calculateInvestmentROI(inv.investmentId)
+              )
+            );
+
+            const totalPrincipal = typeInvestments.reduce(
+              (sum, inv) => sum + inv.amount,
+              0
+            );
+            const totalReturns = roiResults.reduce(
+              (sum, roi) => sum + roi.totalReturns,
+              0
+            );
+            const typeROI =
+              totalPrincipal > 0
+                ? ((totalReturns - totalPrincipal) / totalPrincipal) * 100
+                : 0;
+
+            // Calculate risk metrics
+            const riskLevels = typeInvestments.map(
+              (inv) => inv.riskAssessment?.riskLevel || 'medium'
+            );
+            const riskDistribution = _.countBy(riskLevels);
+
+            // Calculate performance percentiles
+            const roiValues = roiResults
+              .map((roi) => roi.roiPercentage)
+              .sort((a, b) => a - b);
+            const percentiles = this.calculatePercentiles(roiValues);
+
+            return {
+              investmentType: type,
+              investmentCount: typeInvestments.length,
+              totalPrincipal,
+              totalReturns,
+              roiPercentage: parseFloat(typeROI.toFixed(2)),
+              averageROI: parseFloat(
+                (
+                  roiResults.reduce((sum, roi) => sum + roi.roiPercentage, 0) /
+                  roiResults.length
+                ).toFixed(2)
+              ),
+              medianROI: percentiles.p50,
+              roiPercentiles: percentiles,
+              riskDistribution,
+              riskAdjustedROI: parseFloat(
+                (
+                  roiResults.reduce(
+                    (sum, roi) => sum + roi.riskAdjustedROI,
+                    0
+                  ) / roiResults.length
+                ).toFixed(2)
+              ),
+              annualizedROI: parseFloat(
+                (
+                  roiResults.reduce((sum, roi) => sum + roi.annualizedROI, 0) /
+                  roiResults.length
+                ).toFixed(2)
+              ),
+              performanceMetrics: {
+                bestPerforming: roiResults.reduce((best, current) =>
+                  current.roiPercentage > best.roiPercentage ? current : best
+                ),
+                worstPerforming: roiResults.reduce((worst, current) =>
+                  current.roiPercentage < worst.roiPercentage ? current : worst
+                ),
+                consistency: this.calculateROIConsistency(roiValues),
+              },
+            };
+          }
+        )
       );
 
       // Filter out null results and sort by ROI
-      const validTypeAnalysis = typeAnalysis.filter(Boolean).sort((a, b) => b.roiPercentage - a.roiPercentage);
+      const validTypeAnalysis = typeAnalysis
+        .filter(Boolean)
+        .sort((a, b) => b.roiPercentage - a.roiPercentage);
 
       // Calculate overall market metrics
       const allROIResults = await Promise.all(
-        investments.map(inv => this.calculateInvestmentROI(inv.investmentId))
+        investments.map((inv) => this.calculateInvestmentROI(inv.investmentId))
       );
 
       const marketMetrics = {
         totalInvestments: investments.length,
         totalPrincipal: investments.reduce((sum, inv) => sum + inv.amount, 0),
-        totalReturns: allROIResults.reduce((sum, roi) => sum + roi.totalReturns, 0),
-        marketROI: parseFloat(((allROIResults.reduce((sum, roi) => sum + roi.roiPercentage, 0) / allROIResults.length)).toFixed(2)),
-        marketRiskAdjustedROI: parseFloat((allROIResults.reduce((sum, roi) => sum + roi.riskAdjustedROI, 0) / allROIResults.length).toFixed(2)),
-        marketAnnualizedROI: parseFloat((allROIResults.reduce((sum, roi) => sum + roi.annualizedROI, 0) / allROIResults.length).toFixed(2))
+        totalReturns: allROIResults.reduce(
+          (sum, roi) => sum + roi.totalReturns,
+          0
+        ),
+        marketROI: parseFloat(
+          (
+            allROIResults.reduce((sum, roi) => sum + roi.roiPercentage, 0) /
+            allROIResults.length
+          ).toFixed(2)
+        ),
+        marketRiskAdjustedROI: parseFloat(
+          (
+            allROIResults.reduce((sum, roi) => sum + roi.riskAdjustedROI, 0) /
+            allROIResults.length
+          ).toFixed(2)
+        ),
+        marketAnnualizedROI: parseFloat(
+          (
+            allROIResults.reduce((sum, roi) => sum + roi.annualizedROI, 0) /
+            allROIResults.length
+          ).toFixed(2)
+        ),
       };
 
       // Generate recommendations
-      const recommendations = this.generateInvestmentRecommendations(validTypeAnalysis, marketMetrics);
+      const recommendations = this.generateInvestmentRecommendations(
+        validTypeAnalysis,
+        marketMetrics
+      );
 
       const result = {
         analysisPeriod: {
-          startDate: startDate || (investments.length > 0 ? Math.min(...investments.map(inv => inv.startDate)) : null),
-          endDate: endDate || (investments.length > 0 ? Math.max(...investments.map(inv => inv.startDate)) : null)
+          startDate:
+            startDate ||
+            (investments.length > 0
+              ? Math.min(...investments.map((inv) => inv.startDate))
+              : null),
+          endDate:
+            endDate ||
+            (investments.length > 0
+              ? Math.max(...investments.map((inv) => inv.startDate))
+              : null),
         },
         marketMetrics,
         investmentTypeAnalysis: validTypeAnalysis,
@@ -526,20 +705,20 @@ class ROIAnalyticsService {
         methodology: {
           minInvestmentCount,
           riskAdjustmentMethod: 'risk_level_multiplier',
-          percentileCalculation: 'linear_interpolation'
+          percentileCalculation: 'linear_interpolation',
         },
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('Comparative ROI analysis completed successfully', {
         investmentTypes: validTypeAnalysis.length,
-        marketROI: marketMetrics.marketROI
+        marketROI: marketMetrics.marketROI,
       });
 
       return result;
     } catch (error) {
       logger.error('Failed to perform comparative ROI analysis', {
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -552,9 +731,16 @@ class ROIAnalyticsService {
    * @param {Object} options - Calculation options
    * @returns {Promise<Object>} Risk-adjusted ROI calculations
    */
-  async calculateRiskAdjustedROI(investmentId = null, investorId = null, options = {}) {
+  async calculateRiskAdjustedROI(
+    investmentId = null,
+    investorId = null,
+    options = {}
+  ) {
     try {
-      logger.info('Calculating risk-adjusted ROI', { investmentId, investorId });
+      logger.info('Calculating risk-adjusted ROI', {
+        investmentId,
+        investorId,
+      });
 
       const { riskModel = 'standard' } = options;
 
@@ -576,21 +762,26 @@ class ROIAnalyticsService {
       // Calculate risk-adjusted ROI for each investment
       const riskAdjustedResults = await Promise.all(
         investments.map(async (investment) => {
-          const basicROI = await this.calculateInvestmentROI(investment.investmentId);
-          
+          const basicROI = await this.calculateInvestmentROI(
+            investment.investmentId
+          );
+
           // Get risk factors
           const riskFactors = this.extractRiskFactors(investment);
-          
+
           // Calculate risk score
           const riskScore = this.calculateRiskScore(riskFactors, riskModel);
-          
+
           // Apply risk adjustment
-          const riskMultiplier = this.calculateRiskMultiplier(riskScore, riskModel);
+          const riskMultiplier = this.calculateRiskMultiplier(
+            riskScore,
+            riskModel
+          );
           const riskAdjustedROI = basicROI.roiPercentage * riskMultiplier;
-          
+
           // Calculate Sharpe ratio (risk-adjusted return)
           const riskFreeRate = 0.05; // 5% risk-free rate (can be made configurable)
-          const excessReturn = (riskAdjustedROI / 100) - riskFreeRate;
+          const excessReturn = riskAdjustedROI / 100 - riskFreeRate;
           const volatility = this.calculateVolatility(investment);
           const sharpeRatio = volatility > 0 ? excessReturn / volatility : 0;
 
@@ -605,7 +796,7 @@ class ROIAnalyticsService {
             volatility: parseFloat(volatility.toFixed(4)),
             riskGrade: this.getRiskGrade(riskScore),
             maxDrawdown: this.calculateMaxDrawdown(investment),
-            var95: this.calculateVaR(investment, 0.95) // 95% Value at Risk
+            var95: this.calculateVaR(investment, 0.95), // 95% Value at Risk
           };
         })
       );
@@ -613,18 +804,41 @@ class ROIAnalyticsService {
       // Aggregate results if multiple investments
       let aggregatedMetrics = null;
       if (riskAdjustedResults.length > 1) {
-        const basicROIs = riskAdjustedResults.map(r => r.basicROI);
-        const riskAdjustedROIs = riskAdjustedResults.map(r => r.riskAdjustedROI);
-        const riskScores = riskAdjustedResults.map(r => r.riskScore);
-        const sharpeRatios = riskAdjustedResults.map(r => r.sharpeRatio);
+        const basicROIs = riskAdjustedResults.map((r) => r.basicROI);
+        const riskAdjustedROIs = riskAdjustedResults.map(
+          (r) => r.riskAdjustedROI
+        );
+        const riskScores = riskAdjustedResults.map((r) => r.riskScore);
+        const sharpeRatios = riskAdjustedResults.map((r) => r.sharpeRatio);
 
         aggregatedMetrics = {
-          averageBasicROI: parseFloat((basicROIs.reduce((sum, roi) => sum + roi, 0) / basicROIs.length).toFixed(2)),
-          averageRiskAdjustedROI: parseFloat((riskAdjustedROIs.reduce((sum, roi) => sum + roi, 0) / riskAdjustedROIs.length).toFixed(2)),
-          averageRiskScore: parseFloat((riskScores.reduce((sum, score) => sum + score, 0) / riskScores.length).toFixed(2)),
-          averageSharpeRatio: parseFloat((sharpeRatios.reduce((sum, ratio) => sum + ratio, 0) / sharpeRatios.length).toFixed(4)),
-          portfolioVolatility: this.calculatePortfolioVolatility(riskAdjustedResults),
-          diversificationBenefit: this.calculateDiversificationBenefit(riskAdjustedResults)
+          averageBasicROI: parseFloat(
+            (
+              basicROIs.reduce((sum, roi) => sum + roi, 0) / basicROIs.length
+            ).toFixed(2)
+          ),
+          averageRiskAdjustedROI: parseFloat(
+            (
+              riskAdjustedROIs.reduce((sum, roi) => sum + roi, 0) /
+              riskAdjustedROIs.length
+            ).toFixed(2)
+          ),
+          averageRiskScore: parseFloat(
+            (
+              riskScores.reduce((sum, score) => sum + score, 0) /
+              riskScores.length
+            ).toFixed(2)
+          ),
+          averageSharpeRatio: parseFloat(
+            (
+              sharpeRatios.reduce((sum, ratio) => sum + ratio, 0) /
+              sharpeRatios.length
+            ).toFixed(4)
+          ),
+          portfolioVolatility:
+            this.calculatePortfolioVolatility(riskAdjustedResults),
+          diversificationBenefit:
+            this.calculateDiversificationBenefit(riskAdjustedResults),
         };
       }
 
@@ -635,12 +849,12 @@ class ROIAnalyticsService {
         investments: riskAdjustedResults,
         aggregatedMetrics,
         riskModelDescription: this.getRiskModelDescription(riskModel),
-        calculatedAt: new Date()
+        calculatedAt: new Date(),
       };
 
       logger.info('Risk-adjusted ROI calculation completed', {
         investmentCount: riskAdjustedResults.length,
-        averageRiskAdjustedROI: aggregatedMetrics?.averageRiskAdjustedROI
+        averageRiskAdjustedROI: aggregatedMetrics?.averageRiskAdjustedROI,
       });
 
       return result;
@@ -648,7 +862,7 @@ class ROIAnalyticsService {
       logger.error('Failed to calculate risk-adjusted ROI', {
         investmentId,
         investorId,
-        error: error.message
+        error: error.message,
       });
       throw error;
     }
@@ -665,7 +879,7 @@ class ROIAnalyticsService {
     const multipliers = {
       low: 1.2,
       medium: 1.0,
-      high: 0.8
+      high: 0.8,
     };
     return multipliers[riskLevel] || 1.0;
   }
@@ -680,14 +894,18 @@ class ROIAnalyticsService {
     const onTimePayments = investment.performance.onTimePayments || 0;
     const latePayments = investment.performance.latePayments || 0;
     const totalPayments = onTimePayments + latePayments;
-    
+
     return {
-      onTimePaymentRate: totalPayments > 0 ? (onTimePayments / totalPayments) * 100 : 0,
-      latePaymentRate: totalPayments > 0 ? (latePayments / totalPayments) * 100 : 0,
+      onTimePaymentRate:
+        totalPayments > 0 ? (onTimePayments / totalPayments) * 100 : 0,
+      latePaymentRate:
+        totalPayments > 0 ? (latePayments / totalPayments) * 100 : 0,
       totalPayments,
-      paymentConsistency: this.calculatePaymentConsistency(investment.repaymentSchedule),
+      paymentConsistency: this.calculatePaymentConsistency(
+        investment.repaymentSchedule
+      ),
       daysActive: investment.performance.daysActive || 0,
-      status: investment.status
+      status: investment.status,
     };
   }
 
@@ -698,21 +916,21 @@ class ROIAnalyticsService {
    */
   calculatePaymentConsistency(repaymentSchedule) {
     if (!repaymentSchedule || repaymentSchedule.length === 0) return 100;
-    
-    const paidPayments = repaymentSchedule.filter(p => p.status === 'paid');
+
+    const paidPayments = repaymentSchedule.filter((p) => p.status === 'paid');
     if (paidPayments.length === 0) return 100;
-    
+
     let consistencyScore = 100;
-    paidPayments.forEach(payment => {
+    paidPayments.forEach((payment) => {
       const dueDate = new Date(payment.dueDate);
       const paidDate = new Date(payment.paidDate);
       const daysLate = Math.floor((paidDate - dueDate) / (24 * 60 * 60 * 1000));
-      
+
       if (daysLate > 0) {
         consistencyScore -= Math.min(daysLate * 2, 50); // Deduct up to 50 points for late payments
       }
     });
-    
+
     return Math.max(0, consistencyScore);
   }
 
@@ -724,11 +942,11 @@ class ROIAnalyticsService {
   getInvestmentStatusBreakdown(investments) {
     const statusCounts = _.countBy(investments, 'status');
     const totalInvestments = investments.length;
-    
+
     return Object.entries(statusCounts).map(([status, count]) => ({
       status,
       count,
-      percentage: parseFloat(((count / totalInvestments) * 100).toFixed(2))
+      percentage: parseFloat(((count / totalInvestments) * 100).toFixed(2)),
     }));
   }
 
@@ -741,22 +959,25 @@ class ROIAnalyticsService {
     if (roiData.length < 2) {
       return { trend: 'insufficient_data', direction: 'neutral', change: 0 };
     }
-    
-    const recentROI = roiData.slice(-3).map(d => d.roiPercentage);
-    const olderROI = roiData.slice(0, 3).map(d => d.roiPercentage);
-    
-    const recentAvg = recentROI.reduce((sum, roi) => sum + roi, 0) / recentROI.length;
-    const olderAvg = olderROI.reduce((sum, roi) => sum + roi, 0) / olderROI.length;
-    
+
+    const recentROI = roiData.slice(-3).map((d) => d.roiPercentage);
+    const olderROI = roiData.slice(0, 3).map((d) => d.roiPercentage);
+
+    const recentAvg =
+      recentROI.reduce((sum, roi) => sum + roi, 0) / recentROI.length;
+    const olderAvg =
+      olderROI.reduce((sum, roi) => sum + roi, 0) / olderROI.length;
+
     const change = recentAvg - olderAvg;
-    const direction = change > 1 ? 'improving' : change < -1 ? 'declining' : 'stable';
-    
+    const direction =
+      change > 1 ? 'improving' : change < -1 ? 'declining' : 'stable';
+
     return {
       trend: direction,
       direction,
       change: parseFloat(change.toFixed(2)),
       recentAverage: parseFloat(recentAvg.toFixed(2)),
-      olderAverage: parseFloat(olderAvg.toFixed(2))
+      olderAverage: parseFloat(olderAvg.toFixed(2)),
     };
   }
 
@@ -769,19 +990,21 @@ class ROIAnalyticsService {
   groupInvestmentsByPeriod(investments, period) {
     return _.groupBy(investments, (investment) => {
       const date = new Date(investment.startDate);
-      
+
       switch (period) {
         case 'daily':
           return date.toISOString().split('T')[0];
-        case 'weekly':
+        case 'weekly': {
           const weekStart = new Date(date);
           weekStart.setDate(date.getDate() - date.getDay());
           return weekStart.toISOString().split('T')[0];
+        }
         case 'monthly':
           return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        case 'quarterly':
+        case 'quarterly': {
           const quarter = Math.floor(date.getMonth() / 3) + 1;
           return `${date.getFullYear()}-Q${quarter}`;
+        }
         case 'yearly':
           return date.getFullYear().toString();
         default:
@@ -799,28 +1022,29 @@ class ROIAnalyticsService {
     if (performanceData.length < 2) {
       return { trend: 'insufficient_data' };
     }
-    
-    const roiValues = performanceData.map(d => d.roiPercentage);
-    const periods = performanceData.map(d => d.period);
-    
+
+    const roiValues = performanceData.map((d) => d.roiPercentage);
+    const periods = performanceData.map((d) => d.period);
+
     // Simple linear regression for trend
     const n = roiValues.length;
     const xSum = periods.reduce((sum, p, i) => sum + i, 0);
     const ySum = roiValues.reduce((sum, roi) => sum + roi, 0);
-    const xySum = periods.reduce((sum, p, i) => sum + (i * roiValues[i]), 0);
-    const x2Sum = periods.reduce((sum, p, i) => sum + (i * i), 0);
-    
+    const xySum = periods.reduce((sum, p, i) => sum + i * roiValues[i], 0);
+    const x2Sum = periods.reduce((sum, p, i) => sum + i * i, 0);
+
     const slope = (n * xySum - xSum * ySum) / (n * x2Sum - xSum * xSum);
     const intercept = (ySum - slope * xSum) / n;
-    
+
     // Calculate trend direction
-    const trendDirection = slope > 0.5 ? 'increasing' : slope < -0.5 ? 'decreasing' : 'stable';
-    
+    const trendDirection =
+      slope > 0.5 ? 'increasing' : slope < -0.5 ? 'decreasing' : 'stable';
+
     return {
       direction: trendDirection,
       slope: parseFloat(slope.toFixed(4)),
       intercept: parseFloat(intercept.toFixed(2)),
-      rSquared: this.calculateRSquared(roiValues, slope, intercept)
+      rSquared: this.calculateRSquared(roiValues, slope, intercept),
     };
   }
 
@@ -835,14 +1059,14 @@ class ROIAnalyticsService {
     const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
     let ssTotal = 0;
     let ssResidual = 0;
-    
+
     values.forEach((val, i) => {
       const predicted = slope * i + intercept;
       ssTotal += Math.pow(val - mean, 2);
       ssResidual += Math.pow(val - predicted, 2);
     });
-    
-    return ssTotal > 0 ? 1 - (ssResidual / ssTotal) : 0;
+
+    return ssTotal > 0 ? 1 - ssResidual / ssTotal : 0;
   }
 
   /**
@@ -854,15 +1078,20 @@ class ROIAnalyticsService {
     const now = new Date();
     const endDate = new Date(investment.endDate);
     const remainingMs = endDate - now;
-    
+
     if (remainingMs <= 0) {
       return { years: 0, months: 0, days: 0 };
     }
-    
+
     const years = Math.floor(remainingMs / (365.25 * 24 * 60 * 60 * 1000));
-    const months = Math.floor((remainingMs % (365.25 * 24 * 60 * 60 * 1000)) / (30.44 * 24 * 60 * 60 * 1000));
-    const days = Math.floor((remainingMs % (30.44 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000));
-    
+    const months = Math.floor(
+      (remainingMs % (365.25 * 24 * 60 * 60 * 1000)) /
+        (30.44 * 24 * 60 * 60 * 1000)
+    );
+    const days = Math.floor(
+      (remainingMs % (30.44 * 24 * 60 * 60 * 1000)) / (24 * 60 * 60 * 1000)
+    );
+
     return { years, months, days };
   }
 
@@ -875,7 +1104,7 @@ class ROIAnalyticsService {
     const multipliers = {
       conservative: 0.8,
       moderate: 1.0,
-      optimistic: 1.2
+      optimistic: 1.2,
     };
     return multipliers[scenario] || 1.0;
   }
@@ -891,24 +1120,24 @@ class ROIAnalyticsService {
     if (historicalData.length < 2) {
       return [];
     }
-    
+
     const scenarioMultiplier = this.getScenarioMultiplier(scenario);
-    const roiValues = historicalData.map(d => d.roiPercentage);
-    
+    const roiValues = historicalData.map((d) => d.roiPercentage);
+
     // Simple trend extrapolation
     const trend = this.calculateROITrends(historicalData);
     const lastROI = roiValues[roiValues.length - 1];
-    
+
     const forecast = [];
     for (let i = 1; i <= periods; i++) {
-      const projectedROI = lastROI + (trend.slope * i * scenarioMultiplier);
+      const projectedROI = lastROI + trend.slope * i * scenarioMultiplier;
       forecast.push({
         period: `forecast_${i}`,
         projectedROI: parseFloat(projectedROI.toFixed(2)),
-        confidence: Math.max(0.1, 1 - (i * 0.08)) // Decreasing confidence over time
+        confidence: Math.max(0.1, 1 - i * 0.08), // Decreasing confidence over time
       });
     }
-    
+
     return forecast;
   }
 
@@ -919,16 +1148,16 @@ class ROIAnalyticsService {
    */
   calculatePercentiles(values) {
     if (values.length === 0) return {};
-    
+
     const getPercentile = (p) => {
       const index = (p / 100) * (values.length - 1);
       const lower = Math.floor(index);
       const upper = Math.ceil(index);
       const weight = index % 1;
-      
+
       return values[lower] * (1 - weight) + values[upper] * weight;
     };
-    
+
     return {
       p10: getPercentile(10),
       p25: getPercentile(25),
@@ -936,7 +1165,7 @@ class ROIAnalyticsService {
       p75: getPercentile(75),
       p90: getPercentile(90),
       min: values[0],
-      max: values[values.length - 1]
+      max: values[values.length - 1],
     };
   }
 
@@ -947,13 +1176,16 @@ class ROIAnalyticsService {
    */
   calculateROIConsistency(roiValues) {
     if (roiValues.length < 2) return 100;
-    
-    const mean = roiValues.reduce((sum, val) => sum + val, 0) / roiValues.length;
-    const variance = roiValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / roiValues.length;
+
+    const mean =
+      roiValues.reduce((sum, val) => sum + val, 0) / roiValues.length;
+    const variance =
+      roiValues.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) /
+      roiValues.length;
     const standardDeviation = Math.sqrt(variance);
-    
+
     // Lower standard deviation = higher consistency
-    const consistencyScore = Math.max(0, 100 - (standardDeviation * 2));
+    const consistencyScore = Math.max(0, 100 - standardDeviation * 2);
     return parseFloat(consistencyScore.toFixed(2));
   }
 
@@ -965,42 +1197,44 @@ class ROIAnalyticsService {
    */
   generateInvestmentRecommendations(typeAnalysis, marketMetrics) {
     const recommendations = [];
-    
+
     // Find best performing types
-    const sortedByROI = [...typeAnalysis].sort((a, b) => b.riskAdjustedROI - a.riskAdjustedROI);
+    const sortedByROI = [...typeAnalysis].sort(
+      (a, b) => b.riskAdjustedROI - a.riskAdjustedROI
+    );
     const topPerformers = sortedByROI.slice(0, 2);
-    
+
     recommendations.push({
       type: 'allocation',
       priority: 'high',
       title: 'Optimize Portfolio Allocation',
-      description: `Consider increasing allocation to ${topPerformers.map(t => t.investmentType).join(' and ')} which show the highest risk-adjusted returns`,
+      description: `Consider increasing allocation to ${topPerformers.map((t) => t.investmentType).join(' and ')} which show the highest risk-adjusted returns`,
       expectedImpact: '+2-5% portfolio ROI',
       actionItems: [
         `Increase ${topPerformers[0].investmentType} allocation by 10-15%`,
-        `Consider reducing underperforming asset classes`
-      ]
+        `Consider reducing underperforming asset classes`,
+      ],
     });
-    
+
     // Risk-based recommendations
-    const highRiskTypes = typeAnalysis.filter(t => 
-      t.riskDistribution.high > (t.investmentCount * 0.3)
+    const highRiskTypes = typeAnalysis.filter(
+      (t) => t.riskDistribution.high > t.investmentCount * 0.3
     );
-    
+
     if (highRiskTypes.length > 0) {
       recommendations.push({
         type: 'risk_management',
         priority: 'medium',
         title: 'Balance Risk Exposure',
-        description: `High-risk investments represent significant portions of ${highRiskTypes.map(t => t.investmentType).join(', ')}`,
+        description: `High-risk investments represent significant portions of ${highRiskTypes.map((t) => t.investmentType).join(', ')}`,
         expectedImpact: 'Reduced portfolio volatility',
         actionItems: [
           'Consider diversifying with lower-risk investments',
-          'Review risk tolerance and investment timeline'
-        ]
+          'Review risk tolerance and investment timeline',
+        ],
       });
     }
-    
+
     return recommendations;
   }
 
@@ -1019,8 +1253,10 @@ class ROIAnalyticsService {
       paymentHistory: {
         onTimePayments: investment.performance.onTimePayments || 0,
         latePayments: investment.performance.latePayments || 0,
-        consistency: this.calculatePaymentConsistency(investment.repaymentSchedule)
-      }
+        consistency: this.calculatePaymentConsistency(
+          investment.repaymentSchedule
+        ),
+      },
     };
   }
 
@@ -1032,29 +1268,29 @@ class ROIAnalyticsService {
    */
   calculateRiskScore(riskFactors, riskModel = 'standard') {
     let score = 50; // Base score
-    
+
     // Credit score impact
     if (riskFactors.creditScore >= 750) score -= 20;
     else if (riskFactors.creditScore >= 700) score -= 10;
     else if (riskFactors.creditScore >= 650) score -= 5;
     else if (riskFactors.creditScore < 600) score += 15;
-    
+
     // Risk level impact
     if (riskFactors.riskLevel === 'low') score -= 15;
     else if (riskFactors.riskLevel === 'high') score += 20;
-    
+
     // Payment history impact
     if (riskFactors.paymentHistory.consistency > 90) score -= 10;
     else if (riskFactors.paymentHistory.consistency < 70) score += 15;
-    
+
     // Interest rate impact (higher rates = higher risk)
     if (riskFactors.interestRate > 15) score += 10;
     else if (riskFactors.interestRate < 8) score -= 5;
-    
+
     // Term impact (longer terms = higher risk)
     if (riskFactors.term > 24) score += 10;
     else if (riskFactors.term < 12) score -= 5;
-    
+
     return Math.max(0, Math.min(100, score));
   }
 
@@ -1099,13 +1335,16 @@ class ROIAnalyticsService {
     // based on the risk level and payment consistency
     const riskLevelMultipliers = {
       low: 0.05,
-      medium: 0.10,
-      high: 0.20
+      medium: 0.1,
+      high: 0.2,
     };
-    
-    const baseVolatility = riskLevelMultipliers[investment.riskAssessment?.riskLevel] || 0.10;
-    const consistencyAdjustment = (100 - this.calculatePaymentConsistency(investment.repaymentSchedule)) / 1000;
-    
+
+    const baseVolatility =
+      riskLevelMultipliers[investment.riskAssessment?.riskLevel] || 0.1;
+    const consistencyAdjustment =
+      (100 - this.calculatePaymentConsistency(investment.repaymentSchedule)) /
+      1000;
+
     return baseVolatility + consistencyAdjustment;
   }
 
@@ -1116,7 +1355,9 @@ class ROIAnalyticsService {
    */
   calculateMaxDrawdown(investment) {
     // Simplified max drawdown calculation based on payment history
-    const consistency = this.calculatePaymentConsistency(investment.repaymentSchedule);
+    const consistency = this.calculatePaymentConsistency(
+      investment.repaymentSchedule
+    );
     return Math.max(0, (100 - consistency) / 2);
   }
 
@@ -1140,9 +1381,9 @@ class ROIAnalyticsService {
   getZScore(confidenceLevel) {
     // Simplified Z-score table
     const zScores = {
-      0.90: 1.28,
+      0.9: 1.28,
       0.95: 1.65,
-      0.99: 2.33
+      0.99: 2.33,
     };
     return zScores[confidenceLevel] || 1.65;
   }
@@ -1154,9 +1395,11 @@ class ROIAnalyticsService {
    */
   calculatePortfolioVolatility(riskAdjustedResults) {
     if (riskAdjustedResults.length === 0) return 0;
-    
-    const volatilities = riskAdjustedResults.map(r => r.volatility);
-    return volatilities.reduce((sum, vol) => sum + vol, 0) / volatilities.length;
+
+    const volatilities = riskAdjustedResults.map((r) => r.volatility);
+    return (
+      volatilities.reduce((sum, vol) => sum + vol, 0) / volatilities.length
+    );
   }
 
   /**
@@ -1166,12 +1409,18 @@ class ROIAnalyticsService {
    */
   calculateDiversificationBenefit(riskAdjustedResults) {
     if (riskAdjustedResults.length < 2) return 0;
-    
-    const individualVolatilities = riskAdjustedResults.map(r => r.volatility);
-    const avgIndividualVolatility = individualVolatilities.reduce((sum, vol) => sum + vol, 0) / individualVolatilities.length;
-    const portfolioVolatility = this.calculatePortfolioVolatility(riskAdjustedResults);
-    
-    const benefit = (avgIndividualVolatility - portfolioVolatility) / avgIndividualVolatility * 100;
+
+    const individualVolatilities = riskAdjustedResults.map((r) => r.volatility);
+    const avgIndividualVolatility =
+      individualVolatilities.reduce((sum, vol) => sum + vol, 0) /
+      individualVolatilities.length;
+    const portfolioVolatility =
+      this.calculatePortfolioVolatility(riskAdjustedResults);
+
+    const benefit =
+      ((avgIndividualVolatility - portfolioVolatility) /
+        avgIndividualVolatility) *
+      100;
     return Math.max(0, parseFloat(benefit.toFixed(2)));
   }
 
@@ -1182,9 +1431,11 @@ class ROIAnalyticsService {
    */
   getRiskModelDescription(riskModel) {
     const descriptions = {
-      standard: 'Standard risk model using credit score, payment history, and investment terms',
-      conservative: 'Conservative risk model with higher penalty for risk factors',
-      aggressive: 'Aggressive risk model with lower penalty for risk factors'
+      standard:
+        'Standard risk model using credit score, payment history, and investment terms',
+      conservative:
+        'Conservative risk model with higher penalty for risk factors',
+      aggressive: 'Aggressive risk model with lower penalty for risk factors',
     };
     return descriptions[riskModel] || descriptions.standard;
   }

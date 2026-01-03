@@ -199,7 +199,7 @@ transactionSchema.statics.buildAdvancedQuery = function (filters) {
       let startDate, endDate;
 
       switch (filters.dateRange) {
-        case 'today':
+        case 'today': {
           startDate = new Date(
             now.getFullYear(),
             now.getMonth(),
@@ -211,23 +211,28 @@ transactionSchema.statics.buildAdvancedQuery = function (filters) {
             now.getDate() + 1
           );
           break;
-        case 'week':
+        }
+        case 'week': {
           startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
           endDate = now;
           break;
-        case 'month':
+        }
+        case 'month': {
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
           endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
           break;
-        case 'quarter':
+        }
+        case 'quarter': {
           const quarter = Math.floor(now.getMonth() / 3);
           startDate = new Date(now.getFullYear(), quarter * 3, 1);
           endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
           break;
-        case 'year':
+        }
+        case 'year': {
           startDate = new Date(now.getFullYear(), 0, 1);
           endDate = new Date(now.getFullYear(), 11, 31);
           break;
+        }
       }
 
       if (startDate && endDate) {

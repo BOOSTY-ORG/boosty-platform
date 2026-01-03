@@ -514,11 +514,12 @@ paymentTransactionSchema.statics.buildAdvancedQuery = function (filters) {
           startDate = new Date(now.getFullYear(), now.getMonth(), 1);
           endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
           break;
-        case 'quarter':
+        case 'quarter': {
           const quarter = Math.floor(now.getMonth() / 3);
           startDate = new Date(now.getFullYear(), quarter * 3, 1);
           endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
           break;
+        }
         case 'year':
           startDate = new Date(now.getFullYear(), 0, 1);
           endDate = new Date(now.getFullYear(), 11, 31);

@@ -911,7 +911,7 @@ class PerformanceDashboardController {
       // For now, return null to skip caching
       return null;
     } catch (error) {
-      logger.error('Error getting from cache:', error);
+      logger.error('Error getting cache:', error);
       return null;
     }
   }

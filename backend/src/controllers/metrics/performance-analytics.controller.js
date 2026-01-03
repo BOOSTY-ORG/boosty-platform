@@ -12,7 +12,6 @@
 import { performance } from 'perf_hooks';
 import performanceCollector from '../../monitoring/performance-collector.js';
 import performanceAnalytics from '../../monitoring/performance-analytics.js';
-import monitoringConfig from '../../config/monitoring.config.js';
 import logger from '../../helpers/logger.js';
 
 class PerformanceAnalyticsController {
@@ -45,7 +44,7 @@ class PerformanceAnalyticsController {
 
       // Check cache first
       const cacheKey = `trends:${timeRange}:${metrics}:${granularity}:${page}:${limit}`;
-      const cachedResult = await this.getFromCache(cacheKey);
+      const cachedResult = await this.getFromCache();
 
       if (cachedResult) {
         return res.json({
@@ -145,7 +144,7 @@ class PerformanceAnalyticsController {
 
       // Check cache first
       const cacheKey = `bottlenecks:${severity}:${category}:${includeRecommendations}:${page}:${limit}`;
-      const cachedResult = await this.getFromCache(cacheKey);
+      const cachedResult = await this.getFromCache();
 
       if (cachedResult) {
         return res.json({
@@ -164,7 +163,7 @@ class PerformanceAnalyticsController {
       );
 
       // Process in parallel for better performance
-      const [bottlenecks, summary, recommendations] = await Promise.all([
+      const [bottlenecks, , recommendations] = await Promise.all([
         new Promise((resolve) => {
           setTimeout(() => {
             const detected =
@@ -456,7 +455,7 @@ class PerformanceAnalyticsController {
       if (includeImpact === 'true') {
         recommendations = recommendations.map((rec) => ({
           ...rec,
-          impact: this.calculateRecommendationImpact(rec, metricsData),
+          impact: this.calculateRecommendationImpact(rec),
           implementation: this.getImplementationDetails(rec),
         }));
       }
@@ -503,17 +502,6 @@ class PerformanceAnalyticsController {
         sections = 'all',
         format = 'json',
       } = req.query;
-
-      // Parse time range
-      const timeRanges = {
-        '1h': 3600000,
-        '6h': 21600000,
-        '24h': 86400000,
-        '7d': 604800000,
-        '30d': 2592000000,
-      };
-
-      const timeWindow = timeRanges[timeRange] || timeRanges['24h'];
 
       // Get metrics snapshot
       const metricsData = performanceCollector.getMetricsSnapshot();
@@ -814,7 +802,7 @@ class PerformanceAnalyticsController {
   /**
    * Calculate recommendation impact
    */
-  calculateRecommendationImpact(recommendation, metricsData) {
+  calculateRecommendationImpact(recommendation) {
     // Simple impact calculation based on recommendation type and current metrics
     const baseImpacts = {
       critical: 80,
@@ -980,15 +968,10 @@ class PerformanceAnalyticsController {
   /**
    * Get data from cache
    */
-  async getFromCache(key) {
-    try {
-      // This would use the cache service in a real implementation
-      // For now, return null to skip caching
-      return null;
-    } catch (error) {
-      logger.error('Error getting from cache:', error);
-      return null;
-    }
+  async getFromCache() {
+    // This would use the cache service in a real implementation
+    // For now, return null to skip caching
+    return null;
   }
 
   /**
