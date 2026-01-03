@@ -4,11 +4,17 @@ import { useAuth } from '../context/AuthContext.jsx';
 import { Navigate } from 'react-router-dom';
 
 const AuthLayout = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
 
-  // Redirect authenticated users to dashboard
+  console.log('AuthLayout: State', { isAuthenticated, user, isLoading });
+
+  // Redirect authenticated users to appropriate dashboard
   if (isAuthenticated && user) {
-    return <Navigate to="/" replace />;
+    console.log('AuthLayout: Redirecting authenticated user', { userRole: user.role });
+    if (user.role === 'admin') {
+      return <Navigate to="/dashboard/admin" replace />;
+    }
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (

@@ -1,0 +1,775 @@
+/* Messaging Components CSS */
+/* This file contains styles for all messaging components */
+
+/* === MessageThreadList Component === */
+.message-thread-list {
+  @apply w-full;
+}
+
+.message-thread-item {
+  @apply border rounded-lg p-4 mb-3 cursor-pointer transition-all duration-200;
+}
+
+.message-thread-item:hover {
+  @apply shadow-md border-blue-300;
+}
+
+.message-thread-item.selected {
+  @apply border-blue-500 bg-blue-50;
+}
+
+.message-thread-item.unread {
+  @apply font-semibold;
+}
+
+.thread-status-indicator {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.thread-status-indicator.active {
+  @apply bg-green-100 text-green-800;
+}
+
+.thread-status-indicator.closed {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.thread-status-indicator.archived {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.thread-priority-indicator {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+}
+
+.thread-priority-indicator.low {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.thread-priority-indicator.medium {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.thread-priority-indicator.high {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.thread-priority-indicator.urgent {
+  @apply bg-red-100 text-red-800;
+}
+
+.unread-count-badge {
+  @apply inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-600 text-white text-xs font-medium;
+}
+
+.participant-avatar {
+  @apply w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center text-xs font-medium text-gray-600;
+}
+
+.participant-avatar.online::after {
+  content: '';
+  @apply absolute w-2 h-2 bg-green-400 rounded-full -mt-1 -mr-1 ml-auto;
+}
+
+/* === MessageThread Component === */
+.message-thread {
+  @apply w-full;
+}
+
+.message-container {
+  @apply h-96 overflow-y-auto p-4 space-y-2;
+}
+
+.message-item {
+  @apply flex mb-4;
+}
+
+.message-item.own {
+  @apply justify-end;
+}
+
+.message-item.other {
+  @apply justify-start;
+}
+
+.message-bubble {
+  @apply px-4 py-2 rounded-lg text-sm;
+}
+
+.message-bubble.own {
+  @apply bg-blue-600 text-white;
+}
+
+.message-bubble.other {
+  @apply bg-gray-100 text-gray-900;
+}
+
+.message-bubble.unread {
+  @apply ring-2 ring-blue-400;
+}
+
+.message-reply-indicator {
+  @apply text-xs opacity-75 mb-1 border-l-2 border-current pl-2;
+}
+
+.message-attachments {
+  @apply mt-2 space-y-1;
+}
+
+.message-attachment {
+  @apply flex items-center space-x-2 text-xs opacity-90;
+}
+
+.message-metadata {
+  @apply flex items-center mt-1 text-xs text-gray-500;
+}
+
+.message-reactions {
+  @apply flex items-center mt-1 space-x-1;
+}
+
+.message-reaction {
+  @apply px-2 py-1 rounded-full text-xs;
+}
+
+.message-reaction.own {
+  @apply bg-blue-100 text-blue-800 hover:bg-blue-200;
+}
+
+.message-reaction.other {
+  @apply bg-gray-100 text-gray-800 hover:bg-gray-200;
+}
+
+.typing-indicator {
+  @apply flex justify-start mb-4;
+}
+
+.typing-indicator-content {
+  @apply flex items-center space-x-2 text-sm text-gray-500;
+}
+
+.typing-dots {
+  @apply flex space-x-1;
+}
+
+.typing-dot {
+  @apply w-2 h-2 bg-gray-400 rounded-full animate-bounce;
+}
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+/* === MessageComposer Component === */
+.message-composer {
+  @apply border rounded-lg bg-white;
+}
+
+.reply-indicator {
+  @apply border-b px-4 py-2 bg-blue-50;
+}
+
+.formatting-toolbar {
+  @apply border-b px-2 py-1 flex items-center space-x-1;
+}
+
+.formatting-button {
+  @apply p-1 rounded hover:bg-gray-100 disabled:opacity-50;
+}
+
+.formatting-button.active {
+  @apply bg-gray-200;
+}
+
+.emoji-picker {
+  @apply absolute bottom-full left-0 mb-2 w-64 bg-white border rounded-lg shadow-lg p-2 z-10;
+}
+
+.emoji-grid {
+  @apply grid grid-cols-8 gap-1;
+}
+
+.emoji-button {
+  @apply p-2 hover:bg-gray-100 rounded text-lg;
+}
+
+.attachments-preview {
+  @apply border-t px-4 py-2;
+}
+
+.attachment-item {
+  @apply flex items-center space-x-2 bg-gray-100 rounded-lg px-3 py-2;
+}
+
+.attachment-preview {
+  @apply w-8 h-8 object-cover rounded;
+}
+
+.composer-footer {
+  @apply border-t px-4 py-2 flex items-center justify-between;
+}
+
+.draft-indicator {
+  @apply text-xs text-gray-500;
+}
+
+.draft-indicator.saved {
+  @apply text-green-600;
+}
+
+/* === AssignmentDashboard Component === */
+.assignment-dashboard {
+  @apply w-full;
+}
+
+.metrics-card {
+  @apply p-4;
+}
+
+.metrics-card-value {
+  @apply text-2xl font-bold;
+}
+
+.metrics-card-label {
+  @apply text-sm font-medium text-gray-600;
+}
+
+.sla-chart-container {
+  @apply flex items-center justify-center;
+}
+
+.sla-chart {
+  @apply relative w-32 h-32;
+}
+
+.sla-chart-circle {
+  @apply transform -rotate-90 w-32 h-32;
+}
+
+.sla-chart-background {
+  @apply stroke-current stroke-12 fill-none text-gray-200;
+}
+
+.sla-chart-progress {
+  @apply stroke-current stroke-12 fill-none;
+}
+
+.sla-chart-progress.excellent {
+  @apply text-green-500;
+}
+
+.sla-chart-progress.good {
+  @apply text-yellow-500;
+}
+
+.sla-chart-progress.poor {
+  @apply text-red-500;
+}
+
+.sla-chart-text {
+  @apply absolute inset-0 flex items-center justify-center;
+}
+
+.sla-chart-percentage {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.agent-workload-item {
+  @apply flex items-center justify-between;
+}
+
+.agent-workload-info {
+  @apply flex items-center space-x-3;
+}
+
+.agent-workload-avatar {
+  @apply w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600;
+}
+
+.agent-workload-details {
+  @apply text-sm;
+}
+
+.agent-workload-name {
+  @apply font-medium text-gray-900;
+}
+
+.agent-workload-count {
+  @apply text-xs text-gray-500;
+}
+
+.agent-workload-progress {
+  @apply flex items-center space-x-2;
+}
+
+.agent-workload-bar {
+  @apply w-24 bg-gray-200 rounded-full h-2;
+}
+
+.agent-workload-fill {
+  @apply h-2 rounded-full;
+}
+
+.agent-workload-fill.low {
+  @apply bg-green-500;
+}
+
+.agent-workload-fill.medium {
+  @apply bg-yellow-500;
+}
+
+.agent-workload-fill.high {
+  @apply bg-red-500;
+}
+
+.agent-workload-percentage {
+  @apply text-sm text-gray-600 w-12 text-right;
+}
+
+/* === AssignmentDetails Component === */
+.assignment-details {
+  @apply w-full;
+}
+
+.assignment-header {
+  @apply flex items-center justify-between;
+}
+
+.assignment-title {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.assignment-metadata {
+  @apply mt-2 flex items-center space-x-4 text-sm text-gray-600;
+}
+
+.assignment-status-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.assignment-status-badge.active {
+  @apply bg-green-100 text-green-800;
+}
+
+.assignment-status-badge.pending {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.assignment-status-badge.completed {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.assignment-status-badge.overdue {
+  @apply bg-red-100 text-red-800;
+}
+
+.assignment-status-badge.escalated {
+  @apply bg-purple-100 text-purple-800;
+}
+
+.assignment-priority-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.assignment-priority-badge.low {
+  @apply bg-blue-100 text-blue-800;
+}
+
+.assignment-priority-badge.medium {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.assignment-priority-badge.high {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.assignment-priority-badge.urgent {
+  @apply bg-red-100 text-red-800;
+}
+
+.sla-status-badge {
+  @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
+}
+
+.sla-status-badge.ok {
+  @apply bg-green-100 text-green-800;
+}
+
+.sla-status-badge.warning {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.sla-status-badge.critical {
+  @apply bg-orange-100 text-orange-800;
+}
+
+.sla-status-badge.overdue {
+  @apply bg-red-100 text-red-800;
+}
+
+.sla-status-badge.unknown {
+  @apply bg-gray-100 text-gray-800;
+}
+
+.assignment-info-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-6;
+}
+
+.assignment-info-section {
+  @apply space-y-4;
+}
+
+.assignment-info-label {
+  @apply text-sm font-medium text-gray-700;
+}
+
+.assignment-info-value {
+  @apply mt-1 text-sm text-gray-900;
+}
+
+.assignment-agent-info {
+  @apply flex items-center space-x-2;
+}
+
+.assignment-agent-avatar {
+  @apply w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600;
+}
+
+.assignment-agent-name {
+  @apply text-sm text-gray-900;
+}
+
+.skill-tag {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800;
+}
+
+.assignment-tag {
+  @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800;
+}
+
+.performance-metrics {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+}
+
+.performance-metric {
+  @apply text-center p-4 rounded-lg;
+}
+
+.performance-metric.blue {
+  @apply bg-blue-50;
+}
+
+.performance-metric.green {
+  @apply bg-green-50;
+}
+
+.performance-metric.purple {
+  @apply bg-purple-50;
+}
+
+.performance-metric.orange {
+  @apply bg-orange-50;
+}
+
+.performance-metric.gray {
+  @apply bg-gray-50;
+}
+
+.performance-metric.yellow {
+  @apply bg-yellow-50;
+}
+
+.performance-metric.indigo {
+  @apply bg-indigo-50;
+}
+
+.performance-metric-value {
+  @apply text-2xl font-bold;
+}
+
+.performance-metric-value.blue {
+  @apply text-blue-900;
+}
+
+.performance-metric-value.green {
+  @apply text-green-900;
+}
+
+.performance-metric-value.purple {
+  @apply text-purple-900;
+}
+
+.performance-metric-value.orange {
+  @apply text-orange-900;
+}
+
+.performance-metric-value.gray {
+  @apply text-gray-900;
+}
+
+.performance-metric-value.yellow {
+  @apply text-yellow-900;
+}
+
+.performance-metric-value.indigo {
+  @apply text-indigo-900;
+}
+
+.performance-metric-label {
+  @apply text-sm;
+}
+
+.performance-metric-label.blue {
+  @apply text-blue-700;
+}
+
+.performance-metric-label.green {
+  @apply text-green-700;
+}
+
+.performance-metric-label.purple {
+  @apply text-purple-700;
+}
+
+.performance-metric-label.orange {
+  @apply text-orange-700;
+}
+
+.performance-metric-label.gray {
+  @apply text-gray-700;
+}
+
+.performance-metric-label.yellow {
+  @apply text-yellow-700;
+}
+
+.performance-metric-label.indigo {
+  @apply text-indigo-700;
+}
+
+.assignment-history {
+  @apply space-y-3;
+}
+
+.history-item {
+  @apply flex items-start space-x-3 pb-3 border-b last:border-b-0;
+}
+
+.history-avatar {
+  @apply flex-shrink-0;
+}
+
+.history-avatar-circle {
+  @apply w-8 h-8 rounded-full bg-gray-300 flex items-center justify-center text-sm font-medium text-gray-600;
+}
+
+.history-content {
+  @apply flex-1 min-w-0;
+}
+
+.history-header {
+  @apply flex items-center justify-between;
+}
+
+.history-action {
+  @apply text-sm font-medium text-gray-900;
+}
+
+.history-timestamp {
+  @apply text-xs text-gray-500;
+}
+
+.history-user {
+  @apply text-sm text-gray-600;
+}
+
+.history-notes {
+  @apply text-sm text-gray-500 mt-1;
+}
+
+.assignment-actions {
+  @apply flex flex-wrap gap-3;
+}
+
+/* === Modal Styles === */
+.modal-content {
+  @apply bg-white rounded-lg shadow-xl max-w-md w-full;
+}
+
+.modal-header {
+  @apply px-6 py-4 border-b;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.modal-body {
+  @apply px-6 py-4;
+}
+
+.modal-footer {
+  @apply px-6 py-4 border-t flex justify-end space-x-2;
+}
+
+.form-group {
+  @apply space-y-4;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.form-input {
+  @apply w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm;
+}
+
+.form-textarea {
+  @apply w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm resize-none;
+}
+
+.form-select {
+  @apply w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm;
+}
+
+.satisfaction-score {
+  @apply flex items-center space-x-2;
+}
+
+.score-button {
+  @apply w-8 h-8 rounded-full border-2 flex items-center justify-center;
+}
+
+.score-button.selected {
+  @apply border-blue-500 bg-blue-500 text-white;
+}
+
+.score-button.unselected {
+  @apply border-gray-300 text-gray-400 hover:border-gray-400;
+}
+
+/* === Responsive Design === */
+@media (max-width: 768px) {
+  .message-thread-list {
+    @apply px-2;
+  }
+  
+  .message-container {
+    @apply h-64;
+  }
+  
+  .assignment-info-grid {
+    @apply grid-cols-1;
+  }
+  
+  .performance-metrics {
+    @apply grid-cols-2;
+  }
+  
+  .assignment-header {
+    @apply flex-col items-start space-y-2;
+  }
+  
+  .assignment-metadata {
+    @apply flex-col items-start space-x-0 space-y-1;
+  }
+}
+
+@media (max-width: 640px) {
+  .performance-metrics {
+    @apply grid-cols-1;
+  }
+  
+  .assignment-actions {
+    @apply flex-col;
+  }
+  
+  .modal-content {
+    @apply mx-4 max-w-none;
+  }
+}
+
+/* === Animation Classes === */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-up {
+  animation: slideUp 0.3s ease-out;
+}
+
+.bounce-in {
+  animation: bounceIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes bounceIn {
+  0% {
+    transform: scale(0.3);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* === Accessibility === */
+.sr-only {
+  @apply sr-only;
+}
+
+.focus-visible {
+  @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+}
+
+/* === Print Styles === */
+@media print {
+  .message-composer,
+  .assignment-actions,
+  .modal-content {
+    @apply hidden;
+  }
+  
+  .message-thread,
+  .assignment-details {
+    @apply block;
+  }
+  
+  .message-bubble {
+    @apply border border-gray-300;
+  }
+  
+  .performance-metric {
+    @apply border border-gray-300;
+  }
+}

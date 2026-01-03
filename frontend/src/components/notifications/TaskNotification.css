@@ -1,0 +1,213 @@
+/* TaskNotification Component Styles */
+
+/* Base styles */
+.task-notification {
+  transition: all 0.2s ease-in-out;
+}
+
+.task-notification:hover {
+  transform: translateY(-1px);
+}
+
+/* Priority border animations */
+.task-notification.priority-critical {
+  animation: pulse-critical 2s infinite;
+}
+
+@keyframes pulse-critical {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+/* Progress bar animations */
+.task-progress-bar {
+  transition: width 0.3s ease-in-out;
+}
+
+.task-progress-bar.complete {
+  animation: progress-complete 0.5s ease-in-out;
+}
+
+@keyframes progress-complete {
+  0% {
+    transform: scaleX(1);
+  }
+  50% {
+    transform: scaleX(1.1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* Status indicator transitions */
+.task-status-indicator {
+  transition: all 0.2s ease-in-out;
+}
+
+.task-status-indicator:hover {
+  transform: scale(1.05);
+}
+
+/* Quick action buttons */
+.task-quick-action {
+  transition: all 0.2s ease-in-out;
+}
+
+.task-quick-action:hover {
+  transform: scale(1.1);
+}
+
+.task-quick-action:active {
+  transform: scale(0.95);
+}
+
+/* Status dropdown */
+.task-status-dropdown {
+  transform-origin: top right;
+  transition: all 0.2s ease-in-out;
+}
+
+.task-status-dropdown.hidden {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.95);
+}
+
+.task-status-dropdown.visible {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+/* Assignee avatar */
+.task-assignee-avatar {
+  transition: all 0.2s ease-in-out;
+}
+
+.task-assignee-avatar:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Tags */
+.task-tag {
+  transition: all 0.2s ease-in-out;
+}
+
+.task-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Dependencies section */
+.task-dependencies {
+  animation: slideIn 0.3s ease-in-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Loading overlay */
+.task-loading-overlay {
+  backdrop-filter: blur(1px);
+  transition: all 0.2s ease-in-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .task-notification {
+    padding: 1rem;
+  }
+  
+  .task-quick-actions {
+    flex-wrap: wrap;
+    gap: 0.25rem;
+  }
+  
+  .task-quick-action {
+    padding: 0.5rem;
+  }
+  
+  .task-status-dropdown {
+    width: 100%;
+    left: 0;
+    right: 0;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .task-notification {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .task-status-dropdown {
+    background-color: rgba(31, 41, 55, 0.95);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .task-loading-overlay {
+    background-color: rgba(17, 24, 39, 0.5);
+  }
+}
+
+/* Focus styles for accessibility */
+.task-quick-action:focus {
+  outline: 2px solid #4f46e5;
+  outline-offset: 2px;
+}
+
+.task-status-dropdown button:focus {
+  background-color: rgba(79, 70, 229, 0.1);
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .task-notification,
+  .task-progress-bar,
+  .task-status-indicator,
+  .task-quick-action,
+  .task-status-dropdown,
+  .task-assignee-avatar,
+  .task-tag,
+  .task-dependencies,
+  .task-loading-overlay {
+    transition: none;
+    animation: none;
+  }
+  
+  .task-notification.priority-critical {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .task-notification {
+    border-width: 2px;
+  }
+  
+  .task-quick-action {
+    border: 1px solid currentColor;
+  }
+  
+  .task-status-dropdown {
+    border-width: 2px;
+  }
+}

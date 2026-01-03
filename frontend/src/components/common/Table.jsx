@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import PropTypes from 'prop-types';
+import { TableAccessIndicator } from '../access-indicators';
 
 /**
  * Reusable Table component with multi-column sorting, filtering, and pagination support
@@ -39,6 +40,8 @@ const Table = ({
   onLoadColumnConfiguration,
   exportable = false,
   onExport,
+  rowPermissions = {},
+  RowActionsComponent,
   ...props
 }) => {
   const [sortFields, setSortFields] = useState(
@@ -462,11 +465,12 @@ const Table = ({
   }
   
   return (
-    <div className={`overflow-x-auto ${className}`}>
-      <div className="mb-2 flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          {/* Active filters display */}
-          {filterable && Object.keys(filters).length > 0 && (
+    <div className={`${className}`}>
+      {/* Mobile-friendly filter display */}
+      {filterable && Object.keys(filters).length > 0 && (
+        <div className="mb-4 sm:mb-2 p-3 bg-gray-50 rounded-lg sm:bg-transparent sm:p-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <div className="text-sm font-medium text-gray-700 mb-2 sm:mb-0">Active Filters:</div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(filters).map(([key, value]) => {
                 if (!value || (Array.isArray(value) && value.length === 0)) return null;
@@ -492,14 +496,15 @@ const Table = ({
                 return (
                   <span
                     key={key}
-                    className="inline-flex items-center px-3 py-1 rounded-full text-sm bg-gray-100 text-gray-800"
+                    className="inline-flex items-center px-2 sm:px-3 py-1 sm:py-1 rounded-full text-xs sm:text-sm bg-gray-100 text-gray-800"
                   >
-                    <span className="font-medium">{column.title}:</span>
-                    <span className="ml-1">{displayValue}</span>
+                    <span className="font-medium truncate max-w-[100px]">{column.title}:</span>
+                    <span className="ml-1 truncate max-w-[80px]">{displayValue}</span>
                     <button
                       type="button"
-                      className="ml-2 text-gray-500 hover:text-gray-700"
+                      className="ml-1 sm:ml-2 text-gray-500 hover:text-gray-700 min-h-[32px] min-w-[32px] flex items-center justify-center p-1 rounded hover:bg-gray-200 transition-colors"
                       onClick={() => handleFilter(key, '')}
+                      aria-label={`Remove ${column.title} filter`}
                     >
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -509,10 +514,22 @@ const Table = ({
                 );
               })}
             </div>
-          )}
+            <button
+              type="button"
+              onClick={() => {
+                // Clear all filters
+                Object.keys(filters).forEach(key => handleFilter(key, ''));
+              }}
+              className="text-xs sm:text-sm text-blue-600 hover:text-blue-500 font-medium min-h-[32px] min-w-[32px] flex items-center justify-center p-1 rounded hover:bg-blue-50 transition-colors"
+            >
+              Clear All
+            </button>
+          </div>
         </div>
-        
-        <div className="flex items-center space-x-2">
+      )}
+
+      <div className="mb-2 flex justify-between items-center">
+        <div className="hidden sm:flex items-center space-x-2">
           {/* Export button */}
           {exportable && (
             <div className="relative">
@@ -655,74 +672,123 @@ const Table = ({
         </div>
       </div>
       
-      <table className={`min-w-full divide-y divide-gray-200 ${tableClassName}`} {...props}>
-        <thead className={`bg-gray-50 ${theadClassName}`}>
-          <tr>
-            {selectable && (
-              <th scope="col" className="px-6 py-3 text-left">
-                <input
-                  type="checkbox"
-                  className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                  checked={isAllSelected}
-                  ref={(el) => {
-                    if (el) el.indeterminate = isIndeterminate;
-                  }}
-                  onChange={(e) => handleSelectAll(e.target.checked)}
-                />
-              </th>
-            )}
-            {columns
-              .filter(column => visibleColumns.includes(column.key))
-              .map((column) => (
-              <th
-                key={column.key}
-                scope="col"
-                className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
-                  sortable && column.sortable !== false ? 'cursor-pointer hover:bg-gray-100' : ''
-                } ${thClassName}`}
-                onClick={() => sortable && column.sortable !== false && handleSort(column.key)}
-              >
-                <div>
-                  {column.title}
-                  {sortable && column.sortable !== false && renderSortIcon(column.key)}
-                </div>
-                {filterable && column.filterable && renderFilterInput(column)}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className={`bg-white divide-y divide-gray-200 ${tbodyClassName}`}>
-          {processedData.length === 0 ? (
-            <tr>
-              <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="px-6 py-4 text-center text-gray-500">
-                {emptyMessage}
-              </td>
-            </tr>
-          ) : (
-            processedData.map((row, index) => (
-              <tr key={row.id || row._id || index} className={`hover:bg-gray-50 ${trClassName}`}>
+      {/* Mobile Card View */}
+      <div className="sm:hidden">
+        {processedData.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            {emptyMessage}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {processedData.map((row, index) => (
+              <div key={row.id || row._id || index} className="bg-white rounded-lg shadow p-4 border border-gray-200">
                 {selectable && (
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="mb-3">
                     <input
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                       checked={selectedRows.includes(row.id || row._id)}
                       onChange={(e) => handleSelectRow(row.id || row._id, e.target.checked)}
                     />
-                  </td>
+                  </div>
                 )}
-                {columns
-                  .filter(column => visibleColumns.includes(column.key))
-                  .map((column) => (
-                  <td key={column.key} className={`px-6 py-4 whitespace-nowrap ${tdClassName}`}>
-                    {column.render ? column.render(row[column.key], row) : row[column.key]}
-                  </td>
-                ))}
+                
+                <div className="space-y-3">
+                  {columns
+                    .filter(column => visibleColumns.includes(column.key))
+                    .map((column) => (
+                      <div key={column.key} className="border-b border-gray-100 pb-2 last:border-0 last:pb-0">
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                          {column.title}
+                        </div>
+                        <div className="text-sm text-gray-900">
+                          {column.render ? column.render(row[column.key], row) : row[column.key]}
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className={`min-w-full divide-y divide-gray-200 ${tableClassName}`} {...props}>
+          <thead className={`bg-gray-50 ${theadClassName}`}>
+            <tr>
+              {selectable && (
+                <th scope="col" className="px-6 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                    checked={isAllSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = isIndeterminate;
+                    }}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                </th>
+              )}
+              {columns
+                .filter(column => visibleColumns.includes(column.key))
+                .map((column) => (
+                <th
+                  key={column.key}
+                  scope="col"
+                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                    sortable && column.sortable !== false ? 'cursor-pointer hover:bg-gray-100' : ''
+                  } ${thClassName}`}
+                  onClick={() => sortable && column.sortable !== false && handleSort(column.key)}
+                >
+                  <div>
+                    {column.title}
+                    {sortable && column.sortable !== false && renderSortIcon(column.key)}
+                  </div>
+                  {filterable && column.filterable && renderFilterInput(column)}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className={`bg-white divide-y divide-gray-200 ${tbodyClassName}`}>
+            {processedData.length === 0 ? (
+              <tr>
+                <td colSpan={visibleColumns.length + (selectable ? 1 : 0)} className="px-6 py-4 text-center text-gray-500">
+                  {emptyMessage}
+                </td>
               </tr>
-            ))
-          )}
-        </tbody>
-      </table>
+            ) : (
+              processedData.map((row, index) => (
+                <tr key={row.id || row._id || index} className={`hover:bg-gray-50 ${trClassName}`}>
+                  {selectable && (
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                        checked={selectedRows.includes(row.id || row._id)}
+                        onChange={(e) => handleSelectRow(row.id || row._id, e.target.checked)}
+                      />
+                    </td>
+                  )}
+                  {columns
+                    .filter(column => visibleColumns.includes(column.key))
+                    .map((column) => (
+                    <td key={column.key} className={`px-6 py-4 whitespace-nowrap ${tdClassName}`}>
+                      {column.render ? column.render(row[column.key], row) : row[column.key]}
+                    </td>
+                  ))}
+                 {RowActionsComponent && (
+                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                     <RowActionsComponent row={row} />
+                   </td>
+                 )}
+              </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
       
       {pagination && (
         <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
@@ -878,6 +944,8 @@ Table.propTypes = {
   onLoadColumnConfiguration: PropTypes.func,
   exportable: PropTypes.bool,
   onExport: PropTypes.func,
+  rowPermissions: PropTypes.object,
+  RowActionsComponent: PropTypes.func,
 };
 
 export default Table;

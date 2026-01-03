@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUser } from '../../context/UserContext.jsx';
 import { useApp } from '../../context/AppContext.jsx';
+import { useAccess } from '../../context/AccessContext.jsx';
 import { formatCurrency, formatDate, formatStatus } from '../../utils/formatters.js';
 import Table from '../../components/common/Table.jsx';
 import AdvancedFilterPanel from '../../components/common/AdvancedFilterPanel.jsx';
@@ -16,6 +17,7 @@ import ExportModal from '../../components/users/ExportModal.jsx';
 import ExportHistory from '../../components/users/ExportHistory.jsx';
 import ExportTemplate from '../../components/users/ExportTemplate.jsx';
 import ExportScheduler from '../../components/users/ExportScheduler.jsx';
+import { AccessGuard, ActionAccessIndicator, TableAccessIndicator } from '../../components/access-indicators';
 
 const UsersPage = () => {
   const navigate = useNavigate();
@@ -99,6 +101,7 @@ const UsersPage = () => {
     getScheduledExportStats
   } = useUser();
   const { setPagination, setFilters, pagination, filters } = useApp();
+  const { canEditUsers, canDeleteUsers, canCreateUsers, userLevel } = useAccess();
   
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -359,35 +362,7 @@ const UsersPage = () => {
       filterType: 'date',
       render: (value) => formatDate(value),
     },
-    {
-      key: 'actions',
-      title: 'Actions',
-      sortable: false,
-      render: (value, row) => (
-        <div className="flex items-center justify-end space-x-2">
-          <button
-            onClick={() => navigate(`/users/${row._id}`)}
-            className="text-primary-600 hover:text-primary-900"
-          >
-            View
-          </button>
-          <span className="text-gray-300">|</span>
-          <button
-            onClick={() => navigate(`/users/${row._id}/application`)}
-            className="text-primary-600 hover:text-primary-900"
-          >
-            Application
-          </button>
-          <span className="text-gray-300">|</span>
-          <button
-            onClick={() => navigate(`/users/${row._id}/installation`)}
-            className="text-primary-600 hover:text-primary-900"
-          >
-            Installation
-          </button>
-        </div>
-      ),
-    },
+    // Actions column is now handled by RowActionsComponent with TableAccessIndicator
   ], []);
 
   // Fetch users on component mount and when filters, search, or sort change
@@ -687,12 +662,29 @@ const UsersPage = () => {
           </p>
         </div>
         <div className="mt-4 flex md:mt-0 md:ml-4">
-          <button
-            type="button"
-            className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          <ActionAccessIndicator
+            permission="user_create"
+            action="create new user"
+            userLevel={userLevel}
+            variant="button"
+            fallback={
+              <button
+                type="button"
+                disabled
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-gray-400 bg-gray-100 cursor-not-allowed"
+                title="Requires Gold access to create users"
+              >
+                Add User
+              </button>
+            }
           >
-            Add User
-          </button>
+            <button
+              type="button"
+              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+            >
+              Add User
+            </button>
+          </ActionAccessIndicator>
         </div>
       </div>
 
@@ -968,17 +960,32 @@ const UsersPage = () => {
       )}
 
       {/* Bulk Actions */}
-      <BulkActions
-        selectedUsers={selectedUsers}
-        onBulkEdit={handleBulkEdit}
-        onBulkKYC={handleBulkKYC}
-        onBulkCommunication={handleBulkCommunication}
-        onBulkExport={handleBulkExport}
-        onBulkStatusUpdate={handleBulkStatusUpdate}
-        onBulkAssign={handleBulkAssign}
-        onBulkDelete={handleBulkDelete}
-        onClearSelection={handleClearSelection}
-      />
+      <AccessGuard
+        requiredLevel="gold"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Bulk actions require Gold level access</p>
+            </div>
+          </div>
+        }
+      >
+        <BulkActions
+          selectedUsers={selectedUsers}
+          onBulkEdit={handleBulkEdit}
+          onBulkKYC={handleBulkKYC}
+          onBulkCommunication={handleBulkCommunication}
+          onBulkExport={handleBulkExport}
+          onBulkStatusUpdate={handleBulkStatusUpdate}
+          onBulkAssign={handleBulkAssign}
+          onBulkDelete={handleBulkDelete}
+          onClearSelection={handleClearSelection}
+        />
+      </AccessGuard>
 
       {/* Users Table */}
       <div className="bg-white shadow overflow-hidden sm:rounded-md">
@@ -1127,24 +1134,65 @@ const UsersPage = () => {
           savedColumnConfigurations={columnConfigurations.users ? [columnConfigurations.users] : []}
           onSaveColumnConfiguration={handleColumnConfigurationChange}
           onLoadColumnConfiguration={handleLoadPreset}
-          exportable={true}
+          exportable={canExportUsers || userLevel !== 'standard'}
           onExport={handleExport}
+          RowActionsComponent={({ row }) => (
+            <TableAccessIndicator
+              rowId={row.id || row._id}
+              entityType="user"
+              permissions={{
+                canView: true,
+                canEdit: canEditUsers,
+                canDelete: canDeleteUsers,
+                canExport: true,
+              }}
+              userLevel={userLevel}
+              variant="dropdown"
+              onView={(id) => navigate(`/users/${id}`)}
+              onEdit={(id) => navigate(`/users/${id}/edit`)}
+              onDelete={(id) => {
+                if (window.confirm('Are you sure you want to delete this user?')) {
+                  // Handle delete
+                  console.log('Delete user:', id);
+                }
+              }}
+              onExport={(id) => {
+                // Handle export
+                console.log('Export user:', id);
+              }}
+            />
+          )}
         />
       </div>
 
       {/* Bulk Operation Modals */}
-      <BulkEditModal
-        isOpen={showBulkEditModal}
-        onClose={hideBulkEditModal}
-        userIds={selectedUsers}
-        onSuccess={() => {
-          hideBulkEditModal();
-          getUsers(); // Refresh users list
-        }}
-        onError={(error) => {
-          console.error('Bulk edit failed:', error);
-        }}
-      />
+      <AccessGuard
+        requiredLevel="gold"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Bulk edit requires Gold level access</p>
+            </div>
+          </div>
+        }
+      >
+        <BulkEditModal
+          isOpen={showBulkEditModal}
+          onClose={hideBulkEditModal}
+          userIds={selectedUsers}
+          onSuccess={() => {
+            hideBulkEditModal();
+            getUsers(); // Refresh users list
+          }}
+          onError={(error) => {
+            console.error('Bulk edit failed:', error);
+          }}
+        />
+      </AccessGuard>
 
       <BulkCommunicationModal
         isOpen={showBulkCommunicationModal}
@@ -1158,51 +1206,141 @@ const UsersPage = () => {
         }}
       />
 
-      <BulkKYCModal
-        isOpen={showBulkKYCModal}
-        onClose={hideBulkKYCModal}
-        userIds={selectedUsers}
-        onSuccess={() => {
-          hideBulkKYCModal();
-          getUsers(); // Refresh users list
-        }}
-        onError={(error) => {
-          console.error('Bulk KYC operation failed:', error);
-        }}
-      />
+      <AccessGuard
+        requiredLevel="silver"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Bulk KYC operations require Silver level access</p>
+            </div>
+          </div>
+        }
+      >
+        <BulkKYCModal
+          isOpen={showBulkKYCModal}
+          onClose={hideBulkKYCModal}
+          userIds={selectedUsers}
+          onSuccess={() => {
+            hideBulkKYCModal();
+            getUsers(); // Refresh users list
+          }}
+          onError={(error) => {
+            console.error('Bulk KYC operation failed:', error);
+          }}
+        />
+      </AccessGuard>
 
-      <BulkOperationManager
-        isOpen={showBulkOperationManagerState}
-        onClose={handleHideOperationManager}
-      />
+      <AccessGuard
+        requiredLevel="gold"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Bulk operation manager requires Gold level access</p>
+            </div>
+          </div>
+        }
+      >
+        <BulkOperationManager
+          isOpen={showBulkOperationManagerState}
+          onClose={handleHideOperationManager}
+        />
+      </AccessGuard>
 
       {/* Export Modals */}
-      <ExportModal
-        isOpen={showExportModal}
-        onClose={() => setShowExportModal(false)}
-        onExport={handleExport}
-        initialData={currentExportData}
-        users={users}
-        selectedUsers={selectedUsers}
-        filters={activeFilters}
-        searchQuery={debouncedSearchQuery}
-        sortConfig={sortConfig}
-      />
+      <AccessGuard
+        requiredLevel="silver"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Export requires Silver level access</p>
+            </div>
+          </div>
+        }
+      >
+        <ExportModal
+          isOpen={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={handleExport}
+          initialData={currentExportData}
+          users={users}
+          selectedUsers={selectedUsers}
+          filters={activeFilters}
+          searchQuery={debouncedSearchQuery}
+          sortConfig={sortConfig}
+        />
+      </AccessGuard>
 
-      <ExportHistory
-        isOpen={showExportHistory}
-        onClose={() => setShowExportHistory(false)}
-      />
+      <AccessGuard
+        requiredLevel="silver"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Export history requires Silver level access</p>
+            </div>
+          </div>
+        }
+      >
+        <ExportHistory
+          isOpen={showExportHistory}
+          onClose={() => setShowExportHistory(false)}
+        />
+      </AccessGuard>
 
-      <ExportTemplate
-        isOpen={showExportTemplate}
-        onClose={() => setShowExportTemplate(false)}
-      />
+      <AccessGuard
+        requiredLevel="gold"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Export templates require Gold level access</p>
+            </div>
+          </div>
+        }
+      >
+        <ExportTemplate
+          isOpen={showExportTemplate}
+          onClose={() => setShowExportTemplate(false)}
+        />
+      </AccessGuard>
 
-      <ExportScheduler
-        isOpen={showExportScheduler}
-        onClose={() => setShowExportScheduler(false)}
-      />
+      <AccessGuard
+        requiredLevel="gold"
+        userLevel={userLevel}
+        fallback={
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <div className="flex items-center">
+              <svg className="w-5 h-5 text-yellow-600 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-yellow-800">Scheduled exports require Gold level access</p>
+            </div>
+          </div>
+        }
+      >
+        <ExportScheduler
+          isOpen={showExportScheduler}
+          onClose={() => setShowExportScheduler(false)}
+        />
+      </AccessGuard>
     </div>
   );
 };

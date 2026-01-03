@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import { authAPI } from '../api/auth.js';
 import toast from 'react-hot-toast';
+import { AccessProvider } from './AccessContext.jsx';
 
 // Initial state
 const initialState = {
@@ -110,10 +111,18 @@ export const AuthProvider = ({ children }) => {
   // Login function
   const login = async (credentials) => {
     try {
+      console.log('AuthContext: Login started', { credentials });
       dispatch({ type: AUTH_ACTIONS.LOGIN_START });
       const response = await authAPI.login(credentials);
+      console.log('AuthContext: API response', response);
       
       setAuthToken(response.token);
+      
+      // Store user data in localStorage
+      if (response.user) {
+        localStorage.setItem('user', JSON.stringify(response.user));
+        console.log('AuthContext: User data stored in localStorage', response.user);
+      }
       
       dispatch({
         type: AUTH_ACTIONS.LOGIN_SUCCESS,
@@ -123,6 +132,7 @@ export const AuthProvider = ({ children }) => {
       toast.success('Login successful!');
       return response;
     } catch (error) {
+      console.error('AuthContext: Login error', error);
       const errorMessage = error.message || 'Login failed';
       dispatch({
         type: AUTH_ACTIONS.LOGIN_FAILURE,
@@ -162,19 +172,26 @@ export const AuthProvider = ({ children }) => {
   // Logout function
   const logout = async () => {
     try {
+      console.log('AuthContext: Logout started');
       await authAPI.logout();
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('AuthContext: Logout error:', error);
     } finally {
       setAuthToken(null);
+      localStorage.removeItem('user');
       dispatch({ type: AUTH_ACTIONS.LOGOUT });
       toast.success('Logged out successfully');
+      console.log('AuthContext: Logout completed');
     }
   };
 
   // Load user from token
   const loadUser = async () => {
     const token = localStorage.getItem('authToken');
+    const storedUser = localStorage.getItem('user');
+    
+    console.log('AuthContext: loadUser called', { tokenExists: !!token, storedUserExists: !!storedUser });
+    
     if (!token) {
       dispatch({ type: AUTH_ACTIONS.LOAD_USER_FAILURE, payload: 'No token found' });
       return;
@@ -182,13 +199,33 @@ export const AuthProvider = ({ children }) => {
 
     try {
       dispatch({ type: AUTH_ACTIONS.LOAD_USER_START });
-      const user = await authAPI.getCurrentUser();
-      dispatch({
-        type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
-        payload: user,
-      });
+      
+      // Try to get user from API first
+      try {
+        const user = await authAPI.getCurrentUser();
+        console.log('AuthContext: User loaded from API', user);
+        localStorage.setItem('user', JSON.stringify(user));
+        dispatch({
+          type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+          payload: user,
+        });
+      } catch (apiError) {
+        console.log('AuthContext: API call failed, using stored user', apiError);
+        // Fallback to stored user if API fails
+        if (storedUser) {
+          const user = JSON.parse(storedUser);
+          dispatch({
+            type: AUTH_ACTIONS.LOAD_USER_SUCCESS,
+            payload: user,
+          });
+        } else {
+          throw apiError;
+        }
+      }
     } catch (error) {
+      console.error('AuthContext: loadUser error', error);
       setAuthToken(null);
+      localStorage.removeItem('user');
       dispatch({
         type: AUTH_ACTIONS.LOAD_USER_FAILURE,
         payload: error.message || 'Failed to load user',
@@ -215,7 +252,11 @@ export const AuthProvider = ({ children }) => {
     clearError,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AccessProvider user={state.user}>
+      <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
+    </AccessProvider>
+  );
 };
 
 // Custom hook to use auth context

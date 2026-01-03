@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useReducer, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import useNotificationStore from '../stores/notificationStore.js';
 
 // Initial state
 const initialState = {
@@ -159,6 +160,9 @@ const AppContext = createContext();
 // App provider component
 export const AppProvider = ({ children }) => {
   const [state, dispatch] = useReducer(appReducer, initialState);
+  
+  // Get notification store methods
+  const notificationStore = useNotificationStore();
 
   // Theme management
   const setTheme = (theme) => {
@@ -180,34 +184,17 @@ export const AppProvider = ({ children }) => {
     dispatch({ type: APP_ACTIONS.SET_SIDEBAR_OPEN, payload: open });
   };
 
-  // Notification management
+  // Notification management - integrate with Zustand store
   const addNotification = (notification) => {
-    const id = Date.now().toString();
-    const newNotification = {
-      id,
-      type: 'info',
-      autoClose: true,
-      duration: 5000,
-      ...notification,
-    };
-
-    dispatch({ type: APP_ACTIONS.ADD_NOTIFICATION, payload: newNotification });
-
-    if (newNotification.autoClose) {
-      setTimeout(() => {
-        removeNotification(id);
-      }, newNotification.duration);
-    }
-
-    return id;
+    return notificationStore.addNotification(notification);
   };
 
   const removeNotification = (id) => {
-    dispatch({ type: APP_ACTIONS.REMOVE_NOTIFICATION, payload: id });
+    notificationStore.removeNotification(id);
   };
 
   const clearNotifications = () => {
-    dispatch({ type: APP_ACTIONS.CLEAR_NOTIFICATIONS });
+    notificationStore.clearAllNotifications();
   };
 
   // Loading and error management
@@ -282,6 +269,29 @@ export const AppProvider = ({ children }) => {
     clearFilters,
     setPagination,
     updatePagination,
+    // Add notification store integration
+    notifications: notificationStore.notifications,
+    unreadCount: notificationStore.unreadCount,
+    notificationLoading: notificationStore.isLoading,
+    notificationError: notificationStore.error,
+    notificationFilters: notificationStore.filters,
+    notificationPagination: notificationStore.pagination,
+    notificationPreferences: notificationStore.preferences,
+    realtimeConnected: notificationStore.realtimeConnected,
+    // Notification store methods
+    markAsRead: notificationStore.markAsRead,
+    markAsUnread: notificationStore.markAsUnread,
+    deleteNotification: notificationStore.deleteNotification,
+    markAllAsRead: notificationStore.markAllAsRead,
+    fetchNotifications: notificationStore.fetchNotifications,
+    fetchUnreadCount: notificationStore.fetchUnreadCount,
+    fetchPreferences: notificationStore.fetchPreferences,
+    updatePreferences: notificationStore.updatePreferences,
+    setNotificationFilters: notificationStore.setFilters,
+    clearNotificationFilters: notificationStore.clearFilters,
+    setNotificationPagination: notificationStore.setPagination,
+    connectRealtime: notificationStore.connectRealtime,
+    disconnectRealtime: notificationStore.disconnectRealtime,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

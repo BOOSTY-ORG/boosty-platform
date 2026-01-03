@@ -1,9 +1,13 @@
-import express from "express";
-import * as authCtrl from "../controllers/auth.controller.js";
+import express from 'express';
+import * as authCtrl from '../controllers/auth.controller.js';
+import { auditLogMiddleware } from '../middleware/auditLog.middleware.js';
 
 const router = express.Router();
 
-router.route("/auth/signin").post(authCtrl.signin);
-router.route("/auth/signout").get(authCtrl.signout);
+// Apply audit logging to authentication routes
+router.use(auditLogMiddleware.logRequest);
+
+router.route('/auth/login').post(authCtrl.login);
+router.route('/auth/logout').get(authCtrl.logout);
 
 export default router;

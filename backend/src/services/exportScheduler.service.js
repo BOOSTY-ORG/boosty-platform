@@ -1,6 +1,7 @@
 import ScheduledExport from '../models/scheduledExport.model.js';
 import ExportHistory from '../models/exportHistory.model.js';
 import { processExport } from '../controllers/export.controller.js';
+import mongoose from 'mongoose';
 
 class ExportScheduler {
   constructor() {
@@ -49,6 +50,12 @@ class ExportScheduler {
   // Check for due exports and process them
   async checkDueExports() {
     try {
+      // Check if database is connected
+      if (mongoose.connection.readyState !== 1) {
+        console.log('[DEBUG] Database not connected, skipping export check');
+        return;
+      }
+      
       const dueExports = await ScheduledExport.getDueSchedules();
       
       if (dueExports.length === 0) {
@@ -65,12 +72,23 @@ class ExportScheduler {
           console.error(`Failed to process scheduled export ${scheduledExport._id}:`, error);
           
           // Record failure
-          await scheduledExport.recordRun('failure', null, error);
+          try {
+            await scheduledExport.recordRun('failure', null, error);
+          } catch (recordError) {
+            console.error('Failed to record export failure:', recordError);
+          }
         }
       }
 
     } catch (error) {
       console.error('Error checking due exports:', error);
+      
+      // Handle database connection errors gracefully
+      if (error.name === 'MongoServerSelectionError' || error.name === 'MongoNetworkError') {
+        console.log('[DEBUG] Database connection issue detected, will retry on next check');
+      } else {
+        console.error('Unexpected error in export scheduler:', error);
+      }
     }
   }
 

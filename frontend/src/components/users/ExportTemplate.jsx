@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, useNotification } from '../common/index.js';
+import { Modal, Button, Table } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { usersAPI } from '../../api/users.js';
 import { formatDate } from '../../utils/formatters.js';
 
 const ExportTemplate = ({ isOpen, onClose, onTemplateSelect }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError } = useNotificationStore();
   const [templates, setTemplates] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -79,10 +80,7 @@ const ExportTemplate = ({ isOpen, onClose, onTemplateSelect }) => {
       setTemplates(response.data || []);
     } catch (error) {
       console.error('Failed to load templates:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to load export templates'
-      });
+      showError('Failed to load export templates');
     } finally {
       setIsLoading(false);
     }
@@ -90,36 +88,24 @@ const ExportTemplate = ({ isOpen, onClose, onTemplateSelect }) => {
 
   const handleCreateTemplate = async () => {
     if (!formData.name.trim()) {
-      showNotification({
-        type: 'error',
-        message: 'Template name is required'
-      });
+      showError('Template name is required');
       return;
     }
 
     if (formData.columns.length === 0) {
-      showNotification({
-        type: 'error',
-        message: 'Please select at least one column'
-      });
+      showError('Please select at least one column');
       return;
     }
 
     try {
       await usersAPI.createExportTemplate(formData);
-      showNotification({
-        type: 'success',
-        message: 'Template created successfully'
-      });
+      showSuccess('Template created successfully');
       loadTemplates();
       setShowCreateForm(false);
       resetForm();
     } catch (error) {
       console.error('Failed to create template:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to create template'
-      });
+      showError('Failed to create template');
     }
   };
 
@@ -142,58 +128,40 @@ const ExportTemplate = ({ isOpen, onClose, onTemplateSelect }) => {
 
     try {
       await usersAPI.updateExportTemplate(editingTemplate._id, formData);
-      showNotification({
-        type: 'success',
-        message: 'Template updated successfully'
-      });
+      showSuccess('Template updated successfully');
       loadTemplates();
       setShowEditForm(false);
       setEditingTemplate(null);
       resetForm();
     } catch (error) {
       console.error('Failed to update template:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to update template'
-      });
+      showError('Failed to update template');
     }
   };
 
   const handleDeleteTemplate = async (templateId) => {
     try {
       await usersAPI.deleteExportTemplate(templateId);
-      showNotification({
-        type: 'success',
-        message: 'Template deleted successfully'
-      });
+      showSuccess('Template deleted successfully');
       loadTemplates();
       setShowDeleteConfirm(false);
       setSelectedTemplates([]);
     } catch (error) {
       console.error('Failed to delete template:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete template'
-      });
+      showError('Failed to delete template');
     }
   };
 
   const handleBulkDelete = async () => {
     try {
       await Promise.all(selectedTemplates.map(id => usersAPI.deleteExportTemplate(id)));
-      showNotification({
-        type: 'success',
-        message: `${selectedTemplates.length} template(s) deleted successfully`
-      });
+      showSuccess(`${selectedTemplates.length} template(s) deleted successfully`);
       loadTemplates();
       setSelectedTemplates([]);
       setShowDeleteConfirm(false);
     } catch (error) {
       console.error('Failed to delete templates:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete templates'
-      });
+      showError('Failed to delete templates');
     }
   };
 

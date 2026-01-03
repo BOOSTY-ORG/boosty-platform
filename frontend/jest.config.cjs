@@ -7,7 +7,10 @@ module.exports = {
   preset: null,
   
   // Test environment
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
+  
+  // Setup files
+  setupFilesAfterEnv: ['<rootDir>/src/setupTests.js'],
   
   // Module file extensions
   moduleFileExtensions: ['js', 'jsx', 'json'],

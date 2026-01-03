@@ -52,12 +52,12 @@ const Modal = ({
   };
   
   const sizeClasses = {
-    xs: 'max-w-sm',
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-    full: 'max-w-full mx-4',
+    xs: 'max-w-sm sm:max-w-md',
+    sm: 'max-w-md sm:max-w-lg',
+    md: 'max-w-lg sm:max-w-xl',
+    lg: 'max-w-xl sm:max-w-2xl lg:max-w-3xl',
+    xl: 'max-w-2xl sm:max-w-3xl lg:max-w-4xl xl:max-w-5xl',
+    full: 'max-w-full mx-2 sm:mx-4',
   };
   
   if (!isOpen) return null;
@@ -70,31 +70,31 @@ const Modal = ({
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
     >
-      <div className="flex min-h-full items-center justify-center p-4 text-center">
+      <div className="flex min-h-full items-center justify-center p-2 sm:p-4 text-center">
         <div
           ref={modalRef}
-          className={`relative w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all ${sizeClasses[size]} ${contentClassName}`}
+          className={`relative w-full transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all ${sizeClasses[size]} ${contentClassName} max-h-[90vh] sm:max-h-[85vh] flex flex-col`}
           tabIndex={-1}
           {...props}
         >
           {/* Header */}
           {(title || showCloseButton) && (
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center justify-between border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
               {title && (
-                <h3 id="modal-title" className="text-lg font-medium leading-6 text-gray-900">
+                <h3 id="modal-title" className="text-base sm:text-lg font-medium leading-5 sm:leading-6 text-gray-900 pr-2">
                   {title}
                 </h3>
               )}
               {showCloseButton && (
                 <button
                   type="button"
-                  className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 p-1 sm:p-0 min-h-[44px] min-w-[44px] flex items-center justify-center"
                   onClick={onClose}
                   aria-label="Close"
                 >
                   <span className="sr-only">Close</span>
                   <svg
-                    className="h-6 w-6"
+                    className="h-5 w-5 sm:h-6 sm:w-6"
                     fill="none"
                     viewBox="0 0 24 24"
                     strokeWidth="1.5"
@@ -108,13 +108,13 @@ const Modal = ({
           )}
           
           {/* Body */}
-          <div className="px-6 py-4">
+          <div className="px-4 sm:px-6 py-3 sm:py-4 flex-1 overflow-y-auto">
             {children}
           </div>
           
           {/* Footer */}
           {footer && (
-            <div className="border-t border-gray-200 px-6 py-4">
+            <div className="border-t border-gray-200 px-4 sm:px-6 py-3 sm:py-4 flex-shrink-0">
               {footer}
             </div>
           )}

@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import Modal from '../common/Modal.jsx';
 import InvestorForm from './InvestorForm.jsx';
 import { useInvestor } from '../../context/InvestorContext.jsx';
-import { useNotification } from '../common/Notification.jsx';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { investorsAPI } from '../../api/investors.js';
 
 const EditInvestorModal = ({ 
@@ -13,7 +13,7 @@ const EditInvestorModal = ({
   investorId
 }) => {
   const { updateInvestor, getInvestorById, currentInvestor } = useInvestor();
-  const { showNotification } = useNotification();
+  const { showSuccess, showError } = useNotificationStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [initialData, setInitialData] = useState({});
@@ -64,11 +64,7 @@ const EditInvestorModal = ({
     } catch (error) {
       console.error('Failed to load investor data:', error);
       
-      showNotification({
-        type: 'error',
-        message: 'Failed to load investor data. Please try again.',
-        duration: 5000,
-      });
+      showError('Failed to load investor data. Please try again.');
       
       onClose();
     } finally {
@@ -123,11 +119,7 @@ const EditInvestorModal = ({
       console.error('Failed to update investor:', error);
       
       // Show error notification
-      showNotification({
-        type: 'error',
-        message: error.message || 'Failed to update investor. Please try again.',
-        duration: 5000,
-      });
+      showError(error.message || 'Failed to update investor. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

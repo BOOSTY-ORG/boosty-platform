@@ -6,7 +6,7 @@ import PersonalInfoForm from './PersonalInfoForm.jsx';
 import FinancialInfoForm from './FinancialInfoForm.jsx';
 import InvestmentPreferencesForm from './InvestmentPreferencesForm.jsx';
 import KYCRequirementsForm from './KYCRequirementsForm.jsx';
-import { useNotification } from '../common/Notification.jsx';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { 
   validatePersonalInfo,
   validateFinancialInfo,
@@ -27,7 +27,7 @@ const InvestorWizard = ({
   onSuccess,
   initialData = {}
 }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError } = useNotificationStore();
   const [currentStep, setCurrentStep] = useState(0);
   const [formData, setFormData] = useState({
     // Personal Information
@@ -247,11 +247,7 @@ const InvestorWizard = ({
       clearDraftFromLocalStorage();
       
       // Show success notification
-      showNotification({
-        type: 'success',
-        message: `Investor ${formData.firstName} ${formData.lastName} has been created successfully!`,
-        duration: 5000,
-      });
+      showSuccess(`Investor ${formData.firstName} ${formData.lastName} has been created successfully!`);
 
       // Call success callback
       if (onSuccess) {
@@ -265,11 +261,7 @@ const InvestorWizard = ({
       console.error('Failed to create investor:', error);
       
       // Show error notification
-      showNotification({
-        type: 'error',
-        message: error.message || 'Failed to create investor. Please try again.',
-        duration: 5000,
-      });
+      showError(error.message || 'Failed to create investor. Please try again.');
     } finally {
       setIsSubmitting(false);
     }

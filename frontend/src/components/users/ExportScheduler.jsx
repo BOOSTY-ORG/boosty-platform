@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Table, useNotification } from '../common/index.js';
+import { Modal, Button, Table } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { usersAPI } from '../../api/users.js';
 import { formatDate } from '../../utils/formatters.js';
 
 const ExportScheduler = ({ isOpen, onClose }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError } = useNotificationStore();
   const [schedules, setSchedules] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -95,10 +96,7 @@ const ExportScheduler = ({ isOpen, onClose }) => {
       setSchedules(response.data || []);
     } catch (error) {
       console.error('Failed to load schedules:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to load export schedules'
-      });
+      showError('Failed to load export schedules');
     } finally {
       setIsLoading(false);
     }
@@ -106,36 +104,24 @@ const ExportScheduler = ({ isOpen, onClose }) => {
 
   const handleCreateSchedule = async () => {
     if (!formData.name.trim()) {
-      showNotification({
-        type: 'error',
-        message: 'Schedule name is required'
-      });
+      showError('Schedule name is required');
       return;
     }
 
     if (formData.exportOptions.columns.length === 0) {
-      showNotification({
-        type: 'error',
-        message: 'Please select at least one column to export'
-      });
+      showError('Please select at least one column to export');
       return;
     }
 
     try {
       await usersAPI.scheduleExport(formData);
-      showNotification({
-        type: 'success',
-        message: 'Export schedule created successfully'
-      });
+      showSuccess('Export schedule created successfully');
       loadSchedules();
       setShowCreateForm(false);
       resetForm();
     } catch (error) {
       console.error('Failed to create schedule:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to create export schedule'
-      });
+      showError('Failed to create export schedule');
     }
   };
 
@@ -158,58 +144,40 @@ const ExportScheduler = ({ isOpen, onClose }) => {
 
     try {
       await usersAPI.updateScheduledExport(editingSchedule._id, formData);
-      showNotification({
-        type: 'success',
-        message: 'Export schedule updated successfully'
-      });
+      showSuccess('Export schedule updated successfully');
       loadSchedules();
       setShowEditForm(false);
       setEditingSchedule(null);
       resetForm();
     } catch (error) {
       console.error('Failed to update schedule:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to update export schedule'
-      });
+      showError('Failed to update export schedule');
     }
   };
 
   const handleDeleteSchedule = async (scheduleId) => {
     try {
       await usersAPI.deleteScheduledExport(scheduleId);
-      showNotification({
-        type: 'success',
-        message: 'Export schedule deleted successfully'
-      });
+      showSuccess('Export schedule deleted successfully');
       loadSchedules();
       setShowDeleteConfirm(false);
       setSelectedSchedules([]);
     } catch (error) {
       console.error('Failed to delete schedule:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete export schedule'
-      });
+      showError('Failed to delete export schedule');
     }
   };
 
   const handleBulkDelete = async () => {
     try {
       await Promise.all(selectedSchedules.map(id => usersAPI.deleteScheduledExport(id)));
-      showNotification({
-        type: 'success',
-        message: `${selectedSchedules.length} schedule(s) deleted successfully`
-      });
+      showSuccess(`${selectedSchedules.length} schedule(s) deleted successfully`);
       loadSchedules();
       setSelectedSchedules([]);
       setShowDeleteConfirm(false);
     } catch (error) {
       console.error('Failed to delete schedules:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to delete export schedules'
-      });
+      showError('Failed to delete export schedules');
     }
   };
 
@@ -228,17 +196,11 @@ const ExportScheduler = ({ isOpen, onClose }) => {
   const handleToggleSchedule = async (scheduleId, enabled) => {
     try {
       await usersAPI.updateScheduledExport(scheduleId, { ...editingSchedule, schedule: { ...editingSchedule.schedule, enabled } });
-      showNotification({
-        type: 'success',
-        message: `Export schedule ${enabled ? 'enabled' : 'disabled'} successfully`
-      });
+      showSuccess(`Export schedule ${enabled ? 'enabled' : 'disabled'} successfully`);
       loadSchedules();
     } catch (error) {
       console.error('Failed to toggle schedule:', error);
-      showNotification({
-        type: 'error',
-        message: 'Failed to update export schedule'
-      });
+      showError('Failed to update export schedule');
     }
   };
 

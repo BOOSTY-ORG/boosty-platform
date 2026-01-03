@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, useNotification } from '../common/index.js';
+import { Modal, Button } from '../common/index.js';
+import useNotificationStore from '../../stores/notificationStore.js';
 import { investorsAPI } from '../../api/investors.js';
 
 const ExportModal = ({ isOpen, onClose, investorIds = [], currentFilters = {} }) => {
-  const { showNotification } = useNotification();
+  const { showSuccess, showError } = useNotificationStore();
   
   // Export configuration states
   const [exportFormat, setExportFormat] = useState('xlsx');
@@ -126,10 +127,7 @@ const ExportModal = ({ isOpen, onClose, investorIds = [], currentFilters = {} })
 
   const handleExport = async () => {
     if (selectedColumns.length === 0) {
-      showNotification({
-        type: 'error',
-        message: 'Please select at least one column to export'
-      });
+      showError('Please select at least one column to export');
       return;
     }
 
@@ -176,18 +174,12 @@ const ExportModal = ({ isOpen, onClose, investorIds = [], currentFilters = {} })
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      showNotification({
-        type: 'success',
-        message: `Successfully exported investors in ${exportFormat.toUpperCase()} format`
-      });
+      showSuccess(`Successfully exported investors in ${exportFormat.toUpperCase()} format`);
 
       onClose();
     } catch (error) {
       console.error('Export failed:', error);
-      showNotification({
-        type: 'error',
-        message: 'Export failed. Please try again.'
-      });
+      showError('Export failed. Please try again.');
     } finally {
       setIsExporting(false);
     }
