@@ -363,10 +363,17 @@ describe('PerformanceDashboardController', () => {
       expect(requestVolumeWidget).toBeDefined();
       expect(topEndpointsWidget).toBeDefined();
 
+      // Check if widgets exist before accessing their properties
+      if (requestVolumeWidget) {
+        expect(requestVolumeWidget.data).toHaveProperty('total');
+        expect(requestVolumeWidget.data).toHaveProperty('errorCount');
+        expect(requestVolumeWidget.data).toHaveProperty('errorRate');
+      }
+
       expect(responseTimeWidget.data).toHaveProperty('current');
       expect(responseTimeWidget.data).toHaveProperty('average');
       expect(responseTimeWidget.data).toHaveProperty('p95');
-      expect(responseVolumeWidget.data).toHaveProperty('total');
+      expect(requestVolumeWidget.data).toHaveProperty('total');
       expect(requestVolumeWidget.data).toHaveProperty('errorCount');
       expect(requestVolumeWidget.data).toHaveProperty('errorRate');
     });

@@ -9,6 +9,7 @@ import { performance } from 'perf_hooks';
 import http from 'http';
 import fs from 'fs';
 import path from 'path';
+import { URL } from 'url';
 
 // Configuration
 const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:7000';

@@ -10,6 +10,7 @@
  * - Performance and load testing
  */
 
+import express from 'express';
 const request = require('supertest');
 const {
   setupTestDatabase,

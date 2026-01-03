@@ -116,7 +116,7 @@ class PerformanceController {
       };
 
       // Prepare response based on requested metrics
-      let responseData = {};
+      const responseData = {};
 
       if (metric === 'all' || metric === 'system') {
         responseData.system = {
@@ -236,7 +236,7 @@ class PerformanceController {
 
       // Calculate overall health score (0-100)
       let healthScore = 100;
-      let issues = [];
+      const issues = [];
 
       // Check CPU usage
       if (summary.system.cpu > thresholds.cpuUsage.critical) {

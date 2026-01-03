@@ -212,7 +212,7 @@ export const contentUtils = {
       // Check allowed domains if specified
       if (templateConfig.validation.allowedDomains.length > 0 && linkMatches) {
         for (const link of linkMatches) {
-          const domain = link.match(/https?:\/\/([^\/]+)/i)?.[1];
+          const domain = link.match(/https?:\/\/([^/]+)/i)?.[1];
           if (
             domain &&
             !templateConfig.validation.allowedDomains.includes(domain)
@@ -248,6 +248,7 @@ export const contentUtils = {
     // Sanitize subject
     const sanitizedSubject = subject
       ? subject
+          // eslint-disable-next-line no-control-regex
           .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Control characters
           .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
           .trim()
@@ -256,6 +257,7 @@ export const contentUtils = {
     // Sanitize text content
     const sanitizedText = text
       ? text
+          // eslint-disable-next-line no-control-regex
           .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Control characters
           .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
           .trim()
@@ -300,6 +302,7 @@ export const contentUtils = {
 
     // Remove control characters
     sanitized = sanitized
+      // eslint-disable-next-line no-control-regex
       .replace(/[\u0000-\u001F\u007F-\u009F]/g, '')
       .replace(/[\u200B-\u200D\uFEFF]/g, '');
 

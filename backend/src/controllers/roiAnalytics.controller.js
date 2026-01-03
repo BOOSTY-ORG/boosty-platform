@@ -521,7 +521,9 @@ class ROIAnalyticsController {
 
       // Check permissions
       let isOwner = false;
-      let isAdmin = ['admin', 'manager', 'superadmin'].includes(req.user?.role);
+      const isAdmin = ['admin', 'manager', 'superadmin'].includes(
+        req.user?.role
+      );
 
       if (targetInvestmentId) {
         // For specific investment, check ownership

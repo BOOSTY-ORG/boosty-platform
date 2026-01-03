@@ -1,7 +1,13 @@
 import { Router } from 'express';
 import WebhookHandlerService from '../services/payment/webhookHandler.service.js';
-import { verifyWebhookSignature, webhookRateLimit } from '../middleware/payment/webhookSignature.middleware.js';
+import {
+  verifyWebhookSignature,
+  webhookRateLimit,
+} from '../middleware/payment/webhookSignature.middleware.js';
 import logger from '../utils/payment/paymentLogger.util.js';
+
+// Create webhook handler instance
+const webhookHandler = new WebhookHandlerService();
 
 /**
  * Webhook Routes
@@ -14,64 +20,64 @@ const router = Router();
  * @desc Handle Paystack webhooks
  * @access External (Paystack only)
  */
-router.post('/paystack', 
+router.post(
+  '/paystack',
   webhookRateLimit(100, 900000), // 100 requests per 15 minutes
   verifyWebhookSignature,
   async (req, res) => {
     const startTime = Date.now();
-    
+
     try {
       // Get raw request body as string
       const payload = JSON.stringify(req.body);
       const signature = req.headers['x-paystack-signature'];
-      
+
       // Process webhook
       const result = await webhookHandler.processWebhook({
         signature,
         payload,
-        headers: req.headers
+        headers: req.headers,
       });
-      
+
       const processingTime = Date.now() - startTime;
-      
+
       logger.info('Webhook processed successfully', {
         event: result.data.event,
-        processingTime
+        processingTime,
       });
-      
+
       // Return appropriate response based on event type
       if (result.data.event?.includes('charge.success')) {
         return res.status(200).json({
           success: true,
-          message: 'Payment webhook processed successfully'
+          message: 'Payment webhook processed successfully',
         });
       } else if (result.data.event?.includes('transfer.success')) {
         return res.status(200).json({
           success: true,
-          message: 'Transfer webhook processed successfully'
+          message: 'Transfer webhook processed successfully',
         });
       } else {
         return res.status(200).json({
           success: true,
-          message: 'Webhook processed successfully'
+          message: 'Webhook processed successfully',
         });
       }
-      
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
+
       logger.error('Webhook processing failed', {
         error: error.message,
         event: req.body?.event,
-        processingTime
+        processingTime,
       });
-      
+
       return res.status(error.statusCode || 500).json({
         success: false,
         error: {
           code: error.code || 'WEBHOOK_PROCESSING_FAILED',
-          message: error.message
-        }
+          message: error.message,
+        },
       });
     }
   }
@@ -84,7 +90,7 @@ router.post('/paystack',
  */
 router.get('/status', async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     // Check if user has admin permissions
     if (!['admin', 'manager', 'superadmin'].includes(req.user?.role)) {
@@ -92,17 +98,17 @@ router.get('/status', async (req, res) => {
         success: false,
         error: {
           code: 'INSUFFICIENT_PERMISSIONS',
-          message: 'You do not have permission to view webhook status'
-        }
+          message: 'You do not have permission to view webhook status',
+        },
       });
     }
-    
+
     // Get webhook processing statistics (this would typically use webhook logs)
     // const stats = await WebhookLog.getProcessingStats({
     //   startDate: req.query.startDate ? new Date(req.query.startDate) : undefined,
     //   endDate: req.query.endDate ? new Date(req.query.endDate) : undefined
     // });
-    
+
     // For now, return mock webhook status
     const stats = {
       totalWebhooks: 1250,
@@ -116,18 +122,18 @@ router.get('/status', async (req, res) => {
         {
           event: 'charge.success',
           count: 450,
-          lastOccurrence: new Date(Date.now() - 5 * 60 * 1000)
+          lastOccurrence: new Date(Date.now() - 5 * 60 * 1000),
         },
         {
           event: 'transfer.success',
           count: 320,
-          lastOccurrence: new Date(Date.now() - 15 * 60 * 1000)
+          lastOccurrence: new Date(Date.now() - 15 * 60 * 1000),
         },
         {
           event: 'refund.processed',
           count: 180,
-          lastOccurrence: new Date(Date.now() - 30 * 60 * 1000)
-        }
+          lastOccurrence: new Date(Date.now() - 30 * 60 * 1000),
+        },
       ],
       configuration: {
         endpointUrl: `${process.env.BASE_URL}/api/webhooks/paystack`,
@@ -135,54 +141,54 @@ router.get('/status', async (req, res) => {
         rateLimiting: true,
         retryAttempts: 5,
         retryDelay: 5000, // milliseconds
-        timeout: 30000 // milliseconds
+        timeout: 30000, // milliseconds
       },
       period: {
-        startDate: req.query.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000),
-        endDate: req.query.endDate || new Date()
-      }
+        startDate:
+          req.query.startDate || new Date(Date.now() - 24 * 60 * 60 * 1000),
+        endDate: req.query.endDate || new Date(),
+      },
     };
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     logger.logApiRequest({
       method: req.method,
       url: req.url,
-      userId: req.auth._id
+      userId: req.auth._id,
     });
-    
+
     logger.logApiResponse({
       statusCode: 200,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.json({
       success: true,
-      data: stats
+      data: stats,
     });
-    
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    
+
     logger.error('Get webhook status failed', {
       error: error.message,
       userId: req.auth._id,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiResponse({
       statusCode: 500,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.status(500).json({
       success: false,
       error: {
         code: 'GET_WEBHOOK_STATUS_FAILED',
-        message: error.message
-      }
+        message: error.message,
+      },
     });
   }
 });
@@ -194,7 +200,7 @@ router.get('/status', async (req, res) => {
  */
 router.post('/test', async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     // Check if user has admin permissions
     if (!['admin', 'manager', 'superadmin'].includes(req.user?.role)) {
@@ -202,35 +208,35 @@ router.post('/test', async (req, res) => {
         success: false,
         error: {
           code: 'INSUFFICIENT_PERMISSIONS',
-          message: 'You do not have permission to test webhooks'
-        }
+          message: 'You do not have permission to test webhooks',
+        },
       });
     }
-    
+
     // Check if in development environment
     if (process.env.NODE_ENV === 'production') {
       return res.status(403).json({
         success: false,
         error: {
           code: 'ENDPOINT_NOT_AVAILABLE',
-          message: 'Webhook test endpoint is not available in production'
-        }
+          message: 'Webhook test endpoint is not available in production',
+        },
       });
     }
-    
+
     const { testEvent, testPayload } = req.body;
-    
+
     // Validate test request
     if (!testEvent || !testPayload) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'INVALID_TEST_REQUEST',
-          message: 'Test event and payload are required'
-        }
+          message: 'Test event and payload are required',
+        },
       });
     }
-    
+
     // Simulate webhook processing
     const mockResult = {
       success: true,
@@ -238,52 +244,51 @@ router.post('/test', async (req, res) => {
         event: testEvent,
         processed: true,
         timestamp: new Date().toISOString(),
-        testMode: true
-      }
+        testMode: true,
+      },
     };
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     logger.info('Webhook test processed', {
       event: testEvent,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiRequest({
       method: req.method,
       url: req.url,
-      userId: req.auth._id
+      userId: req.auth._id,
     });
-    
+
     logger.logApiResponse({
       statusCode: 200,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.json(mockResult);
-    
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    
+
     logger.error('Webhook test failed', {
       error: error.message,
       testEvent: req.body?.testEvent,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiResponse({
       statusCode: 500,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.status(500).json({
       success: false,
       error: {
         code: 'WEBHOOK_TEST_FAILED',
-        message: error.message
-      }
+        message: error.message,
+      },
     });
   }
 });
@@ -295,7 +300,7 @@ router.post('/test', async (req, res) => {
  */
 router.get('/logs', async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     // Check if user has admin permissions
     if (!['admin', 'manager', 'superadmin'].includes(req.user?.role)) {
@@ -303,20 +308,20 @@ router.get('/logs', async (req, res) => {
         success: false,
         error: {
           code: 'INSUFFICIENT_PERMISSIONS',
-          message: 'You do not have permission to view webhook logs'
-        }
+          message: 'You do not have permission to view webhook logs',
+        },
       });
     }
-    
-    const { 
-      page = 1, 
-      limit = 50, 
-      level, 
-      event, 
-      startDate, 
-      endDate 
+
+    const {
+      page = 1,
+      limit = 50,
+      level,
+      event,
+      startDate,
+      endDate,
     } = req.query;
-    
+
     // Get webhook logs (this would typically use WebhookLog model)
     // const logs = await WebhookLog.findWithFilters({
     //   page: parseInt(page),
@@ -326,7 +331,7 @@ router.get('/logs', async (req, res) => {
     //   startDate: startDate ? new Date(startDate) : undefined,
     //   endDate: endDate ? new Date(endDate) : undefined
     // });
-    
+
     // For now, return mock logs
     const logs = {
       data: [
@@ -337,7 +342,7 @@ router.get('/logs', async (req, res) => {
           level: 'info',
           message: 'Payment webhook processed successfully',
           processingTime: 245,
-          ipAddress: '52.31.139.75'
+          ipAddress: '52.31.139.75',
         },
         {
           id: 'log_002',
@@ -346,7 +351,7 @@ router.get('/logs', async (req, res) => {
           level: 'info',
           message: 'Transfer webhook processed successfully',
           processingTime: 189,
-          ipAddress: '52.31.139.75'
+          ipAddress: '52.31.139.75',
         },
         {
           id: 'log_003',
@@ -355,63 +360,62 @@ router.get('/logs', async (req, res) => {
           level: 'error',
           message: 'Payment webhook failed - invalid signature',
           processingTime: 12,
-          ipAddress: '192.168.1.100'
-        }
+          ipAddress: '192.168.1.100',
+        },
       ],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
         total: 1250,
-        pages: Math.ceil(1250 / parseInt(limit))
+        pages: Math.ceil(1250 / parseInt(limit)),
       },
       filters: {
         level,
         event,
         startDate,
-        endDate
-      }
+        endDate,
+      },
     };
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     logger.logApiRequest({
       method: req.method,
       url: req.url,
-      userId: req.auth._id
+      userId: req.auth._id,
     });
-    
+
     logger.logApiResponse({
       statusCode: 200,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.json({
       success: true,
-      data: logs
+      data: logs,
     });
-    
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    
+
     logger.error('Get webhook logs failed', {
       error: error.message,
       userId: req.auth._id,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiResponse({
       statusCode: 500,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.status(500).json({
       success: false,
       error: {
         code: 'GET_WEBHOOK_LOGS_FAILED',
-        message: error.message
-      }
+        message: error.message,
+      },
     });
   }
 });
@@ -423,7 +427,7 @@ router.get('/logs', async (req, res) => {
  */
 router.post('/retry', async (req, res) => {
   const startTime = Date.now();
-  
+
   try {
     // Check if user has admin permissions
     if (!['admin', 'manager', 'superadmin'].includes(req.user?.role)) {
@@ -431,26 +435,26 @@ router.post('/retry', async (req, res) => {
         success: false,
         error: {
           code: 'INSUFFICIENT_PERMISSIONS',
-          message: 'You do not have permission to retry webhooks'
-        }
+          message: 'You do not have permission to retry webhooks',
+        },
       });
     }
-    
+
     const { webhookId, retryCount = 1 } = req.body;
-    
+
     if (!webhookId) {
       return res.status(400).json({
         success: false,
         error: {
           code: 'MISSING_WEBHOOK_ID',
-          message: 'Webhook ID is required'
-        }
+          message: 'Webhook ID is required',
+        },
       });
     }
-    
+
     // Retry webhook processing (this would typically use WebhookLog model)
     // const result = await WebhookLog.retryProcessing(webhookId, retryCount);
-    
+
     // For now, return mock response
     const result = {
       success: true,
@@ -459,53 +463,52 @@ router.post('/retry', async (req, res) => {
         retryCount,
         status: 'retry_scheduled',
         scheduledAt: new Date(Date.now() + 5 * 60 * 1000),
-        message: 'Webhook retry scheduled successfully'
-      }
+        message: 'Webhook retry scheduled successfully',
+      },
     };
-    
+
     const processingTime = Date.now() - startTime;
-    
+
     logger.info('Webhook retry scheduled', {
       webhookId,
       retryCount,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiRequest({
       method: req.method,
       url: req.url,
-      userId: req.auth._id
+      userId: req.auth._id,
     });
-    
+
     logger.logApiResponse({
       statusCode: 200,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.json(result);
-    
   } catch (error) {
     const processingTime = Date.now() - startTime;
-    
+
     logger.error('Webhook retry failed', {
       error: error.message,
       webhookId: req.body?.webhookId,
-      processingTime
+      processingTime,
     });
-    
+
     logger.logApiResponse({
       statusCode: 500,
       url: req.url,
-      responseTime: processingTime
+      responseTime: processingTime,
     });
-    
+
     return res.status(500).json({
       success: false,
       error: {
         code: 'WEBHOOK_RETRY_FAILED',
-        message: error.message
-      }
+        message: error.message,
+      },
     });
   }
 });

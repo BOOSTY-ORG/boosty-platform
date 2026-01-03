@@ -206,7 +206,7 @@ export const contentUtils = {
       // Check allowed domains if specified
       if (contentConfig.validation.allowedDomains.length > 0 && linkMatches) {
         for (const link of linkMatches) {
-          const domain = link.match(/https?:\/\/([^\/]+)/i)?.[1];
+          const domain = link.match(/https?:\/\/([^/]+)/i)?.[1];
           if (
             domain &&
             !contentConfig.validation.allowedDomains.includes(domain)
@@ -239,6 +239,7 @@ export const contentUtils = {
   sanitize: (content) => {
     // Remove potentially harmful characters
     let sanitized = content
+      // eslint-disable-next-line no-control-regex
       .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // Control characters
       .replace(/[\u200B-\u200D\uFEFF]/g, '') // Zero-width characters
       .trim();
@@ -265,6 +266,7 @@ export const contentUtils = {
     }
 
     // Check if content contains Unicode characters
+    // eslint-disable-next-line no-control-regex
     const isUnicode = /[^\x00-\x7F]/.test(content);
     const charactersPerSegment = isUnicode ? 70 : 160;
     const maxCharactersPerSegment = isUnicode ? 67 : 153;

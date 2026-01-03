@@ -10,6 +10,7 @@
  */
 
 const request = require('supertest');
+const express = require('express');
 const { performance } = require('perf_hooks');
 const {
   setupTestDatabase,

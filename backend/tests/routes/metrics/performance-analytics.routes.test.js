@@ -867,7 +867,7 @@ describe('Performance Analytics Routes', () => {
 
     test('should handle large payload errors', async () => {
       const mockController = require('../../../src/controllers/metrics/performance-analytics.controller.js');
-      mockController.runCustomAnalytics.mockImplementation((req, res) => {
+      mockController.runCustomAnalytics.mockImplementation((req, res, next) => {
         // Simulate payload too large error
         const error = new Error('Request payload too large');
         error.code = 'PAYLOAD_TOO_LARGE';

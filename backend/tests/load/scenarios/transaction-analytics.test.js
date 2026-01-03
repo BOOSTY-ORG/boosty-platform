@@ -6,6 +6,7 @@
  */
 
 import { performance } from 'perf_hooks';
+import { URLSearchParams } from 'url';
 
 class TransactionAnalyticsTest {
   constructor() {

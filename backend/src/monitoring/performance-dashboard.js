@@ -9,6 +9,7 @@ import { createServer } from 'http';
 import { readFile } from 'fs/promises';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { URL } from 'url';
 import performanceCollector from './performance-collector.js';
 import performanceAnalytics from './performance-analytics.js';
 import alertingService from './alerting.service.js';
@@ -101,7 +102,7 @@ class PerformanceDashboard {
       } else if (path === '/api/health') {
         await this.serveHealth(res);
       } else if (path === '/api/alerts') {
-        await this.serveAlerts(res);
+        await this.serveAlerts(req, res);
       } else if (path === '/api/analytics') {
         await this.serveAnalytics(res);
       } else if (path === '/api/realtime') {
@@ -173,7 +174,7 @@ class PerformanceDashboard {
   /**
    * Serve alerts
    */
-  async serveAlerts(res) {
+  async serveAlerts(req, res) {
     const url = new URL(req.url, `http://localhost:${this.port}`);
     const level = url.searchParams.get('level') || 'all';
     const limit = parseInt(url.searchParams.get('limit')) || 50;
@@ -847,7 +848,7 @@ class PerformanceDashboard {
    */
   calculateHealthStatus(summary) {
     let score = 100;
-    let issues = [];
+    const issues = [];
 
     // CPU check
     if (summary.system.cpu > 80) {

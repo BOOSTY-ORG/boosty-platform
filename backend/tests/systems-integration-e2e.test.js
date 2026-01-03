@@ -19,6 +19,7 @@ import {
   requirePermission,
   preventRoleEscalation,
   fetchTargetUser,
+  requireOwnershipOrAdmin,
 } from '../src/middleware/roleManagement.middleware.js';
 import {
   encryptRequestData,

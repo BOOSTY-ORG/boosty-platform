@@ -2,6 +2,7 @@
 // Integrates with the audit logging system for comprehensive logging
 
 import auditLogService from '../services/auditLog.service.js';
+import auditLogConfig from '../config/auditLog.config.js';
 import { v4 as uuidv4 } from 'uuid';
 
 const isDevelopment = process.env.NODE_ENV === 'development';

@@ -721,7 +721,7 @@ userSchema.pre('validate', async function (next) {
 
     // Validate phone using original value if provided
     if (this._originalPhone && this._originalPhone.trim()) {
-      const phoneRegex = /^[+]?[\d\s\-\(\)]+$/;
+      const phoneRegex = /^[+]?[\d\s\-()]+$/;
       if (!phoneRegex.test(this._originalPhone.trim())) {
         this.invalidate('phone', 'Please provide a valid phone number.');
       }

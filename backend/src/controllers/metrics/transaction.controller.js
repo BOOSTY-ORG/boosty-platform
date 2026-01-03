@@ -762,6 +762,7 @@ export const getTransactionHistory = async (req, res) => {
 
     // Apply field selection optimization based on operation type
     const fields = getRecommendedFields('transaction', 'list');
+    const { startDate, endDate } = parseDateRange(req.query);
     const optimizedQuery = applyFieldSelection(
       buildQuery(filters, { startDate, endDate }),
       fields

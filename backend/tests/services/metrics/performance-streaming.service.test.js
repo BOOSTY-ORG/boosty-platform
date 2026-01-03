@@ -424,7 +424,7 @@ describe('PerformanceStreamingService', () => {
         subscription.subscriptionId
       );
 
-      let receivedData = [];
+      const receivedData = [];
       stream.on('data', (data) => {
         receivedData.push(data);
 

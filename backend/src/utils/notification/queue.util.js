@@ -174,80 +174,72 @@ class QueueUtil {
    * Check user preferences
    */
   static async checkUserPreferences(notificationData) {
-    try {
-      const { userId, channels, category } = notificationData;
-      const preferences = await UserNotificationPreferences.findOne({ userId });
+    const { userId, channels, category } = notificationData;
+    const preferences = await UserNotificationPreferences.findOne({ userId });
 
-      if (!preferences) {
-        // Create default preferences if none exist
-        await UserNotificationPreferences.createDefault(userId, {
-          email: notificationData.recipient?.email,
-          phone: notificationData.recipient?.phone,
-        });
-        return;
-      }
-
-      // Check global enabled status
-      if (!preferences.globalEnabled) {
-        throw new Error('Notifications are disabled for this user');
-      }
-
-      // Check quiet hours
-      if (
-        preferences.isInQuietHours &&
-        notificationData.priority !== 'urgent'
-      ) {
-        throw new Error('Notifications are not allowed during quiet hours');
-      }
-
-      // Check category preferences
-      if (!preferences.isCategoryEnabled(category)) {
-        throw new Error(`${category} notifications are disabled for this user`);
-      }
-
-      // Get enabled channels for this category
-      const enabledChannels =
-        preferences.getEnabledChannelsForCategory(category);
-
-      // Filter channels based on user preferences
-      notificationData.channels = channels.filter((channel) => {
-        if (!enabledChannels.includes(channel)) {
-          return false;
-        }
-
-        // Check channel-specific preferences
-        if (
-          channel === 'email' &&
-          (!preferences.channels.email.enabled ||
-            !preferences.channels.email.verified)
-        ) {
-          return false;
-        }
-
-        if (
-          channel === 'sms' &&
-          (!preferences.channels.sms.enabled ||
-            !preferences.channels.sms.verified)
-        ) {
-          return false;
-        }
-
-        if (
-          channel === 'push_notification' &&
-          (!preferences.channels.pushNotification.enabled ||
-            preferences.activeDeviceTokens.length === 0)
-        ) {
-          return false;
-        }
-
-        return true;
+    if (!preferences) {
+      // Create default preferences if none exist
+      await UserNotificationPreferences.createDefault(userId, {
+        email: notificationData.recipient?.email,
+        phone: notificationData.recipient?.phone,
       });
+      return;
+    }
 
-      if (notificationData.channels.length === 0) {
-        throw new Error('No enabled channels available for this notification');
+    // Check global enabled status
+    if (!preferences.globalEnabled) {
+      throw new Error('Notifications are disabled for this user');
+    }
+
+    // Check quiet hours
+    if (preferences.isInQuietHours && notificationData.priority !== 'urgent') {
+      throw new Error('Notifications are not allowed during quiet hours');
+    }
+
+    // Check category preferences
+    if (!preferences.isCategoryEnabled(category)) {
+      throw new Error(`${category} notifications are disabled for this user`);
+    }
+
+    // Get enabled channels for this category
+    const enabledChannels = preferences.getEnabledChannelsForCategory(category);
+
+    // Filter channels based on user preferences
+    notificationData.channels = channels.filter((channel) => {
+      if (!enabledChannels.includes(channel)) {
+        return false;
       }
-    } catch (error) {
-      throw error;
+
+      // Check channel-specific preferences
+      if (
+        channel === 'email' &&
+        (!preferences.channels.email.enabled ||
+          !preferences.channels.email.verified)
+      ) {
+        return false;
+      }
+
+      if (
+        channel === 'sms' &&
+        (!preferences.channels.sms.enabled ||
+          !preferences.channels.sms.verified)
+      ) {
+        return false;
+      }
+
+      if (
+        channel === 'push_notification' &&
+        (!preferences.channels.pushNotification.enabled ||
+          preferences.activeDeviceTokens.length === 0)
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+
+    if (notificationData.channels.length === 0) {
+      throw new Error('No enabled channels available for this notification');
     }
   }
 
@@ -255,34 +247,30 @@ class QueueUtil {
    * Apply rate limiting
    */
   static async applyRateLimiting(notificationData) {
-    try {
-      const { userId, channels } = notificationData;
+    const { userId, channels } = notificationData;
 
-      for (const channel of channels) {
-        const rateLimitConfig = rateLimitConfigs[channel];
-        if (!rateLimitConfig) {
-          continue;
-        }
-
-        // Check rate limit for this user/channel
-        const key = rateLimitConfig.keyGenerator({
-          ...notificationData,
-          userId,
-          channel,
-        });
-
-        const isAllowed = await this.checkRateLimit(
-          key,
-          rateLimitConfig.maxRequests,
-          rateLimitConfig.windowMs
-        );
-
-        if (!isAllowed) {
-          throw new Error(`Rate limit exceeded for ${channel} notifications`);
-        }
+    for (const channel of channels) {
+      const rateLimitConfig = rateLimitConfigs[channel];
+      if (!rateLimitConfig) {
+        continue;
       }
-    } catch (error) {
-      throw error;
+
+      // Check rate limit for this user/channel
+      const key = rateLimitConfig.keyGenerator({
+        ...notificationData,
+        userId,
+        channel,
+      });
+
+      const isAllowed = await this.checkRateLimit(
+        key,
+        rateLimitConfig.maxRequests,
+        rateLimitConfig.windowMs
+      );
+
+      if (!isAllowed) {
+        throw new Error(`Rate limit exceeded for ${channel} notifications`);
+      }
     }
   }
 
@@ -290,29 +278,21 @@ class QueueUtil {
    * Check rate limit using Redis
    */
   static async checkRateLimit(key, maxRequests, windowMs) {
-    try {
-      // This would use Redis for distributed rate limiting
-      // For now, we'll use a simple in-memory approach
-      const now = Date.now();
-      const windowStart = now - windowMs;
+    // This would use Redis for distributed rate limiting
+    // For now, we'll use a simple in-memory approach
+    const now = Date.now();
+    const windowStart = now - windowMs;
 
-      // Get existing requests from Redis (or memory)
-      const existingRequests = await this.getRateLimitRequests(
-        key,
-        windowStart
-      );
+    // Get existing requests from Redis (or memory)
+    const existingRequests = await this.getRateLimitRequests(key, windowStart);
 
-      if (existingRequests.length >= maxRequests) {
-        return false;
-      }
-
-      // Add current request
-      await this.addRateLimitRequest(key, now);
-      return true;
-    } catch (error) {
-      console.error('Failed to check rate limit:', error);
-      return true; // Allow on error
+    if (existingRequests.length >= maxRequests) {
+      return false;
     }
+
+    // Add current request
+    await this.addRateLimitRequest(key, now);
+    return true;
   }
 
   /**
@@ -461,115 +441,95 @@ class QueueUtil {
    * Get queue metrics
    */
   static async getQueueMetrics() {
-    try {
-      const queueStats = await queueManager.getQueueStats();
-      const metrics = {
-        queues: queueStats,
-        timestamp: new Date(),
-      };
+    const queueStats = await queueManager.getQueueStats();
+    const metrics = {
+      queues: queueStats,
+      timestamp: new Date(),
+    };
 
-      // Add calculated metrics
-      for (const [queueName, stats] of Object.entries(queueStats)) {
-        if (stats.waiting !== undefined) {
-          stats.totalJobs =
-            stats.waiting + stats.active + stats.completed + stats.failed;
-          stats.successRate =
-            stats.totalJobs > 0
-              ? ((stats.completed / stats.totalJobs) * 100).toFixed(2)
-              : 0;
-          stats.failureRate =
-            stats.totalJobs > 0
-              ? ((stats.failed / stats.totalJobs) * 100).toFixed(2)
-              : 0;
-        }
+    // Add calculated metrics
+    for (const [queueName, stats] of Object.entries(queueStats)) {
+      if (stats.waiting !== undefined) {
+        stats.totalJobs =
+          stats.waiting + stats.active + stats.completed + stats.failed;
+        stats.successRate =
+          stats.totalJobs > 0
+            ? ((stats.completed / stats.totalJobs) * 100).toFixed(2)
+            : 0;
+        stats.failureRate =
+          stats.totalJobs > 0
+            ? ((stats.failed / stats.totalJobs) * 100).toFixed(2)
+            : 0;
       }
-
-      return metrics;
-    } catch (error) {
-      console.error('Failed to get queue metrics:', error);
-      throw error;
     }
+
+    return metrics;
   }
 
   /**
    * Get notification analytics
    */
   static async getNotificationAnalytics(options = {}) {
-    try {
-      const { dateRange, category, type, userId } = options;
+    const { dateRange, category, type, userId } = options;
 
-      // Get notification stats
-      const notificationStats = await Notification.getStats(userId, {
-        dateRange,
-        category,
-        type,
-      });
+    // Get notification stats
+    const notificationStats = await Notification.getStats(userId, {
+      dateRange,
+      category,
+      type,
+    });
 
-      // Get delivery stats
-      const deliveryStats = await NotificationDelivery.getDeliveryStats({
-        dateRange,
-      });
+    // Get delivery stats
+    const deliveryStats = await NotificationDelivery.getDeliveryStats({
+      dateRange,
+    });
 
-      // Get engagement metrics
-      const engagementMetrics = await NotificationDelivery.getEngagementMetrics(
-        {
-          dateRange,
-        }
-      );
+    // Get engagement metrics
+    const engagementMetrics = await NotificationDelivery.getEngagementMetrics({
+      dateRange,
+    });
 
-      return {
-        notifications: notificationStats[0] || {},
-        deliveries: deliveryStats[0] || {},
-        engagement: engagementMetrics[0] || {},
-        timestamp: new Date(),
-      };
-    } catch (error) {
-      console.error('Failed to get notification analytics:', error);
-      throw error;
-    }
+    return {
+      notifications: notificationStats[0] || {},
+      deliveries: deliveryStats[0] || {},
+      engagement: engagementMetrics[0] || {},
+      timestamp: new Date(),
+    };
   }
 
   /**
    * Cancel a scheduled notification
    */
   static async cancelNotification(notificationId) {
-    try {
-      const notification = await Notification.findById(notificationId);
+    const notification = await Notification.findById(notificationId);
 
-      if (!notification) {
-        throw new Error('Notification not found');
-      }
+    if (!notification) {
+      throw new Error('Notification not found');
+    }
 
-      if (
-        notification.status !== 'pending' &&
-        notification.status !== 'queued'
-      ) {
-        throw new Error('Cannot cancel notification that is already processed');
-      }
+    if (notification.status !== 'pending' && notification.status !== 'queued') {
+      throw new Error('Cannot cancel notification that is already processed');
+    }
 
-      // Update notification status
-      notification.status = 'cancelled';
-      await notification.save();
+    // Update notification status
+    notification.status = 'cancelled';
+    await notification.save();
 
-      // Cancel queue job if it exists
-      if (notification.queueJobId && notification.queueName) {
-        const queue = queueManager.queues[notification.queueName];
-        if (queue) {
-          const job = await queue.instance.getJob(notification.queueJobId);
-          if (job) {
-            await job.remove();
-          }
+    // Cancel queue job if it exists
+    if (notification.queueJobId && notification.queueName) {
+      const queue = queueManager.queues[notification.queueName];
+      if (queue) {
+        const job = await queue.instance.getJob(notification.queueJobId);
+        if (job) {
+          await job.remove();
         }
       }
-
-      return {
-        success: true,
-        message: 'Notification cancelled successfully',
-      };
-    } catch (error) {
-      console.error('Failed to cancel notification:', error);
-      throw error;
     }
+
+    return {
+      success: true,
+      message: 'Notification cancelled successfully',
+    };
   }
 
   /**
@@ -646,35 +606,30 @@ class QueueUtil {
    * Clean up old notifications and delivery records
    */
   static async cleanupOldRecords(retentionDays = 90) {
-    try {
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-      // Clean old notifications
-      const notificationResult = await Notification.deleteMany({
-        createdAt: { $lt: cutoffDate },
-        status: { $in: ['delivered', 'read', 'cancelled'] },
-      });
+    // Clean old notifications
+    const notificationResult = await Notification.deleteMany({
+      createdAt: { $lt: cutoffDate },
+      status: { $in: ['delivered', 'read', 'cancelled'] },
+    });
 
-      // Clean old delivery records
-      const deliveryResult = await NotificationDelivery.deleteMany({
-        createdAt: { $lt: cutoffDate },
-        status: { $in: ['delivered', 'read', 'bounced', 'complained'] },
-      });
+    // Clean old delivery records
+    const deliveryResult = await NotificationDelivery.deleteMany({
+      createdAt: { $lt: cutoffDate },
+      status: { $in: ['delivered', 'read', 'bounced', 'complained'] },
+    });
 
-      console.log(
-        `Cleanup completed: ${notificationResult.deletedCount} notifications, ${deliveryResult.deletedCount} delivery records`
-      );
+    console.log(
+      `Cleanup completed: ${notificationResult.deletedCount} notifications, ${deliveryResult.deletedCount} delivery records`
+    );
 
-      return {
-        notificationsDeleted: notificationResult.deletedCount,
-        deliveriesDeleted: deliveryResult.deletedCount,
-        cutoffDate,
-      };
-    } catch (error) {
-      console.error('Failed to cleanup old records:', error);
-      throw error;
-    }
+    return {
+      notificationsDeleted: notificationResult.deletedCount,
+      deliveriesDeleted: deliveryResult.deletedCount,
+      cutoffDate,
+    };
   }
 }
 

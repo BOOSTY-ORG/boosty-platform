@@ -13,6 +13,8 @@ import mongoose from 'mongoose';
 import User from '../../src/models/user.model.js';
 import NotificationTemplate from '../../src/models/notificationTemplate.model.js';
 import UserNotificationPreferences from '../../src/models/userNotificationPreferences.model.js';
+import Notification from '../../src/models/notification.model.js';
+import NotificationDelivery from '../../src/models/notificationDelivery.model.js';
 
 class NotificationTestFixtures {
   constructor() {

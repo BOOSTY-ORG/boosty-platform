@@ -13,6 +13,7 @@
  * - Delivery tracking endpoints
  */
 
+import mongoose from 'mongoose';
 import Notification from '../models/notification.model.js';
 import NotificationDelivery from '../models/notificationDelivery.model.js';
 import NotificationTemplate from '../models/notificationTemplate.model.js';

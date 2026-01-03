@@ -581,7 +581,7 @@ class PerformanceAggregationService {
    */
   calculateOverallHealth(categories) {
     let totalScore = 0;
-    let totalIssues = [];
+    const totalIssues = [];
     let categoryCount = 0;
 
     for (const [category, categoryData] of Object.entries(categories)) {

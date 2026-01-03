@@ -7,6 +7,7 @@
 
 import { performance } from 'perf_hooks';
 import { LoadTestRunner } from '../run-load-tests.js';
+import { URLSearchParams } from 'url';
 
 class DashboardMetricsTest {
   constructor() {

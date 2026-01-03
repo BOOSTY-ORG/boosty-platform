@@ -30,6 +30,11 @@ import {
 } from '../controllers/userNotificationPreferences.controller.js';
 import { authenticate } from '../middleware/auth.middleware.js';
 import { validateNotificationPreferences } from '../middleware/notification/notificationValidation.middleware.js';
+import {
+  validateUserAccess,
+  validateAdminAccess,
+  validateMigrationRequest,
+} from '../middleware/notification/userPreferencesValidation.middleware.js';
 
 const router = express.Router();
 

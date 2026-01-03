@@ -14,6 +14,7 @@ import {
   handleEncryptionErrors,
   conditionalDecryption,
 } from '../middleware/encryption.middleware.js';
+import encryptionService from '../services/encryption.service.js';
 import User from '../models/user.model.js';
 import PaymentTransaction from '../models/payment/paymentTransaction.model.js';
 import Payout from '../models/payment/payout.model.js';
@@ -272,7 +273,7 @@ router.get(
     try {
       const { bankName, lastFour, ...otherFilters } = req.query;
 
-      let filter = { ...otherFilters };
+      const filter = { ...otherFilters };
 
       // Search by encrypted bank name if provided
       if (bankName) {

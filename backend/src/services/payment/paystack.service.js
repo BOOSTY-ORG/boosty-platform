@@ -36,23 +36,19 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Payment initialization response
    */
   async initializePayment(request) {
-    try {
-      const response = await this.client.post('/transaction/initialize', {
-        amount: request.amount * 100, // Convert to kobo
-        email: request.email,
-        reference: request.reference,
-        callback_url: request.callbackUrl,
-        metadata: request.metadata,
-        channels: request.channels,
-        split_code: request.splitCode,
-        subaccount: request.subaccount,
-        currency: request.currency || 'NGN',
-      });
+    const response = await this.client.post('/transaction/initialize', {
+      amount: request.amount * 100, // Convert to kobo
+      email: request.email,
+      reference: request.reference,
+      callback_url: request.callbackUrl,
+      metadata: request.metadata,
+      channels: request.channels,
+      split_code: request.splitCode,
+      subaccount: request.subaccount,
+      currency: request.currency || 'NGN',
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -61,14 +57,8 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Transaction verification response
    */
   async verifyTransaction(reference) {
-    try {
-      const response = await this.client.get(
-        `/transaction/verify/${reference}`
-      );
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.client.get(`/transaction/verify/${reference}`);
+    return response.data;
   }
 
   /**
@@ -77,19 +67,15 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Refund processing response
    */
   async processRefund(request) {
-    try {
-      const response = await this.client.post('/refund', {
-        transaction: request.transactionId,
-        amount: request.amount * 100, // Convert to kobo
-        currency: request.currency || 'NGN',
-        reason: request.reason,
-        customer_note: request.customerNote,
-      });
+    const response = await this.client.post('/refund', {
+      transaction: request.transactionId,
+      amount: request.amount * 100, // Convert to kobo
+      currency: request.currency || 'NGN',
+      reason: request.reason,
+      customer_note: request.customerNote,
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -98,20 +84,16 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Transfer creation response
    */
   async createTransfer(request) {
-    try {
-      const response = await this.client.post('/transfer', {
-        source: 'balance',
-        amount: request.amount * 100, // Convert to kobo
-        reference: request.reference,
-        recipient: request.recipientCode,
-        reason: request.reason,
-        currency: request.currency || 'NGN',
-      });
+    const response = await this.client.post('/transfer', {
+      source: 'balance',
+      amount: request.amount * 100, // Convert to kobo
+      reference: request.reference,
+      recipient: request.recipientCode,
+      reason: request.reason,
+      currency: request.currency || 'NGN',
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -120,21 +102,17 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Recipient creation response
    */
   async createTransferRecipient(request) {
-    try {
-      const response = await this.client.post('/transferrecipient', {
-        type: request.type, // nuban, mobile_money, card
-        name: request.name,
-        account_number: request.accountNumber,
-        bank_code: request.bankCode,
-        currency: request.currency || 'NGN',
-        email: request.email,
-        description: request.description,
-      });
+    const response = await this.client.post('/transferrecipient', {
+      type: request.type, // nuban, mobile_money, card
+      name: request.name,
+      account_number: request.accountNumber,
+      bank_code: request.bankCode,
+      currency: request.currency || 'NGN',
+      email: request.email,
+      description: request.description,
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -143,20 +121,16 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Split configuration response
    */
   async createSplitPayment(request) {
-    try {
-      const response = await this.client.post('/split', {
-        name: request.name,
-        type: request.type, // percentage or flat
-        currency: request.currency || 'NGN',
-        subaccounts: request.subaccounts,
-        bearer_type: request.bearerType, // account, subaccount, all
-        bearer_subaccount: request.bearerSubaccount,
-      });
+    const response = await this.client.post('/split', {
+      name: request.name,
+      type: request.type, // percentage or flat
+      currency: request.currency || 'NGN',
+      subaccounts: request.subaccounts,
+      bearer_type: request.bearerType, // account, subaccount, all
+      bearer_subaccount: request.bearerSubaccount,
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -165,12 +139,8 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Split configuration details
    */
   async fetchSplitPayment(splitCode) {
-    try {
-      const response = await this.client.get(`/split/${splitCode}`);
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.client.get(`/split/${splitCode}`);
+    return response.data;
   }
 
   /**
@@ -179,22 +149,18 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Sub-account creation response
    */
   async createSubAccount(request) {
-    try {
-      const response = await this.client.post('/subaccount', {
-        business_name: request.businessName,
-        settlement_bank: request.settlementBank,
-        account_number: request.accountNumber,
-        percentage_charge: request.percentageCharge,
-        description: request.description,
-        primary_contact_email: request.primaryContactEmail,
-        primary_contact_name: request.primaryContactName,
-        settlement_schedule: request.settlementSchedule, // auto, weekly, monthly, manual
-      });
+    const response = await this.client.post('/subaccount', {
+      business_name: request.businessName,
+      settlement_bank: request.settlementBank,
+      account_number: request.accountNumber,
+      percentage_charge: request.percentageCharge,
+      description: request.description,
+      primary_contact_email: request.primaryContactEmail,
+      primary_contact_name: request.primaryContactName,
+      settlement_schedule: request.settlementSchedule, // auto, weekly, monthly, manual
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -203,22 +169,18 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Transaction history response
    */
   async fetchTransactions(options = {}) {
-    try {
-      const params = {
-        perPage: options.perPage || 50,
-        page: options.page || 1,
-        from: options.from,
-        to: options.to,
-        customer: options.customer,
-        status: options.status,
-        amount: options.amount,
-      };
+    const params = {
+      perPage: options.perPage || 50,
+      page: options.page || 1,
+      from: options.from,
+      to: options.to,
+      customer: options.customer,
+      status: options.status,
+      amount: options.amount,
+    };
 
-      const response = await this.client.get('/transaction', { params });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.client.get('/transaction', { params });
+    return response.data;
   }
 
   /**
@@ -226,12 +188,8 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Account balance response
    */
   async fetchBalance() {
-    try {
-      const response = await this.client.get('/balance');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.client.get('/balance');
+    return response.data;
   }
 
   /**
@@ -278,7 +236,7 @@ class PaystackService extends PaymentGateway {
       504: PaymentErrorType.TIMEOUT_ERROR,
     };
 
-    const errorType = errorMap[status] || PaymentErrorType.SYSTEM_ERROR;
+    let errorType = errorMap[status] || PaymentErrorType.SYSTEM_ERROR;
 
     // Extract specific error details from Paystack response
     let message = data?.message || 'Payment processing error';
@@ -321,12 +279,8 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} List of available banks
    */
   async getBanks() {
-    try {
-      const response = await this.client.get('/bank');
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    const response = await this.client.get('/bank');
+    return response.data;
   }
 
   /**
@@ -336,16 +290,12 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Account resolution response
    */
   async resolveAccount(accountNumber, bankCode) {
-    try {
-      const response = await this.client.post('/bank/resolve', {
-        account_number: accountNumber,
-        bank_code: bankCode,
-      });
+    const response = await this.client.post('/bank/resolve', {
+      account_number: accountNumber,
+      bank_code: bankCode,
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -354,19 +304,15 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Customer creation response
    */
   async createCustomer(request) {
-    try {
-      const response = await this.client.post('/customer', {
-        email: request.email,
-        first_name: request.firstName,
-        last_name: request.lastName,
-        phone: request.phone,
-        metadata: request.metadata,
-      });
+    const response = await this.client.post('/customer', {
+      email: request.email,
+      first_name: request.firstName,
+      last_name: request.lastName,
+      phone: request.phone,
+      metadata: request.metadata,
+    });
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**
@@ -375,22 +321,18 @@ class PaystackService extends PaymentGateway {
    * @returns {Promise<Object>} Authorization response
    */
   async chargeAuthorization(request) {
-    try {
-      const response = await this.client.post(
-        '/transaction/charge_authorization',
-        {
-          authorization_code: request.authorizationCode,
-          email: request.email,
-          amount: request.amount * 100, // Convert to kobo
-          reference: request.reference,
-          metadata: request.metadata,
-        }
-      );
+    const response = await this.client.post(
+      '/transaction/charge_authorization',
+      {
+        authorization_code: request.authorizationCode,
+        email: request.email,
+        amount: request.amount * 100, // Convert to kobo
+        reference: request.reference,
+        metadata: request.metadata,
+      }
+    );
 
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
+    return response.data;
   }
 
   /**

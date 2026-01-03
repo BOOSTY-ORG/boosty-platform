@@ -438,7 +438,7 @@ class WebhookHandlerService {
       status: 'processed',
       action: 'invoice_updated',
       invoiceCode: transactionData.invoice_code,
-      status: transactionData.status,
+      invoiceStatus: transactionData.status,
     };
   }
 

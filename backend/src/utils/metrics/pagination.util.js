@@ -1,3 +1,5 @@
+import mongoose from 'mongoose';
+
 // Pagination utility functions for metrics
 
 export const buildPagination = (page = 1, limit = 20) => {

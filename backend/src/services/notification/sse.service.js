@@ -9,6 +9,7 @@
  * - Last event ID tracking for resume capability
  */
 
+import jwt from 'jsonwebtoken';
 import User from '../../models/user.model.js';
 import UserNotificationPreferences from '../../models/userNotificationPreferences.model.js';
 import Notification from '../../models/notification.model.js';

@@ -14,6 +14,7 @@
 import UserNotificationPreferences from '../../models/userNotificationPreferences.model.js';
 import User from '../../models/user.model.js';
 import NotificationDelivery from '../../models/notificationDelivery.model.js';
+import Notification from '../../models/notification.model.js';
 
 class NotificationPreferencesService {
   constructor() {

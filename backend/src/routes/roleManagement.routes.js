@@ -20,6 +20,8 @@ import {
   canReadUsers,
   canUpdateUser,
   canViewSystemConfig,
+  requireAdmin,
+  requireManager,
 } from '../middleware/roleManagement.middleware.js';
 
 const router = express.Router();

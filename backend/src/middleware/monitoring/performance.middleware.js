@@ -9,7 +9,7 @@
  * - API endpoint performance analysis
  */
 
-import { performance } from 'perf_hooks';
+import { performance, setImmediate } from 'timers';
 import crypto from 'crypto';
 import performanceCollector from '../../monitoring/performance-collector.js';
 import alertingService from '../../monitoring/alerting.service.js';
