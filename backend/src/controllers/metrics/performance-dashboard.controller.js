@@ -906,14 +906,9 @@ class PerformanceDashboardController {
    * Get data from cache
    */
   async getFromCache(key) {
-    try {
-      // This would use the cache service in a real implementation
-      // For now, return null to skip caching
-      return null;
-    } catch (error) {
-      logger.error('Error getting cache:', error);
-      return null;
-    }
+    // This would use the cache service in a real implementation
+    // For now, return null to skip caching
+    return null;
   }
 
   /**
