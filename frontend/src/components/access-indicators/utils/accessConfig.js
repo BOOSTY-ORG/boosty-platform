@@ -256,6 +256,3 @@ export const cachedHasAccess = (userLevel, requiredLevel) => {
 export const clearAccessCache = () => {
   accessCache.clear();
 };
-
-// Export all configurations for easy access
-export { ACCESS_LEVELS, ACCESS_STATES, PERMISSIONS, ROLE_MAPPING };
