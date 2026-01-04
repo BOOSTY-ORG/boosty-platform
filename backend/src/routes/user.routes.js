@@ -3,12 +3,12 @@ import * as userCtrl from '../controllers/user.controller.js';
 import * as authCtrl from '../controllers/auth.controller.js';
 import { auditLogMiddleware } from '../middleware/auditLog.middleware.js';
 import { authorize } from '../middleware/roleManagement.middleware.js';
-import { encryptionMiddleware } from '../middleware/encryption.middleware.js';
+import encryptionMiddleware from '../middleware/encryption.middleware.js';
 
 const router = express.Router();
 
 // Apply audit logging to all user routes
-router.use(auditLogMiddleware.logRequest);
+router.use(auditLogMiddleware);
 
 // Route for listing all users and creating a new user
 router
@@ -23,15 +23,15 @@ router
   .put(
     authCtrl.requireSignin,
     authorize('users:update'),
-    encryptionMiddleware.decryptRequest,
-    encryptionMiddleware.encryptResponse,
+    encryptionMiddleware.encryptRequest('user'),
+    encryptionMiddleware.decryptResponse('user'),
     userCtrl.update
   ) // update profile
   .patch(
     authCtrl.requireSignin,
     authorize('users:update'),
-    encryptionMiddleware.decryptRequest,
-    encryptionMiddleware.encryptResponse,
+    encryptionMiddleware.encryptRequest('user'),
+    encryptionMiddleware.decryptResponse('user'),
     userCtrl.update
   ) // update profile
   .delete(authCtrl.requireSignin, authorize('users:delete'), userCtrl.remove); // delete profile

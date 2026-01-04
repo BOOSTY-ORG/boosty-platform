@@ -1,4 +1,4 @@
-import Joi from 'joi';
+import Joi from '../../utils/joi.js';
 import {
   PaymentError,
   PaymentErrorType,

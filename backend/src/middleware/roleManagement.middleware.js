@@ -399,6 +399,9 @@ const canViewCommunicationHistory = requirePermission(
   'view_history'
 );
 
+// Alias for requirePermission to maintain compatibility with existing imports
+const authorize = requirePermission;
+
 export {
   // Core middleware
   authenticateToken,
@@ -436,4 +439,7 @@ export {
   canSendCommunication,
   canManageTemplates,
   canViewCommunicationHistory,
+
+  // Compatibility exports
+  authorize,
 };

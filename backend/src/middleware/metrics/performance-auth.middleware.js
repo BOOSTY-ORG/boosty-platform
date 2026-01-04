@@ -486,6 +486,19 @@ const roleBasedRateLimit = (limits) => {
   };
 };
 
+// Simple cache middleware for dashboard responses
+const dashboardCache = (req, res, next) => {
+  // Simple cache implementation - in production, use Redis or similar
+  const cacheKey = `dashboard_${req.user?.role}_${req.path}`;
+  const cachedData = {}; // In production, this would be a proper cache
+  
+  if (cachedData[cacheKey]) {
+    return res.json(cachedData[cacheKey]);
+  }
+  
+  next();
+};
+
 export {
   requirePerformanceAuth,
   requirePerformanceAccess,
@@ -512,4 +525,5 @@ export {
   requireSettingsConfigAccess,
   auditPerformanceAccess,
   roleBasedRateLimit,
+  dashboardCache,
 };

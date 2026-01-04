@@ -8,7 +8,7 @@ import {
   processCursorResults,
 } from '../../utils/metrics/pagination.util.js';
 import { parseDateRange } from '../../utils/metrics/dateRange.util.js';
-import { paymentLogger } from '../../utils/payment/paymentLogger.util.js';
+import paymentLogger from '../../utils/payment/paymentLogger.util.js';
 
 /**
  * Transaction History Service

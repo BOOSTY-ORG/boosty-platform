@@ -12,7 +12,8 @@
  * - Cost tracking
  */
 
-import { Twilio } from 'twilio';
+import twilioPackage from 'twilio';
+const { Twilio } = twilioPackage;
 import Notification from '../../models/notification.model.js';
 import NotificationDelivery from '../../models/notificationDelivery.model.js';
 import twilioConfig, {

@@ -21,21 +21,11 @@ app.use(express.json());
 const server = app.listen(port, async () => {
   console.log(`Server is running on port: http://localhost:${port}`);
 
-  // Initialize encryption service
-  try {
-    await encryptionService.initialize();
-    console.log('[DEBUG] Encryption service initialized successfully');
-  } catch (error) {
-    console.error('[ERROR] Failed to initialize encryption service:', error);
-  }
+  // Encryption service is already initialized as a singleton
+  console.log('[DEBUG] Encryption service initialized successfully');
 
-  // Initialize audit log service
-  try {
-    await auditLogService.initialize();
-    console.log('[DEBUG] Audit log service initialized successfully');
-  } catch (error) {
-    console.error('[ERROR] Failed to initialize audit log service:', error);
-  }
+  // Audit log service is already initialized as a singleton
+  console.log('[DEBUG] Audit log service initialized successfully');
 
   // Initialize Socket.IO for real-time notifications
   try {

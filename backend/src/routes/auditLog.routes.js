@@ -20,7 +20,7 @@ import {
   getUserActivityLogs,
   getAuditLogMetadata,
 } from '../controllers/auditLog.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
+import { requireSignin } from '../middleware/auth.middleware.js';
 import { authorize } from '../middleware/roleManagement.middleware.js';
 import { body, query, param, validationResult } from 'express-validator';
 
@@ -40,7 +40,7 @@ const handleValidationErrors = (req, res, next) => {
 };
 
 // Apply authentication to all audit log routes
-router.use(authenticate);
+router.use(requireSignin);
 
 /**
  * @route   GET /api/audit/logs

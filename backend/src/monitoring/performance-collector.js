@@ -10,7 +10,8 @@
  */
 
 import os from 'os';
-import { performance, setImmediate } from 'timers';
+import { performance } from 'perf_hooks';
+import { setImmediate } from 'timers';
 import EventEmitter from 'events';
 import monitoringConfig from '../config/monitoring.config.js';
 import logger from '../helpers/logger.js';

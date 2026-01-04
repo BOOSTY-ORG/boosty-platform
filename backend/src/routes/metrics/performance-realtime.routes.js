@@ -13,11 +13,11 @@ import performanceRealtimeController from '../../controllers/metrics/performance
 import {
   requirePerformanceAuth,
   requireAnalystAccess,
-  realtimeCache,
+  dashboardCache,
   auditPerformanceAccess,
 } from '../../middleware/metrics/performance-auth.middleware.js';
 import { validateRequest } from '../../middleware/metrics/validation.middleware.js';
-import { rateLimiter } from '../../middleware/metrics/rateLimit.middleware.js';
+import { rateLimit } from '../../middleware/metrics/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -28,7 +28,13 @@ router.use(requirePerformanceAuth);
 router.use(auditPerformanceAccess);
 
 // Apply rate limiting (higher rate for real-time endpoints)
-router.use(rateLimiter(100, 60000)); // 100 requests per minute
+router.use(
+  rateLimit({
+    max: 100, // 100 requests
+    windowMs: 60000, // per minute
+    message: 'Too many real-time requests, please try again later.',
+  })
+);
 
 /**
  * @route GET /api/v1/performance/realtime/metrics
@@ -38,7 +44,7 @@ router.use(rateLimiter(100, 60000)); // 100 requests per minute
 router.get(
   '/metrics',
   requireAnalystAccess,
-  realtimeCache, // Very short cache for real-time data
+  dashboardCache, // Very short cache for real-time data
   validateRequest({
     query: {
       interval: {
@@ -60,7 +66,7 @@ router.get(
 router.get(
   '/system',
   requireAnalystAccess,
-  realtimeCache, // Very short cache for real-time data
+  dashboardCache, // Very short cache for real-time data
   validateRequest({
     query: {
       interval: {
@@ -82,7 +88,7 @@ router.get(
 router.get(
   '/endpoints/:endpoint',
   requireAnalystAccess,
-  realtimeCache, // Very short cache for real-time data
+  dashboardCache, // Very short cache for real-time data
   validateRequest({
     params: {
       endpoint: {
@@ -110,7 +116,7 @@ router.get(
 router.get(
   '/alerts',
   requireAnalystAccess,
-  realtimeCache, // Very short cache for real-time data
+  dashboardCache, // Very short cache for real-time data
   validateRequest({
     query: {
       level: {

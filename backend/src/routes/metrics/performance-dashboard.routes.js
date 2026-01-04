@@ -22,7 +22,7 @@ import {
   auditPerformanceAccess,
 } from '../../middleware/metrics/performance-auth.middleware.js';
 import { validateRequest } from '../../middleware/metrics/validation.middleware.js';
-import { rateLimiter } from '../../middleware/metrics/rateLimit.middleware.js';
+import { rateLimit } from '../../middleware/metrics/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -33,7 +33,13 @@ router.use(requirePerformanceAuth);
 router.use(auditPerformanceAccess);
 
 // Apply rate limiting
-router.use(rateLimiter);
+router.use(
+  rateLimit({
+    max: 30, // 30 requests
+    windowMs: 60000, // per minute
+    message: 'Too many dashboard requests, please try again later.',
+  })
+);
 
 /**
  * @route GET /api/v1/performance/dashboard/overview

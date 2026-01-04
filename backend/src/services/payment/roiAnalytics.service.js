@@ -1,6 +1,6 @@
 import Investment from '../../models/metrics/investment.model.js';
-import Payout from '../payout.model.js';
-import PaymentIntent from '../paymentIntent.model.js';
+import Payout from '../../models/payment/payout.model.js';
+import PaymentIntent from '../../models/payment/paymentIntent.model.js';
 import logger from '../../utils/payment/paymentLogger.util.js';
 import {
   PaymentError,

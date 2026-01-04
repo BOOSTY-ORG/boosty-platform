@@ -22,9 +22,9 @@ import { fileURLToPath } from 'url';
 import 'dotenv/config';
 
 // Import middleware for integration
-import { authenticate } from './middleware/auth.middleware.js';
+import { requireSignin } from './middleware/auth.middleware.js';
 import { auditLogMiddleware } from './middleware/auditLog.middleware.js';
-import { encryptionMiddleware } from './middleware/encryption.middleware.js';
+import encryptionMiddleware from './middleware/encryption.middleware.js';
 
 // Since we're using ES modules, we need to define __dirname manually
 const __filename = fileURLToPath(import.meta.url);
@@ -38,11 +38,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.json());
 
-// Initialize audit logging middleware (will be applied selectively)
-app.use(auditLogMiddleware.initialize());
+// Initialize audit logging middleware
+app.use(auditLogMiddleware);
 
-// Initialize encryption middleware (will be applied selectively)
-app.use(encryptionMiddleware.initialize());
+// Initialize encryption middleware for headers
+app.use(encryptionMiddleware.addEncryptionHeaders());
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(currentDirname, '../uploads')));

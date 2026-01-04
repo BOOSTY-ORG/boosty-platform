@@ -21,11 +21,11 @@ import {
   requireComparisonsAnalyticsAccess,
   requireRecommendationsAnalyticsAccess,
   requireReportsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   auditPerformanceAccess,
 } from '../../middleware/metrics/performance-auth.middleware.js';
 import { validateRequest } from '../../middleware/metrics/validation.middleware.js';
-import { rateLimiter } from '../../middleware/metrics/rateLimit.middleware.js';
+import { rateLimit } from '../../middleware/metrics/rateLimit.middleware.js';
 
 const router = Router();
 
@@ -36,7 +36,13 @@ router.use(requirePerformanceAuth);
 router.use(auditPerformanceAccess);
 
 // Apply rate limiting
-router.use(rateLimiter);
+router.use(
+  rateLimit({
+    max: 50, // 50 requests
+    windowMs: 60000, // per minute
+    message: 'Too many analytics requests, please try again later.',
+  })
+);
 
 /**
  * @route GET /api/v1/performance/analytics/trends
@@ -46,7 +52,7 @@ router.use(rateLimiter);
 router.get(
   '/trends',
   requireTrendsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       timeRange: {
@@ -76,7 +82,7 @@ router.get(
 router.get(
   '/bottlenecks',
   requireBottlenecksAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       severity: {
@@ -106,7 +112,7 @@ router.get(
 router.get(
   '/predictions',
   requirePredictionsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       horizon: {
@@ -136,7 +142,7 @@ router.get(
 router.get(
   '/comparisons',
   requireComparisonsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       baseline: {
@@ -166,7 +172,7 @@ router.get(
 router.get(
   '/recommendations',
   requireRecommendationsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       priority: {
@@ -196,7 +202,7 @@ router.get(
 router.get(
   '/reports',
   requireReportsAnalyticsAccess,
-  analyticsCache,
+  dashboardCache,
   validateRequest({
     query: {
       timeRange: {

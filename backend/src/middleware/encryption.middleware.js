@@ -378,9 +378,10 @@ export const conditionalDecryption = () => {
   };
 };
 
-export default {
-  encryptRequestData,
-  decryptResponseData,
+// Create a middleware object for easier imports
+const encryptionMiddleware = {
+  encryptRequest: encryptRequestData,
+  decryptResponse: decryptResponseData,
   encryptDatabaseFields,
   decryptDatabaseFields,
   auditEncryptionActivity,
@@ -389,3 +390,5 @@ export default {
   handleEncryptionErrors,
   conditionalDecryption,
 };
+
+export default encryptionMiddleware;

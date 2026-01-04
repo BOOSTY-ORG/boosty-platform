@@ -1,311 +1,476 @@
 // Validation middleware for metrics endpoints
+import Joi from '../../utils/joi.js';
+
+/**
+ * Creates a validation middleware for request validation
+ * @param {Object} schema - Validation schema with query, body, params properties
+ * @returns {Function} Express middleware function
+ */
+const validateRequest = (schema) => {
+  return (req, res, next) => {
+    try {
+      // Validate query parameters if specified
+      if (schema.query) {
+        const querySchema = Joi.object(schema.query);
+        const { error, value } = querySchema.validate(req.query, {
+          abortEarly: false,
+          stripUnknown: true,
+          convert: true,
+        });
+
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid query parameters',
+              details: error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+              })),
+            },
+          });
+        }
+
+        // Update req.query with validated values
+        req.query = value;
+      }
+
+      // Validate body if specified
+      if (schema.body) {
+        const bodySchema = Joi.object(schema.body);
+        const { error, value } = bodySchema.validate(req.body, {
+          abortEarly: false,
+          stripUnknown: true,
+          convert: true,
+        });
+
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid request body',
+              details: error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+              })),
+            },
+          });
+        }
+
+        // Update req.body with validated values
+        req.body = value;
+      }
+
+      // Validate params if specified
+      if (schema.params) {
+        const paramsSchema = Joi.object(schema.params);
+        const { error, value } = paramsSchema.validate(req.params, {
+          abortEarly: false,
+          stripUnknown: true,
+          convert: true,
+        });
+
+        if (error) {
+          return res.status(400).json({
+            success: false,
+            error: {
+              code: 'VALIDATION_ERROR',
+              message: 'Invalid route parameters',
+              details: error.details.map((detail) => ({
+                field: detail.path.join('.'),
+                message: detail.message,
+              })),
+            },
+          });
+        }
+
+        // Update req.params with validated values
+        req.params = value;
+      }
+
+      next();
+    } catch (error) {
+      return res.status(400).json({
+        success: false,
+        error: {
+          code: 'VALIDATION_ERROR',
+          message: error.message,
+        },
+      });
+    }
+  };
+};
 
 const validateDateRange = (req, res, next) => {
   const { startDate, endDate, dateRange } = req.query;
-  
+
   try {
     // Validate custom date range
     if (startDate && endDate) {
       const start = new Date(startDate);
       const end = new Date(endDate);
-      
+
       if (isNaN(start.getTime()) || isNaN(end.getTime())) {
         return res.status(400).json({
           success: false,
           error: {
-            code: "INVALID_DATE_FORMAT",
-            message: "Invalid date format. Use ISO 8601 format (YYYY-MM-DD)"
-          }
+            code: 'INVALID_DATE_FORMAT',
+            message: 'Invalid date format. Use ISO 8601 format (YYYY-MM-DD)',
+          },
         });
       }
-      
+
       if (start > end) {
         return res.status(400).json({
           success: false,
           error: {
-            code: "INVALID_DATE_RANGE",
-            message: "Start date cannot be after end date"
-          }
+            code: 'INVALID_DATE_RANGE',
+            message: 'Start date cannot be after end date',
+          },
         });
       }
-      
+
       const daysDiff = (end - start) / (1000 * 60 * 60 * 24);
       if (daysDiff > 365) {
         return res.status(400).json({
           success: false,
           error: {
-            code: "DATE_RANGE_TOO_LARGE",
-            message: "Date range cannot exceed 365 days"
-          }
+            code: 'DATE_RANGE_TOO_LARGE',
+            message: 'Date range cannot exceed 365 days',
+          },
         });
       }
     }
-    
+
     // Validate preset date range
     if (dateRange) {
-      const validRanges = ['today', 'yesterday', 'last_7_days', 'last_30_days', 'this_month', 'last_month', 'this_year', 'last_year'];
+      const validRanges = [
+        'today',
+        'yesterday',
+        'last_7_days',
+        'last_30_days',
+        'this_month',
+        'last_month',
+        'this_year',
+        'last_year',
+      ];
       if (!validRanges.includes(dateRange)) {
         return res.status(400).json({
           success: false,
           error: {
-            code: "INVALID_DATE_RANGE_PRESET",
-            message: "Invalid date range preset. Valid options: " + validRanges.join(', ')
-          }
+            code: 'INVALID_DATE_RANGE_PRESET',
+            message:
+              'Invalid date range preset. Valid options: ' +
+              validRanges.join(', '),
+          },
         });
       }
     }
-    
+
     next();
   } catch (error) {
     return res.status(400).json({
       success: false,
       error: {
-        code: "VALIDATION_ERROR",
-        message: error.message
-      }
+        code: 'VALIDATION_ERROR',
+        message: error.message,
+      },
     });
   }
 };
 
 const validatePagination = (req, res, next) => {
   const { page, limit } = req.query;
-  
+
   if (page !== undefined) {
     const pageNum = parseInt(page);
     if (isNaN(pageNum) || pageNum < 1) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_PAGE",
-          message: "Page must be a positive integer"
-        }
+          code: 'INVALID_PAGE',
+          message: 'Page must be a positive integer',
+        },
       });
     }
   }
-  
+
   if (limit !== undefined) {
     const limitNum = parseInt(limit);
     if (isNaN(limitNum) || limitNum < 1 || limitNum > 100) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_LIMIT",
-          message: "Limit must be between 1 and 100"
-        }
+          code: 'INVALID_LIMIT',
+          message: 'Limit must be between 1 and 100',
+        },
       });
     }
   }
-  
+
   next();
 };
 
 const validateSorting = (req, res, next) => {
   const { sortBy, sortOrder } = req.query;
-  
+
   if (sortBy !== undefined) {
     const validSortFields = [
-      'createdAt', 'updatedAt', 'amount', 'status', 'name', 'email',
-      'applicationStatus', 'kycStatus', 'totalInvested', 'roi', 'submittedAt',
-      'completedAt', 'processedAt', 'reviewedAt'
+      'createdAt',
+      'updatedAt',
+      'amount',
+      'status',
+      'name',
+      'email',
+      'applicationStatus',
+      'kycStatus',
+      'totalInvested',
+      'roi',
+      'submittedAt',
+      'completedAt',
+      'processedAt',
+      'reviewedAt',
     ];
-    
+
     if (!validSortFields.includes(sortBy)) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_SORT_FIELD",
-          message: "Invalid sort field. Valid options: " + validSortFields.join(', ')
-        }
+          code: 'INVALID_SORT_FIELD',
+          message:
+            'Invalid sort field. Valid options: ' + validSortFields.join(', '),
+        },
       });
     }
   }
-  
+
   if (sortOrder !== undefined) {
     if (!['asc', 'desc'].includes(sortOrder)) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_SORT_ORDER",
-          message: "Sort order must be 'asc' or 'desc'"
-        }
+          code: 'INVALID_SORT_ORDER',
+          message: "Sort order must be 'asc' or 'desc'",
+        },
       });
     }
   }
-  
+
   next();
 };
 
 const validateStatusFilter = (req, res, next) => {
   const { status } = req.query;
-  
+
   if (status !== undefined) {
     const validStatuses = [
-      'active', 'inactive', 'pending', 'completed', 'failed', 'cancelled',
-      'draft', 'submitted', 'under_review', 'approved', 'rejected', 'funded',
-      'installation_scheduled', 'installed', 'verified', 'not_started', 'under_review',
-      'processing', 'defaulted', 'terminated'
+      'active',
+      'inactive',
+      'pending',
+      'completed',
+      'failed',
+      'cancelled',
+      'draft',
+      'submitted',
+      'under_review',
+      'approved',
+      'rejected',
+      'funded',
+      'installation_scheduled',
+      'installed',
+      'verified',
+      'not_started',
+      'under_review',
+      'processing',
+      'defaulted',
+      'terminated',
     ];
-    
+
     const statusArray = Array.isArray(status) ? status : [status];
-    const invalidStatuses = statusArray.filter(s => !validStatuses.includes(s));
-    
+    const invalidStatuses = statusArray.filter(
+      (s) => !validStatuses.includes(s)
+    );
+
     if (invalidStatuses.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_STATUS",
-          message: "Invalid status values: " + invalidStatuses.join(', ')
-        }
+          code: 'INVALID_STATUS',
+          message: 'Invalid status values: ' + invalidStatuses.join(', '),
+        },
       });
     }
   }
-  
+
   next();
 };
 
 const validateInvestorFilters = (req, res, next) => {
   const { investorType, riskProfile } = req.query;
-  
+
   if (investorType !== undefined) {
     const validTypes = ['individual', 'institutional', 'corporate'];
-    const typeArray = Array.isArray(investorType) ? investorType : [investorType];
-    const invalidTypes = typeArray.filter(t => !validTypes.includes(t));
-    
+    const typeArray = Array.isArray(investorType)
+      ? investorType
+      : [investorType];
+    const invalidTypes = typeArray.filter((t) => !validTypes.includes(t));
+
     if (invalidTypes.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_INVESTOR_TYPE",
-          message: "Invalid investor types: " + invalidTypes.join(', ')
-        }
+          code: 'INVALID_INVESTOR_TYPE',
+          message: 'Invalid investor types: ' + invalidTypes.join(', '),
+        },
       });
     }
   }
-  
+
   if (riskProfile !== undefined) {
     const validProfiles = ['conservative', 'moderate', 'aggressive'];
-    const profileArray = Array.isArray(riskProfile) ? riskProfile : [riskProfile];
-    const invalidProfiles = profileArray.filter(p => !validProfiles.includes(p));
-    
+    const profileArray = Array.isArray(riskProfile)
+      ? riskProfile
+      : [riskProfile];
+    const invalidProfiles = profileArray.filter(
+      (p) => !validProfiles.includes(p)
+    );
+
     if (invalidProfiles.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_RISK_PROFILE",
-          message: "Invalid risk profiles: " + invalidProfiles.join(', ')
-        }
+          code: 'INVALID_RISK_PROFILE',
+          message: 'Invalid risk profiles: ' + invalidProfiles.join(', '),
+        },
       });
     }
   }
-  
+
   next();
 };
 
 const validateTransactionFilters = (req, res, next) => {
   const { transactionType, paymentMethod, minAmount, maxAmount } = req.query;
-  
+
   if (transactionType !== undefined) {
     const validTypes = ['investment', 'repayment', 'fee', 'refund', 'penalty'];
-    const typeArray = Array.isArray(transactionType) ? transactionType : [transactionType];
-    const invalidTypes = typeArray.filter(t => !validTypes.includes(t));
-    
+    const typeArray = Array.isArray(transactionType)
+      ? transactionType
+      : [transactionType];
+    const invalidTypes = typeArray.filter((t) => !validTypes.includes(t));
+
     if (invalidTypes.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_TRANSACTION_TYPE",
-          message: "Invalid transaction types: " + invalidTypes.join(', ')
-        }
+          code: 'INVALID_TRANSACTION_TYPE',
+          message: 'Invalid transaction types: ' + invalidTypes.join(', '),
+        },
       });
     }
   }
-  
+
   if (paymentMethod !== undefined) {
     const validMethods = ['bank_transfer', 'card', 'wallet', 'auto_debit'];
-    const methodArray = Array.isArray(paymentMethod) ? paymentMethod : [paymentMethod];
-    const invalidMethods = methodArray.filter(m => !validMethods.includes(m));
-    
+    const methodArray = Array.isArray(paymentMethod)
+      ? paymentMethod
+      : [paymentMethod];
+    const invalidMethods = methodArray.filter((m) => !validMethods.includes(m));
+
     if (invalidMethods.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_PAYMENT_METHOD",
-          message: "Invalid payment methods: " + invalidMethods.join(', ')
-        }
+          code: 'INVALID_PAYMENT_METHOD',
+          message: 'Invalid payment methods: ' + invalidMethods.join(', '),
+        },
       });
     }
   }
-  
+
   if (minAmount !== undefined) {
     const amount = parseFloat(minAmount);
     if (isNaN(amount) || amount < 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_MIN_AMOUNT",
-          message: "Minimum amount must be a positive number"
-        }
+          code: 'INVALID_MIN_AMOUNT',
+          message: 'Minimum amount must be a positive number',
+        },
       });
     }
   }
-  
+
   if (maxAmount !== undefined) {
     const amount = parseFloat(maxAmount);
     if (isNaN(amount) || amount < 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_MAX_AMOUNT",
-          message: "Maximum amount must be a positive number"
-        }
+          code: 'INVALID_MAX_AMOUNT',
+          message: 'Maximum amount must be a positive number',
+        },
       });
     }
   }
-  
+
   next();
 };
 
 const validateReportParameters = (req, res, next) => {
   const { format } = req.query;
-  
+
   if (format !== undefined) {
     const validFormats = ['json', 'pdf', 'excel'];
     if (!validFormats.includes(format)) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_REPORT_FORMAT",
-          message: "Invalid format. Valid options: " + validFormats.join(', ')
-        }
+          code: 'INVALID_REPORT_FORMAT',
+          message: 'Invalid format. Valid options: ' + validFormats.join(', '),
+        },
       });
     }
   }
-  
+
   if (req.query.includeSections !== undefined) {
-    const validSections = ['overview', 'investors', 'users', 'transactions', 'kyc'];
-    const sectionsArray = Array.isArray(req.query.includeSections) ? req.query.includeSections : [req.query.includeSections];
-    const invalidSections = sectionsArray.filter(s => !validSections.includes(s));
-    
+    const validSections = [
+      'overview',
+      'investors',
+      'users',
+      'transactions',
+      'kyc',
+    ];
+    const sectionsArray = Array.isArray(req.query.includeSections)
+      ? req.query.includeSections
+      : [req.query.includeSections];
+    const invalidSections = sectionsArray.filter(
+      (s) => !validSections.includes(s)
+    );
+
     if (invalidSections.length > 0) {
       return res.status(400).json({
         success: false,
         error: {
-          code: "INVALID_REPORT_SECTIONS",
-          message: "Invalid sections: " + invalidSections.join(', ')
-        }
+          code: 'INVALID_REPORT_SECTIONS',
+          message: 'Invalid sections: ' + invalidSections.join(', '),
+        },
       });
     }
   }
-  
+
   next();
 };
 
 export {
+  validateRequest,
   validateDateRange,
   validatePagination,
   validateSorting,
   validateStatusFilter,
   validateInvestorFilters,
   validateTransactionFilters,
-  validateReportParameters
+  validateReportParameters,
 };

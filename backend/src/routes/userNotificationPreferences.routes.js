@@ -28,8 +28,8 @@ import {
   verifyEmail,
   verifyPhone,
 } from '../controllers/userNotificationPreferences.controller.js';
-import { authenticate } from '../middleware/auth.middleware.js';
-import { validateNotificationPreferences } from '../middleware/notification/notificationValidation.middleware.js';
+import { requireSignin } from '../middleware/auth.middleware.js';
+import { validatePreferencesUpdate } from '../middleware/notification/notificationValidation.middleware.js';
 import {
   validateUserAccess,
   validateAdminAccess,
@@ -43,7 +43,7 @@ const router = express.Router();
  * @desc    Get user notification preferences
  * @access  Private (user or admin)
  */
-router.get('/:userId/preferences', authenticate, getUserPreferences);
+router.get('/:userId/preferences', requireSignin, getUserPreferences);
 
 /**
  * @route   PUT /api/users/:userId/preferences
@@ -52,9 +52,9 @@ router.get('/:userId/preferences', authenticate, getUserPreferences);
  */
 router.put(
   '/:userId/preferences',
-  authenticate,
+  requireSignin,
   validateUserAccess,
-  validateNotificationPreferences,
+  validatePreferencesUpdate,
   updateUserPreferences
 );
 
@@ -63,7 +63,7 @@ router.put(
  * @desc    Reset user preferences to defaults
  * @access  Private (user or admin)
  */
-router.post('/:userId/preferences/reset', authenticate, resetUserPreferences);
+router.post('/:userId/preferences/reset', requireSignin, resetUserPreferences);
 
 /**
  * @route   GET /api/users/preferences/options
@@ -86,7 +86,7 @@ router.post('/preferences/validate', validatePreferences);
  */
 router.post(
   '/:userId/preferences/migrate',
-  authenticate,
+  requireSignin,
   validateAdminAccess,
   validateMigrationRequest,
   migratePreferences
@@ -99,7 +99,7 @@ router.post(
  */
 router.post(
   '/preferences/bulk-migrate',
-  authenticate,
+  requireSignin,
   validateAdminAccess,
   validateMigrationRequest,
   bulkMigratePreferences
@@ -112,7 +112,7 @@ router.post(
  */
 router.get(
   '/preferences/stats',
-  authenticate,
+  requireSignin,
   validateAdminAccess,
   getPreferenceStats
 );
@@ -122,27 +122,27 @@ router.get(
  * @desc    Update device token for push notifications
  * @access  Private (user or admin)
  */
-router.put('/:userId/device-token', authenticate, updateDeviceToken);
+router.put('/:userId/device-token', requireSignin, updateDeviceToken);
 
 /**
  * @route   DELETE /api/users/:userId/device-token
  * @desc    Remove device token
  * @access  Private (user or admin)
  */
-router.delete('/:userId/device-token', authenticate, removeDeviceToken);
+router.delete('/:userId/device-token', requireSignin, removeDeviceToken);
 
 /**
  * @route   POST /api/users/:userId/verify-email
  * @desc    Verify email address
  * @access  Private (user or admin)
  */
-router.post('/:userId/verify-email', authenticate, verifyEmail);
+router.post('/:userId/verify-email', requireSignin, verifyEmail);
 
 /**
  * @route   POST /api/users/:userId/verify-phone
  * @desc    Verify phone number
  * @access  Private (user or admin)
  */
-router.post('/:userId/verify-phone', authenticate, verifyPhone);
+router.post('/:userId/verify-phone', requireSignin, verifyPhone);
 
 export default router;

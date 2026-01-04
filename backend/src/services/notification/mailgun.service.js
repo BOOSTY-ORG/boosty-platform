@@ -12,8 +12,9 @@
  * - Cost tracking
  */
 
-import { Mailgun } from 'mailgun.js';
-import FormData from 'form-data';
+import mailgunPackage from 'mailgun.js';
+const { Mailgun } = mailgunPackage;
+import FormData from '../../utils/form-data.js';
 import fs from 'fs';
 import path from 'path';
 import Notification from '../../models/notification.model.js';
